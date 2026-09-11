@@ -15,7 +15,8 @@ private:
    CGuiButton m_back,m_save,m_next;
    GuiRect m_cards[3],m_status,m_summary;
    int m_open,m_edit,m_focus,m_height;
-   bool m_dirty,m_error;
+   bool m_dirty,m_error,m_embedded;
+   GuiRect m_embedded_bounds;
    string m_message;
    void Status(const string message,const bool error=false)
      { m_message=message; m_error=error; m_dirty=true; }
@@ -54,7 +55,7 @@ public:
       for(int i=0;i<2;i++) m_select[i].SetSelected(state.Choice(i==1 ? 4 : 0));
       UpdateTargets(); m_dirty=true;
      }
-   CGuiRulesPage() { m_open=-1; m_edit=-1; m_focus=-1; m_dirty=true; m_error=false; }
+   CGuiRulesPage() { m_open=-1; m_edit=-1; m_focus=-1; m_dirty=true; m_error=false; m_embedded=false; }
    void Create()
      {
       state.Reset();
@@ -70,6 +71,7 @@ public:
      }
    void Place(CGuiLayout &layout)
      {
+      m_embedded=false;
       for(int i=0;i<2;i++) m_cards[i]=layout.cards[i];
       m_cards[2]=layout.schedule;
       m_height=layout.height; m_summary=layout.summary;
@@ -87,6 +89,36 @@ public:
       m_dirty=true;
      }
    bool Dirty() { return m_dirty; }
+   bool HasPopup() { return m_open>=0; }
+   bool HitEmbedded(const int x,const int y)
+     { return m_embedded_bounds.Contains(x,y) || (m_open>=0 && m_select[m_open].popup.Contains(x,y)); }
+   void LeaveFocus() { Focus(-1); }
+   void PlaceEmbedded(CGuiLayout &layout)
+     {
+      m_embedded=true; m_embedded_bounds=layout.indicator_rules; m_height=layout.height;
+      GuiRect c=m_embedded_bounds;
+      int columns=c.w>=760 ? 4 : 2;
+      int width=(c.w-48-(columns-1)*16)/columns;
+      for(int id=0;id<4;id++)
+        {
+         int x=c.x+24+(id%columns)*(width+16),y=c.y+64+(id/columns)*76;
+         m_labels[id].SetBounds(x,y-22,width,18);
+         if(id<2) m_select[id].SetBounds(x,y,width,42);
+         else m_text[id-2].SetBounds(x,y,width,42);
+        }
+      m_dirty=true;
+     }
+   void RenderEmbedded(CGuiRenderer &r,const bool full)
+     {
+      if(!full && !m_dirty) return;
+      GuiRect c=m_embedded_bounds;
+      r.Box(c,GUI_CARD,GUI_BORDER);
+      r.Icon(GUI_ICON_RULES,c.x+24,c.y+12,GUI_ACCENT,20);
+      r.Text(c.x+52,c.y+14,"REGRAS DE ENTRADA E SAÍDA",GUI_TEXT,14,true,c.w-76);
+      for(int id=0;id<4;id++) { m_labels[id].Draw(r); if(id<2) m_select[id].Draw(r); else m_text[id-2].Draw(r); }
+      r.Text(c.x+24,c.y+c.h-28,m_error ? m_message : "Stop loss e take profit: 0 desativa a saída.",m_error ? GUI_ERROR : GUI_MUTED,12,false,c.w-48);
+      m_dirty=false;
+     }
    void CloseSelect() { if(m_open>=0) { m_select[m_open].Close(); m_open=-1; m_dirty=true; } }
    void ClearHover()
      {
@@ -130,9 +162,9 @@ public:
       if(m_edit>=0 && hit==m_edit+2) return 0;
       if(!Finish(true)) return 0;
       if(hit>=0) Begin(hit);
-      else if(m_back.ContainsPoint(x,y)) { Focus(4); return Ready() ? 2 : 0; }
-      else if(m_next.ContainsPoint(x,y)) { Focus(6); return Ready() ? 4 : 0; }
-      else if(m_save.ContainsPoint(x,y)) { Focus(5); return Ready() ? 1 : 0; }
+      else if(!m_embedded && m_back.ContainsPoint(x,y)) { Focus(4); return Ready() ? 2 : 0; }
+      else if(!m_embedded && m_next.ContainsPoint(x,y)) { Focus(6); return Ready() ? 4 : 0; }
+      else if(!m_embedded && m_save.ContainsPoint(x,y)) { Focus(5); return Ready() ? 1 : 0; }
       return 0;
      }
    void Mouse(const int x,const int y,const string flags)
@@ -161,7 +193,7 @@ public:
          if(m_open>=0) { int option=m_select[m_open].hot; if(option>=0) SelectOption(option); else CloseSelect(); }
          bool back=(TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT)&0x8000)!=0;
          int next=m_focus<0 ? (back ? 6 : 0) : m_focus+(back ? -1 : 1);
-         if(next<0 || next>6) { Focus(-1); return 3; }
+         if(next<0 || next>(m_embedded ? 3 : 6)) { Focus(-1); return 3; }
          Focus(next); if(next>=2 && next<4) Begin(next); return 0;
         }
       if(m_open>=0)
@@ -190,7 +222,7 @@ public:
         { Begin(m_focus); m_text[m_edit].Key(key); m_dirty=true; }
       return 0;
      }
-   void EnterFocus(const bool last) { Focus(last ? 6 : 0); }
+   void EnterFocus(const bool last) { Focus(last ? (m_embedded ? 3 : 6) : 0); }
    void Render(CGuiRenderer &r,const bool full)
      {
       if(!full && !m_dirty) return;

@@ -25,6 +25,7 @@ private:
    CGuiButton m_next;
    CGuiButton m_back;
    int m_step;
+   bool m_rules_focus;
    void SetupAction(const int action)
      {
       if(action==1) { ChangeStep(1); return; }
@@ -64,15 +65,16 @@ private:
      }
    void ChangeStep(const int step)
      {
+      if(step==2) { ChangeStep(3); return; }
       if(step<0 || step>3 || step==m_step) return;
       if(m_step==0) { if(!m_setup.Ready()) { m_dirty=true; return; } }
       else if(m_step==3) { if(!m_management.Ready()) { m_dirty=true; return; } }
       else if(m_step==2) { if(!m_rules.Ready()) { m_dirty=true; return; } }
-      else if(!FinishEdit(true)) return;
+      else if(!FinishEdit(true) || !m_rules.Ready()) { m_dirty=true; return; }
       CloseSelect(); m_setup.CloseSelect(); m_setup.ClearHover(); m_rules.CloseSelect(); m_management.CloseSelect(); m_rules.ClearHover(); m_management.ClearHover();
-      m_step=step; m_focus=-1;
+      m_step=step; m_focus=-1; m_rules_focus=false; m_rules.LeaveFocus();
       m_state.setup=m_setup.state; m_state.rules=m_rules.state; m_state.management=m_management.state;
-      m_layout.Calculate(m_layout.width,m_layout.height,m_step==0,m_step==2,m_step==3);
+      m_layout.Calculate(m_layout.width,m_layout.height,m_step==0,false,m_step==3);
       Reflow();
      }
    void DrawSummary()
@@ -126,37 +128,38 @@ private:
          r.Set(m_layout.width-356,25,8,8); m_renderer.Round(r,0xFF16A085,4);
          m_renderer.Text(m_layout.width-338,22,"CONFIGURAÇÃO",GUI_MUTED,12,true);
         }
-      string steps[7]={"Setup","Indicadores","Regras","Gestão","Filtros","Revisão","Ativação"};
+      string steps[6]={"Setup","Indicadores","Gestão","Filtros","Revisão","Ativação"};
+      int active_step=m_step==3 ? 2 : m_step;
       if(m_layout.sidebar>0)
         {
          r.Set(0,76,m_layout.sidebar,m_layout.height-76); m_renderer.Fill(r,GUI_CARD);
          r.Set(m_layout.sidebar-1,76,1,m_layout.height-76); m_renderer.Fill(r,GUI_BORDER);
          m_renderer.Text(24,108,"SUA ESTRATÉGIA",GUI_MUTED,11,true);
-         for(int i=0;i<7;i++)
+         for(int i=0;i<6;i++)
            {
             int y=144+i*46;
-            if(i==m_step) { r.Set(12,y-8,m_layout.sidebar-24,40); m_renderer.Round(r,GUI_HOVER); }
-            m_renderer.Icon(i==0 ? GUI_ICON_PARAMETERS : (ENUM_GUI_ICON)(i-1),24,y-2,i==m_step ? GUI_ACCENT : GUI_MUTED,20);
-            m_renderer.Text(52,y,steps[i],i==m_step ? GUI_ACCENT : GUI_MUTED,14,i==m_step);
+            if(i==active_step) { r.Set(12,y-8,m_layout.sidebar-24,40); m_renderer.Round(r,GUI_HOVER); }
+            m_renderer.Icon(i==0 ? GUI_ICON_PARAMETERS : (ENUM_GUI_ICON)(i-1),24,y-2,i==active_step ? GUI_ACCENT : GUI_MUTED,20);
+            m_renderer.Text(52,y,steps[i],i==active_step ? GUI_ACCENT : GUI_MUTED,14,i==active_step);
            }
-         m_renderer.Text(24,474,"Etapas 5–7 em breve",GUI_MUTED,11);
+         m_renderer.Text(24,428,"Etapas 4–6 em breve",GUI_MUTED,11);
         }
       else
         {
          m_renderer.Text(m_layout.left,90,"Setup  /  Indicadores  /  Regras  /  Gestão  /  Filtros  /  Revisão  /  Ativação",GUI_MUTED,12,false,m_layout.content_width);
         }
       int y=m_layout.sidebar>0 ? 92 : (m_layout.dense ? 116 : 130);
-      m_renderer.Text(m_layout.left,y,"PASSO "+IntegerToString(m_step+1)+" DE 7",GUI_ACCENT,12,true);
+      m_renderer.Text(m_layout.left,y,"PASSO "+IntegerToString(active_step+1)+" DE 6",GUI_ACCENT,12,true);
       if(m_layout.dense)
         {
          m_renderer.Text(m_layout.left,y+21,m_step==0 ? "Vamos começar pelo seu setup" : (m_step==3 ? "Configure o stop móvel" : m_step==2 ? "Configure as regras da sua estratégia" : "Configure os indicadores da sua estratégia"),GUI_TEXT,24,true,m_layout.content_width);
-         m_renderer.Text(m_layout.left,y+49,m_step==0 ? "Identifique a estratégia e defina como ela poderá operar." : (m_step==3 ? "Defina o breakeven e o trailing stop da estratégia." : m_step==2 ? "Escolha o tipo de ordem e os valores de saída." : "Selecione um dos quatro indicadores e ajuste seus parâmetros."),GUI_MUTED,13,false,m_layout.content_width);
+         m_renderer.Text(m_layout.left,y+49,m_step==0 ? "Identifique a estratégia e defina como ela poderá operar." : (m_step==3 ? "Defina o breakeven e o trailing stop da estratégia." : m_step==2 ? "Escolha o tipo de ordem e os valores de saída." : "Configure os indicadores e as regras de entrada e saída."),GUI_MUTED,13,false,m_layout.content_width);
         }
       else
         {
          m_renderer.Text(m_layout.left,y+30,m_step==0 ? "Defina a base" : (m_step==3 ? "Configure o stop móvel" : m_step==2 ? "Configure as regras" : "Configure os indicadores"),GUI_TEXT,28,true,m_layout.content_width);
          m_renderer.Text(m_layout.left,y+65,m_step==0 ? "do seu setup" : "da sua estratégia",GUI_TEXT,28,true,m_layout.content_width);
-         m_renderer.Text(m_layout.left,y+100,m_step==0 ? "Identifique a estratégia e defina como ela poderá operar." : (m_step==3 ? "Defina o breakeven e o trailing stop da estratégia." : m_step==2 ? "Escolha o tipo de ordem e os valores de saída." : "Selecione um dos quatro indicadores e ajuste seus parâmetros."),GUI_MUTED,14,false,m_layout.content_width);
+         m_renderer.Text(m_layout.left,y+100,m_step==0 ? "Identifique a estratégia e defina como ela poderá operar." : (m_step==3 ? "Defina o breakeven e o trailing stop da estratégia." : m_step==2 ? "Escolha o tipo de ordem e os valores de saída." : "Configure os indicadores e as regras de entrada e saída."),GUI_MUTED,14,false,m_layout.content_width);
         }
      }
    bool FieldVisible(const int index)
@@ -191,7 +194,7 @@ private:
          int option=m_fields[m_open].select.hot;
          if(option>=0) SelectOption(option); else CloseSelect();
         }
-      int id=m_focus;
+      int previous=m_focus,id=m_focus;
       if(id<0) id=backward ? 0 : 12;
       for(int i=0;i<13;i++)
         {
@@ -199,6 +202,10 @@ private:
          if(FocusAvailable(id)) break;
         }
       SetFocus(id);
+      if((!backward && id==9) || (backward && previous==9))
+        {
+         SetFocus(-1); m_rules_focus=true; m_rules.EnterFocus(backward); return;
+        }
       if(id>=4 && id<=8)
         {
          int field=m_active_indicator*5+id-4;
@@ -253,8 +260,8 @@ private:
         { m_toggle.caption="EXIBIR INTERFACE"; m_toggle.SetBounds(0,0,176,40); }
       else
         {
-         m_layout.Calculate(w,h,m_step==0,m_step==2,m_step==3);
-         m_setup.Place(m_layout); m_rules.Place(m_layout); m_management.Place(m_layout);
+         m_layout.Calculate(w,h,m_step==0,false,m_step==3);
+         m_setup.Place(m_layout); m_rules.PlaceEmbedded(m_layout); m_management.Place(m_layout);
          // Reposition without rebinding: preserve even the current edit buffer.
          for(int i=0;i<20;i++)
            {
@@ -281,7 +288,7 @@ private:
         }
       m_toggle.caption="Recolher"; m_toggle.secondary=true;
       m_toggle.SetBounds((int)MathMax(0,m_layout.width-172),m_layout.too_small ? 110 : 18,148,40);
-      m_back.caption=m_step==3 ? "Regras" : (m_step==2 ? "Indicadores" : "Setup"); m_back.secondary=true;
+      m_back.caption=m_step==3 ? "Indicadores" : "Setup"; m_back.secondary=true;
       m_back.show_icon=true; m_back.icon=GUI_ICON_ARROW_LEFT;
       m_back.SetBounds(m_layout.left,m_layout.too_small ? 110 : m_layout.apply.y,m_step>=2 ? 172 : 128,44);
       m_next.caption="Continuar"; m_next.show_icon=true; m_next.icon=GUI_ICON_ARROW_RIGHT; m_next.icon_after=true;
@@ -321,7 +328,7 @@ private:
       for(int i=0;i<4;i++) BuildIndicator(i);
       GuiRect r=m_layout.apply; m_apply.SetBounds(r.x,r.y,r.w,r.h);
       PlaceToggle();
-      m_setup.Place(m_layout); m_rules.Place(m_layout); m_management.Place(m_layout);
+      m_setup.Place(m_layout); m_rules.PlaceEmbedded(m_layout); m_management.Place(m_layout);
       SetFocus(FocusAvailable(m_focus) ? m_focus : -1);
       m_full=true; m_dirty=true;
      }
@@ -364,10 +371,10 @@ private:
      {
       if(m_toggle.ContainsPoint(x,y)) { SetFocus(10); ToggleInterface(); return; }
       if(m_collapsed) return;
-      if(m_step>0 && m_layout.too_small && m_back.ContainsPoint(x,y)) { ChangeStep(m_step-1); return; }
+      if(m_step>0 && m_layout.too_small && m_back.ContainsPoint(x,y)) { ChangeStep(m_step==3 ? 1 : 0); return; }
       if(m_layout.too_small) return;
       if(m_layout.sidebar>0 && x>=12 && x<m_layout.sidebar-12)
-         for(int step=0;step<4;step++)
+         for(int step=0;step<3;step++)
             if(y>=136+step*46 && y<176+step*46) { ChangeStep(step); return; }
       if(m_step==0)
         {
@@ -394,6 +401,15 @@ private:
          bool same=m_fields[m_open].ContainsPoint(x,y);
          CloseSelect(); if(same) return;
         }
+      if(m_rules.HitEmbedded(x,y) || m_rules.HasPopup())
+        {
+         if(!FinishEdit(true)) return;
+         bool hit_rules=m_rules.HitEmbedded(x,y);
+         SetFocus(-1); m_rules_focus=true; m_rules.Click(x,y); m_dirty=true;
+         if(hit_rules) return;
+        }
+      if(!m_rules.Finish(true)) { m_dirty=true; return; }
+      m_rules_focus=false; m_rules.LeaveFocus();
       if(m_back.ContainsPoint(x,y)) { ChangeStep(0); return; }
       if(m_next.ContainsPoint(x,y)) { ChangeStep(2); return; }
       for(int slot=0;slot<4;slot++)
@@ -420,12 +436,13 @@ private:
         }
       else if(m_apply.ContainsPoint(x,y))
         {
+         if(!m_rules.Ready()) { m_dirty=true; return; }
          SetFocus(9);
          m_state.setup=m_setup.state; m_state.rules=m_rules.state; m_state.management=m_management.state;
          if(!m_state.Apply()) { Status("Não foi possível guardar a aplicação.",true); return; }
          m_first_application=(int)MathMax(0,ArraySize(m_state.applications)-1);
          m_summary_dirty=true; m_summary_draft=false;
-         m_state.PrintConfiguration(); Status("Os quatro indicadores foram salvos no histórico."); Log("Configuração aplicada");
+         m_state.PrintConfiguration(); Status("Indicadores e regras salvos no histórico."); Log("Configuração aplicada");
         }
      }
    void RulesAction(const int action)
@@ -445,7 +462,7 @@ private:
      }
    void ManagementAction(const int action)
      {
-      if(action==2) { ChangeStep(2); return; }
+      if(action==2) { ChangeStep(1); return; }
       if(action==3) { m_focus=10; m_toggle.focused=true; m_toggle.dirty=true; return; }
       if(action!=1) return;
       m_state.setup=m_setup.state; m_state.rules=m_rules.state; m_state.management=m_management.state;
@@ -468,7 +485,9 @@ private:
       if(m_step==0) { m_setup.Mouse(x,y,flags); if(m_setup.Dirty()) m_dirty=true; return; }
       if(m_step==2) { m_rules.Mouse(x,y,flags); if(m_rules.Dirty()) m_dirty=true; return; }
       if(m_step==3) { m_management.Mouse(x,y,flags); if(m_management.Dirty()) m_dirty=true; return; }
-      bool overlay=(m_open>=0 && m_fields[m_open].select.popup.Contains(x,y));
+      if(m_open<0) m_rules.Mouse(x,y,flags);
+      if(m_rules.Dirty()) m_dirty=true;
+      bool overlay=(m_open>=0 && m_fields[m_open].select.popup.Contains(x,y)) || m_rules.HasPopup();
       if(m_back.SetHover(!overlay && m_back.ContainsPoint(x,y))) m_dirty=true;
       if(m_next.SetHover(!overlay && m_next.ContainsPoint(x,y))) m_dirty=true;
       bool next_down=((StringToInteger(flags)&1)!=0 && m_next.hover && m_open<0);
@@ -490,7 +509,7 @@ private:
      {
       if(m_collapsed)
         { if(key==13 || key==32) ToggleInterface(); return; }
-      if(m_layout.too_small) { if(m_step>0 && key==27) ChangeStep(m_step-1); return; }
+      if(m_layout.too_small) { if(m_step>0 && key==27) ChangeStep(m_step==3 ? 1 : 0); return; }
       if(m_step==0)
         {
          if(m_focus==10)
@@ -541,6 +560,20 @@ private:
          if(m_management.Dirty() || m_toggle.dirty) m_dirty=true;
          return;
         }
+      if(m_rules_focus)
+        {
+         int action=m_rules.Key(key);
+         if(action==3)
+           {
+            bool back=(TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT)&0x8000)!=0;
+            m_rules_focus=false; m_rules.LeaveFocus();
+            if(back)
+              { int id=8; while(id>4 && !FocusAvailable(id)) id--; SetFocus(id); }
+            else SetFocus(9);
+           }
+         if(m_rules.Dirty()) m_dirty=true;
+         return;
+        }
       if(key==9)
         {
          TabFocus((TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT)&0x8000)!=0);
@@ -585,10 +618,10 @@ private:
       m_setup.CloseSelect(); m_rules.CloseSelect(); m_management.CloseSelect();
       if(m_step==0 && !m_setup.Finish(true)) m_setup.Finish(false);
       if(!FinishEdit(true)) { FinishEdit(false); Status("Edição inválida descartada ao redimensionar.",true); }
-      m_layout.Calculate(w,h,m_step==0,m_step==2,m_step==3); Reflow(); Log(StringFormat("Canvas redimensionado: %dx%d",w,h));
+      m_layout.Calculate(w,h,m_step==0,false,m_step==3); Reflow(); Log(StringFormat("Canvas redimensionado: %dx%d",w,h));
      }
 public:
-   CGuiApp() { m_ready=false; m_saved=false; m_dirty=false; m_open=-1; m_edit=-1; m_focus=-1; m_error=false; m_collapsed=false; m_active_indicator=0; m_summary_dirty=false; m_summary_draft=true; m_first_application=0; m_step=0; }
+   CGuiApp() { m_ready=false; m_saved=false; m_dirty=false; m_open=-1; m_edit=-1; m_focus=-1; m_error=false; m_collapsed=false; m_active_indicator=0; m_summary_dirty=false; m_summary_draft=true; m_first_application=0; m_step=0; m_rules_focus=false; }
    bool Create(const long chart,const bool debug)
      {
       m_chart=chart; m_debug=debug; m_state.Reset(); m_name="CanvasGUI_"+IntegerToString(chart)+"_"+IntegerToString((long)GetTickCount64());
@@ -681,6 +714,7 @@ public:
             if(card==0) m_fields[m_active_indicator*5].Draw(m_renderer,all);
             else if(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE) for(int j=1;j<5;j++) if(FieldVisible(m_active_indicator*5+j)) m_fields[m_active_indicator*5+j].Draw(m_renderer,all);
            }
+         m_rules.RenderEmbedded(m_renderer,m_full);
          if(m_full || m_apply.dirty) m_apply.Draw(m_renderer);
          if(m_full || m_back.dirty) m_back.Draw(m_renderer);
          if(m_full || m_next.dirty) m_next.Draw(m_renderer);
@@ -689,8 +723,9 @@ public:
            {
             m_renderer.Fill(m_layout.status,GUI_BG);
             m_renderer.Text(m_layout.status.x,m_layout.status.y,m_message,m_error ? GUI_ERROR : GUI_MUTED,13,false,m_layout.status.w);
-            m_renderer.Text(m_layout.status.x,m_layout.status.y+22,"Próxima etapa: Regras",GUI_MUTED,11);
+            m_renderer.Text(m_layout.status.x,m_layout.status.y+22,"Próxima etapa: Gestão",GUI_MUTED,11);
            }
+         m_rules.DrawOverlay(m_renderer);
          if(m_open>=0) { m_renderer.SaveOverlay(m_fields[m_open].select.popup); m_fields[m_open].select.DrawOverlay(m_renderer); }
          }
         }

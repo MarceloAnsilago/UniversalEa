@@ -68,7 +68,7 @@ public:
       for(int i=0;i<3;i++) { m_select[i].SetOptions("Desativado|Pontos|Porcentagem"); m_select[i].SetSelected(0); }
       m_labels[10].caption="Stop móvel"; m_labels[7].caption="Ativar após"; m_labels[8].caption="Distância do preço"; m_labels[9].caption="Passo de ajuste";
       UpdateTargets();
-      m_back.caption="Regras"; m_back.secondary=true; m_back.show_icon=true; m_back.icon=GUI_ICON_ARROW_LEFT;
+      m_back.caption="Indicadores"; m_back.secondary=true; m_back.show_icon=true; m_back.icon=GUI_ICON_ARROW_LEFT;
       m_save.caption="Salvar gestão";
       Status("Configure o breakeven e o trailing stop.");
      }
