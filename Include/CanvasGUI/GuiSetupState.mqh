@@ -1,5 +1,6 @@
 #ifndef CANVAS_GUI_SETUP_STATE_MQH
 #define CANVAS_GUI_SETUP_STATE_MQH
+#include "GuiMagicRegistry.mqh"
 
 enum ENUM_GUI_SETUP_MARKET { GUI_SETUP_FOREX=0, GUI_SETUP_B3=1 };
 enum ENUM_GUI_SETUP_DIRECTION { GUI_SETUP_BUY_SELL=0, GUI_SETUP_BUY_ONLY=1, GUI_SETUP_SELL_ONLY=2 };
@@ -61,6 +62,8 @@ bool GuiSetupParseTime(const string value,int &minutes)
 class CGuiSetupState
   {
 private:
+   bool m_automatic_magic;
+   string m_magic_error;
    int VolumeDigits(const double value)
      {
       if(!MathIsValidNumber(value) || value<=0.0) return -1;
@@ -84,6 +87,14 @@ private:
      }
 
 public:
+   CGuiSetupState() { m_automatic_magic=false; }
+   bool EnableAutomaticMagic(string &error)
+     {
+      m_automatic_magic=true;
+      if(!GuiReserveMagic(name,magic,error)) { magic=0; m_magic_error=error; return false; }
+      m_magic_error="";
+      return true;
+     }
    string name;
    long magic;
    int market;
@@ -104,6 +115,7 @@ public:
      {
       name="Meu setup";
       magic=1;
+      if(m_automatic_magic) EnableAutomaticMagic(m_magic_error);
       market=GUI_SETUP_FOREX;
       timeframe=chart_period;
       direction=GUI_SETUP_BUY_SELL;
@@ -186,6 +198,12 @@ public:
          if(StringLen(value)>48) { error="Nome: use no máximo 48 caracteres."; return false; }
          StringTrimLeft(value);
          StringTrimRight(value);
+         if(m_automatic_magic && (value!=name || magic==0))
+           {
+            long candidate=0;
+            if(!GuiReserveMagic(value,candidate,error)) return false;
+            magic=candidate; m_magic_error="";
+           }
          name=value;
          return true;
         }
@@ -200,6 +218,7 @@ public:
          return true;
         }
       if(index!=1) { error="Campo de configuração inválido."; return false; }
+      if(m_automatic_magic) { error="Magic Number é gerado automaticamente pelo nome."; return false; }
       if(StringLen(value)==0) { error="Informe o magic number."; return false; }
       long candidate=0;
       for(int i=0;i<StringLen(value);i++)
@@ -293,6 +312,7 @@ public:
    bool Validate(string &error)
      {
       error="";
+      if(m_automatic_magic && magic==0 && !EnableAutomaticMagic(error)) return false;
       if(StringLen(name)>48) { error="Nome: use no máximo 48 caracteres."; return false; }
       if(magic<1 || magic>2147483647) { error="Magic number: 1 a 2147483647."; return false; }
       if(Choice(2)<0) { error="Selecione o mercado: Forex ou B3."; return false; }

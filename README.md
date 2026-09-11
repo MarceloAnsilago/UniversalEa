@@ -37,9 +37,9 @@ Validação manual: configurar uma ordem pendente, stop de `150,25` e take de `3
 
 ## Etapa 1 — Setup
 
-A interface inicia em **Setup**, antes de **Indicadores** (etapa 2 de 7). O card Identificação contém nome opcional (até 48 caracteres) e Magic Number obrigatório (1 a 2147483647). O card Mercado e operação contém Forex/B3, os 21 timeframes MT5 e direção permitida: Compra e venda, Somente compra ou Somente venda.
+A interface inicia em **Setup**, antes de **Indicadores** (etapa 2 de 7). O card Identificação contém nome opcional (até 48 caracteres) e Magic Number automático (1 a 2147483647). O card Mercado e operação contém Forex/B3, os 21 timeframes MT5 e direção permitida: Compra e venda, Somente compra ou Somente venda.
 
-Padrões: Meu setup, Magic 1, Forex, período do gráfico e Compra e venda. **Continuar** valida os campos e abre Indicadores; **< Setup** retorna preservando os valores dos dois passos. Tab/Shift+Tab percorrem os controles e Enter confirma/aciona. Valores inválidos impedem sair do campo. Recolher mantém a edição pendente.
+Padrões: Meu setup, Magic aleatório de cinco dígitos, Forex, período do gráfico e Compra e venda. **Continuar** valida os campos e abre Indicadores; **< Setup** retorna preservando os valores dos dois passos. Tab/Shift+Tab percorrem os controles e Enter confirma/aciona. Valores inválidos impedem sair do campo. Recolher mantém a edição pendente.
 
 O seletor **Modalidade**, ao lado de Mercado, oferece **Day trade** (padrão) e **Swing trade**. A escolha é preservada ao voltar de Indicadores e incluída no histórico e no log de salvamento. Trocar a modalidade mantém os horários, a direção e a opção de encerramento já escolhidos. O Tab segue a ordem visual: Mercado → Modalidade → Timeframe → Lote → Direção.
 
@@ -135,3 +135,14 @@ EA e script de estado compilados no MetaEditor. Os testes incluem independência
 Roteiro visual: selecionar 1–4, editar períodos distintos, alternar tipos, tentar trocar de indicador com valor inválido, abrir dropdowns, salvar duas configurações, conferir o resumo salvo e recolher/reabrir com edição pendente.
 
 O botão **Salvar indicadores** fica abaixo do resumo, alinhado à direita. As mensagens ficam à esquerda na mesma área. O histórico continua armazenado em memória; a interface mostra a última aplicação ou a edição atual, sem setas de navegação.
+
+
+## Magic Number automático
+
+No card Identificação, “Meu setup” (ou nome vazio) reserva um número de 10000 a 99999. Nomes personalizados usam FNV-1a sobre os bytes UTF-16: letras, acentos, números, espaços internos e pontuação participam, com distinção entre maiúsculas e minúsculas. Espaços externos são removidos. O candidato fica entre 100000 e 2147483647; colisões avançam até o próximo número livre. Confirmar o mesmo nome na mesma instância preserva o Magic. Renomear ou criar outra instância reserva outro identificador, mesmo quando o nome já foi usado.
+
+O campo Magic é somente leitura e é ignorado pelo Tab. A reserva é gravada imediatamente em `UniEA\magic-v1.bin` na pasta comum dos terminais (`Terminal/Common/Files`), sem expiração nem reciclagem dos números de rascunhos. Um arquivo aberto exclusivamente serializa as reservas entre terminais que compartilham essa pasta. Também são consultadas posições, ordens e o histórico de ordens/deals disponível na conta conectada, em todos os símbolos. Falhas de acesso, ausência de conexão ou esgotamento impedem gerar/confirmar o identificador. Essa persistência é independente das configurações da GUI, que continuam em memória.
+
+A proteção cobre esse registro compartilhado e o histórico disponibilizado pelo servidor. Outro computador/VPS sem o registro, um registro apagado, histórico indisponível ou robôs externos que atribuam números simultaneamente não permitem garantia global. Ao migrar, preserve o registro; uso simultâneo entre máquinas exige um serviço central de reservas. Apenas o hash não garante exclusividade.
+
+`Tests/GuiMagicTests.mq5` verifica limites, hash, caracteres, colisões, duplicatas, retorno ao começo da faixa e esgotamento sem acessar o registro real. Roteiro de integração: abrir dois gráficos e conferir Magics distintos; confirmar o mesmo nome sem alteração; renomear; reiniciar e conferir que reservas antigas não são reutilizadas; desconectar e tentar renomear. Os testes de estado legados usam o modo sem reserva; o card habilita explicitamente o modo automático.

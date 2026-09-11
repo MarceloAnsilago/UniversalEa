@@ -25,7 +25,7 @@ private:
      { return id>=2 && id<=9 ? id-2 : -1; }
    int TextId(const int index) { return index==2 ? 10 : index; }
    int SelectId(const int index) { return index+2; }
-   bool FocusAvailable(const int id) { return id>=0 && id<=11 && (id!=8 || state.close_enabled); }
+   bool FocusAvailable(const int id) { return id>=0 && id<=11 && id!=1 && (id!=8 || state.close_enabled); }
    int NextFocus(const bool backward)
      {
       // Follow the visible rows, including timeframe and lot on the same row.
@@ -82,8 +82,10 @@ public:
       m_symbol=symbol;
       RefreshVolumeLimits();
       state.Reset(chart_period,state.volume_min,state.volume_max,state.volume_step);
+      string magic_error;
+      state.EnableAutomaticMagic(magic_error);
       m_labels[0].caption="Nome do setup (opcional)";
-      m_labels[1].caption="Magic Number";
+      m_labels[1].caption="Magic Number (automático)";
       m_labels[2].caption="Mercado";
       m_labels[3].caption="Timeframe";
       m_labels[4].caption="Direção permitida";
@@ -95,6 +97,7 @@ public:
       m_labels[10].caption="Lote";
       m_text[0].text_mode=true; m_text[0].max_length=48;
       m_text[1].max_length=10;
+      m_text[1].enabled=false;
       m_text[2].max_length=16;
       for(int i=0;i<3;i++) m_text[i].SetValue(state.Value(TextId(i)));
       m_select[0].SetOptions("Forex|B3");
@@ -112,6 +115,7 @@ public:
       Status("Defina a identificação e as preferências do setup.");
       string error;
       if(!state.ValidateLot(state.lot,error)) Status(error,true);
+      if(magic_error!="") Status(magic_error,true);
      }
    void Place(CGuiLayout &layout)
      {
@@ -178,6 +182,7 @@ public:
          if(!state.CommitText(TextId(index),m_text[index].Buffer(),error))
            { m_text[index].invalid=true; m_text[index].dirty=true; Status(error,true); return false; }
          m_text[index].SetValue(state.Value(TextId(index)));
+         m_text[1].SetValue(state.Value(1));
         }
       m_text[index].End(); m_edit=-1;
       Status(save ? "Configuração atualizada." : "Edição cancelada.");
@@ -189,6 +194,7 @@ public:
       if(!Finish(true)) return false;
       string error;
       if(!state.Validate(error)) { Status(error,true); return false; }
+      m_text[1].SetValue(state.Value(1));
       CloseSelect(); return true;
      }
    bool Click(const int x,const int y)
@@ -202,7 +208,7 @@ public:
          CloseSelect(); if(same) return false;
         }
       int hit=-1;
-      for(int i=0;i<3;i++) if(m_text[i].ContainsPoint(x,y)) hit=TextId(i);
+      for(int i=0;i<3;i++) if(m_text[i].enabled && m_text[i].ContainsPoint(x,y)) hit=TextId(i);
       for(int i=0;i<8;i++) if(m_select[i].ContainsPoint(x,y)) hit=SelectId(i);
       if(m_edit>=0 && hit==TextId(m_edit)) return false;
       if(!Finish(true)) return false;
