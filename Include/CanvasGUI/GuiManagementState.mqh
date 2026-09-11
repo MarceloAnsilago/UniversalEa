@@ -1,12 +1,45 @@
 #ifndef CANVAS_GUI_MANAGEMENT_STATE_MQH
 #define CANVAS_GUI_MANAGEMENT_STATE_MQH
 // Mode: 0 disabled, 1 points, 2 percent. Values are configuration only.
+struct GuiManagementStorage
+  { int mode[3],unit[3]; double bank[2][8]; };
 class CGuiManagementState
   {
 private:
    double m_bank[2][8];
    int m_unit[3];
 public:
+   void ExportStorage(GuiManagementStorage &data)
+     {
+      for(int i=0;i<3;i++) { data.mode[i]=mode[i]; data.unit[i]=m_unit[i]; }
+      for(int i=0;i<8;i++)
+        {
+         for(int unit=0;unit<2;unit++) data.bank[unit][i]=m_bank[unit][i];
+         data.bank[m_unit[Owner(i+2)]][i]=values[i];
+        }
+     }
+   bool ImportStorage(const GuiManagementStorage &data,string &error)
+     {
+      CGuiManagementState candidate;
+      for(int i=0;i<3;i++)
+        {
+         if(data.unit[i]<0 || data.unit[i]>1 || data.mode[i]<0 || data.mode[i]>2 ||
+            (data.mode[i]>0 && data.unit[i]!=data.mode[i]-1)) { error="Modo de gestão inválido."; return false; }
+         candidate.mode[i]=data.mode[i]; candidate.m_unit[i]=data.unit[i];
+        }
+      for(int i=0;i<8;i++)
+        {
+         for(int unit=0;unit<2;unit++)
+           {
+            double value=data.bank[unit][i];
+            if(!MathIsValidNumber(value) || value<0 || value>100000000) { error="Valor de gestão inválido."; return false; }
+            candidate.m_bank[unit][i]=value;
+           }
+         candidate.values[i]=data.bank[data.unit[Owner(i+2)]][i];
+        }
+      if(!candidate.Validate(error)) return false;
+      this=candidate; return true;
+     }
    int mode[3];
    double values[8]; // BE trigger, BE offset, trailing trigger, distance, step.
    CGuiManagementState() { Reset(); }

@@ -52,6 +52,12 @@ private:
      }
 public:
    CGuiManagementState state;
+   void ReplaceState(CGuiManagementState &loaded)
+     {
+      Finish(false); CloseSelect(); state=loaded;
+      for(int i=0;i<3;i++) m_select[i].SetSelected(state.Choice(i));
+      UpdateTargets(); m_dirty=true;
+     }
    CGuiManagementPage() { m_open=-1; m_edit=-1; m_focus=-1; m_dirty=true; m_error=false; }
    void Create()
      {

@@ -91,11 +91,13 @@ public:
    bool EnableAutomaticMagic(string &error)
      {
       m_automatic_magic=true;
-      if(!GuiReserveMagic(name,magic,error)) { magic=0; m_magic_error=error; return false; }
+      if(!GuiReserveMagic(name,magic,error,set_id)) { magic=0; m_magic_error=error; return false; }
       m_magic_error="";
       return true;
      }
    string name;
+   string set_id;
+   void UseSavedIdentity() { m_automatic_magic=true; m_magic_error=""; }
    long magic;
    int market;
    ENUM_TIMEFRAMES timeframe;
@@ -115,6 +117,7 @@ public:
      {
       name="Meu setup";
       magic=1;
+      set_id="";
       if(m_automatic_magic) EnableAutomaticMagic(m_magic_error);
       market=GUI_SETUP_FOREX;
       timeframe=chart_period;
@@ -198,10 +201,12 @@ public:
          if(StringLen(value)>48) { error="Nome: use no máximo 48 caracteres."; return false; }
          StringTrimLeft(value);
          StringTrimRight(value);
-         if(m_automatic_magic && (value!=name || magic==0))
+         if(m_automatic_magic && value!=name)
            {
             long candidate=0;
-            if(!GuiReserveMagic(value,candidate,error)) return false;
+            string identity;
+            if(!GuiReserveMagic(value,candidate,error,identity)) return false;
+            set_id=identity;
             magic=candidate; m_magic_error="";
            }
          name=value;

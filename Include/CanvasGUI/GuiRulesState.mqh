@@ -3,11 +3,34 @@
 enum ENUM_GUI_ORDER_MODE { GUI_ORDER_MARKET,GUI_ORDER_PENDING };
 enum ENUM_GUI_CANDLE_FILTER { GUI_CANDLE_DISABLED,GUI_CANDLE_BULLISH,GUI_CANDLE_BEARISH };
 enum ENUM_GUI_TARGET_UNIT { GUI_TARGET_POINTS,GUI_TARGET_PERCENT };
+struct GuiRulesStorage
+  { int unit,order,candle; double stop[2],take[2]; };
 class CGuiRulesState
   {
 private:
    double m_stop[2],m_take[2];
 public:
+   void ExportStorage(GuiRulesStorage &data)
+     {
+      data.unit=(int)target_unit; data.order=(int)order_mode; data.candle=(int)candle_filter;
+      for(int i=0;i<2;i++) { data.stop[i]=m_stop[i]; data.take[i]=m_take[i]; }
+      if(data.unit>=0 && data.unit<2) { data.stop[data.unit]=stop_loss; data.take[data.unit]=take_profit; }
+     }
+   bool ImportStorage(const GuiRulesStorage &data,string &error)
+     {
+      CGuiRulesState candidate;
+      candidate.order_mode=(ENUM_GUI_ORDER_MODE)data.order; candidate.candle_filter=(ENUM_GUI_CANDLE_FILTER)data.candle;
+      if(data.unit<0 || data.unit>1) { error="Unidade dos alvos inválida."; return false; }
+      for(int i=0;i<2;i++)
+        {
+         candidate.target_unit=(ENUM_GUI_TARGET_UNIT)i; candidate.stop_loss=data.stop[i]; candidate.take_profit=data.take[i];
+         if(!candidate.Validate(error)) return false;
+         candidate.m_stop[i]=data.stop[i]; candidate.m_take[i]=data.take[i];
+        }
+      candidate.target_unit=(ENUM_GUI_TARGET_UNIT)data.unit;
+      candidate.stop_loss=data.stop[data.unit]; candidate.take_profit=data.take[data.unit];
+      this=candidate; return true;
+     }
    ENUM_GUI_TARGET_UNIT target_unit;
    ENUM_GUI_ORDER_MODE order_mode;
    ENUM_GUI_CANDLE_FILTER candle_filter;

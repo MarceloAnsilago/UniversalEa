@@ -6,6 +6,7 @@
 #include "GuiSetupPage.mqh"
 #include "GuiRulesPage.mqh"
 #include "GuiManagementPage.mqh"
+#include "GuiSetFile.mqh"
 class CGuiApp
   {
 private:
@@ -24,6 +25,43 @@ private:
    CGuiButton m_next;
    CGuiButton m_back;
    int m_step;
+   void SetupAction(const int action)
+     {
+      if(action==1) { ChangeStep(1); return; }
+      if(action!=3 && action!=4) return;
+      bool save=action==3;
+      string paths[],error;
+      string filename=m_setup.state.name;
+      for(int i=0;i<StringLen(filename);i++)
+        { ushort c=StringGetCharacter(filename,i); if(c<32 || StringFind("<>:\"/\\|?*",ShortToString(c))>=0) StringSetCharacter(filename,i,'_'); }
+      if(filename=="") filename="Meu setup";
+      filename+="_"+IntegerToString(m_setup.state.magic)+".set";
+      FolderCreate("UniEA\\Sets",FILE_COMMON);
+      int selected=FileSelectDialog(save ? "Salvar set UniEA" : "Carregar set UniEA","UniEA\\Sets",
+                                   "Sets UniEA (*.set)|*.set",FSD_COMMON_FOLDER|(save ? FSD_WRITE_FILE : FSD_FILE_MUST_EXIST),
+                                   paths,save ? filename : "");
+      if(selected<=0)
+        { m_setup.SetMessage(selected==0 ? "Operação cancelada." : "Não foi possível abrir a seleção de arquivos.",selected<0); return; }
+      if(save)
+        {
+         m_state.setup=m_setup.state; m_state.rules=m_rules.state; m_state.management=m_management.state;
+         bool ok=GuiSaveSet(paths[0],m_state,error);
+         m_setup.SetMessage(ok ? "Set salvo com o Magic "+IntegerToString(m_state.setup.magic)+"." : error,!ok);
+        }
+      else
+        {
+         CGuiState loaded;
+         if(!GuiLoadSet(paths[0],loaded,error)) { m_setup.SetMessage(error,true); return; }
+         m_state=loaded;
+         m_setup.ReplaceState(loaded.setup); m_rules.ReplaceState(loaded.rules); m_management.ReplaceState(loaded.management);
+         m_state.setup=m_setup.state;
+         m_summary_draft=true; m_summary_dirty=true; m_first_application=0;
+         m_active_indicator=0; m_edit=-1; m_open=-1; m_focus=-1;
+         Reflow();
+         m_setup.SetMessage("Set carregado. Magic preservado: "+IntegerToString(m_setup.state.magic)+".");
+        }
+      m_dirty=true; m_full=true;
+     }
    void ChangeStep(const int step)
      {
       if(step<0 || step>3 || step==m_step) return;
@@ -334,7 +372,7 @@ private:
       if(m_step==0)
         {
          m_focus=-1; m_toggle.focused=false; m_toggle.dirty=true;
-         if(m_setup.Click(x,y)) ChangeStep(1);
+         SetupAction(m_setup.Click(x,y));
          m_dirty=true; return;
         }
       if(m_step==2)
@@ -467,7 +505,7 @@ private:
          else
            {
             int action=m_setup.Key(key);
-            if(action==1) ChangeStep(1);
+            if(action==1 || action==3 || action==4) SetupAction(action);
             else if(action==2) { m_focus=10; m_toggle.focused=true; m_toggle.dirty=true; }
            }
          if(m_setup.Dirty() || m_toggle.dirty) m_dirty=true;

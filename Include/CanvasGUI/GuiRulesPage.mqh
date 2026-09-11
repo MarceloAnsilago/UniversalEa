@@ -48,6 +48,12 @@ private:
      }
 public:
    CGuiRulesState state;
+   void ReplaceState(CGuiRulesState &loaded)
+     {
+      Finish(false); CloseSelect(); state=loaded;
+      for(int i=0;i<2;i++) m_select[i].SetSelected(state.Choice(i==1 ? 4 : 0));
+      UpdateTargets(); m_dirty=true;
+     }
    CGuiRulesPage() { m_open=-1; m_edit=-1; m_focus=-1; m_dirty=true; m_error=false; }
    void Create()
      {

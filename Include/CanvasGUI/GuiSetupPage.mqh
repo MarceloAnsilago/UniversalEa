@@ -14,7 +14,7 @@ private:
    CGuiLabel m_labels[11];
    CGuiTextField m_text[3];
    CGuiSelectBox m_select[8];
-   CGuiButton m_continue;
+   CGuiButton m_continue,m_save_set,m_load_set;
    GuiRect m_cards[3],m_status;
    int m_open,m_edit,m_focus,m_height;
    bool m_dirty,m_error;
@@ -25,11 +25,11 @@ private:
      { return id>=2 && id<=9 ? id-2 : -1; }
    int TextId(const int index) { return index==2 ? 10 : index; }
    int SelectId(const int index) { return index+2; }
-   bool FocusAvailable(const int id) { return id>=0 && id<=11 && id!=1 && (id!=8 || state.close_enabled); }
+   bool FocusAvailable(const int id) { return id>=0 && id<=13 && id!=1 && (id!=8 || state.close_enabled); }
    int NextFocus(const bool backward)
      {
       // Follow the visible rows, including timeframe and lot on the same row.
-      int order[]={0,1,2,9,3,10,4,5,6,7,8,11};
+      int order[]={0,1,12,13,2,9,3,10,4,5,6,7,8,11};
       int position=backward ? ArraySize(order) : -1;
       for(int i=0;i<ArraySize(order);i++) if(order[i]==m_focus) { position=i; break; }
       for(position+=backward ? -1 : 1;position>=0 && position<ArraySize(order);position+=backward ? -1 : 1)
@@ -57,6 +57,7 @@ private:
       for(int i=0;i<3;i++) { m_text[i].focused=index==TextId(i); m_text[i].dirty=true; }
       for(int i=0;i<8;i++) { m_select[i].focused=index==SelectId(i); m_select[i].dirty=true; }
       m_continue.focused=index==11; m_continue.dirty=true; m_dirty=true;
+      m_save_set.focused=index==12; m_load_set.focused=index==13;
      }
    void SelectOption(const int option)
      {
@@ -76,6 +77,14 @@ private:
      }
 public:
    CGuiSetupState state;
+   void SetMessage(const string message,const bool error=false) { Status(message,error); }
+   void ReplaceState(CGuiSetupState &loaded)
+     {
+      Finish(false); CloseSelect(); Focus(-1); state=loaded; RefreshVolumeLimits();
+      for(int i=0;i<3;i++) m_text[i].SetValue(state.Value(TextId(i)));
+      for(int i=0;i<8;i++) m_select[i].SetSelected(state.Choice(SelectId(i)));
+      UpdateCloseField();
+     }
    CGuiSetupPage() { m_open=-1; m_edit=-1; m_focus=-1; m_dirty=true; m_error=false; }
    void Create(const ENUM_TIMEFRAMES chart_period,const string symbol)
      {
@@ -111,6 +120,8 @@ public:
       for(int i=0;i<8;i++) m_select[i].SetSelected(state.Choice(SelectId(i)));
       UpdateCloseField();
       m_continue.caption="Continuar";
+      m_save_set.caption="Salvar set"; m_load_set.caption="Carregar set";
+      m_save_set.secondary=true; m_load_set.secondary=true;
       m_continue.show_icon=true; m_continue.icon=GUI_ICON_ARROW_RIGHT; m_continue.icon_after=true;
       Status("Defina a identificação e as preferências do setup.");
       string error;
@@ -160,6 +171,9 @@ public:
          else m_select[select].SetBounds(x,y,w,42);
         }
       GuiRect r=layout.apply; m_continue.SetBounds(r.x,r.y,r.w,r.h);
+      int button_width=(m_cards[0].w-56)/2;
+      m_save_set.SetBounds(m_cards[0].x+24,m_cards[0].y+250,button_width,42);
+      m_load_set.SetBounds(m_cards[0].x+32+button_width,m_cards[0].y+250,button_width,42);
       m_dirty=true;
      }
    bool Dirty() { return m_dirty; }
@@ -170,6 +184,7 @@ public:
       for(int i=0;i<3;i++) m_text[i].SetHover(false);
       for(int i=0;i<8;i++) m_select[i].SetHover(false);
       m_continue.SetHover(false); m_continue.active=false; m_dirty=true;
+      m_save_set.SetHover(false); m_load_set.SetHover(false);
      }
    bool Finish(const bool save)
      {
@@ -197,7 +212,7 @@ public:
       m_text[1].SetValue(state.Value(1));
       CloseSelect(); return true;
      }
-   bool Click(const int x,const int y)
+   int Click(const int x,const int y)
      {
       if(m_open>=0)
         {
@@ -208,6 +223,8 @@ public:
          CloseSelect(); if(same) return false;
         }
       int hit=-1;
+      if(m_load_set.ContainsPoint(x,y)) { Focus(13); return 4; }
+      if(m_save_set.ContainsPoint(x,y)) { Focus(12); return Ready() ? 3 : 0; }
       for(int i=0;i<3;i++) if(m_text[i].enabled && m_text[i].ContainsPoint(x,y)) hit=TextId(i);
       for(int i=0;i<8;i++) if(m_select[i].ContainsPoint(x,y)) hit=SelectId(i);
       if(m_edit>=0 && hit==TextId(m_edit)) return false;
@@ -222,6 +239,8 @@ public:
       for(int i=0;i<3;i++) if(m_text[i].SetHover(!overlay && m_text[i].ContainsPoint(x,y))) m_dirty=true;
       for(int i=0;i<8;i++) if(m_select[i].SetHover(!overlay && m_select[i].ContainsPoint(x,y))) m_dirty=true;
       if(m_continue.SetHover(!overlay && m_continue.ContainsPoint(x,y))) m_dirty=true;
+      if(m_save_set.SetHover(!overlay && m_save_set.ContainsPoint(x,y))) m_dirty=true;
+      if(m_load_set.SetHover(!overlay && m_load_set.ContainsPoint(x,y))) m_dirty=true;
       bool down=(StringToInteger(flags)&1)!=0 && m_continue.hover;
       if(down!=m_continue.active) { m_continue.active=down; m_dirty=true; }
       if(m_open>=0)
@@ -230,7 +249,7 @@ public:
          if(hot!=m_select[m_open].hot) { m_select[m_open].hot=hot; m_dirty=true; }
         }
      }
-   // Return 1 to advance, 2 to focus the shared Recolher button.
+   // 1 advance, 2 shared focus, 3 save set, 4 load set.
    int Key(const int key)
      {
       if(key==9)
@@ -261,7 +280,11 @@ public:
         }
       if(m_focus<0) return 0;
       if(key==13 || key==32)
-        { if(m_focus==11) return Ready() ? 1 : 0; Begin(m_focus); return 0; }
+        {
+         if(m_focus==12) return Ready() ? 3 : 0;
+         if(m_focus==13) return 4;
+         if(m_focus==11) return Ready() ? 1 : 0; Begin(m_focus); return 0;
+        }
       if(TextIndex(m_focus)>=0 && FocusAvailable(m_focus))
         {
          // Ignore modifier keys until a printable/editing key arrives.
@@ -300,6 +323,7 @@ public:
       r.Text(m_status.x,m_status.y,m_message,m_error ? GUI_ERROR : GUI_MUTED,13,false,m_status.w);
       r.Text(m_status.x,m_status.y+24,"Próxima etapa: Indicadores",GUI_MUTED,11,false,m_status.w);
       m_continue.Draw(r);
+      m_save_set.Draw(r); m_load_set.Draw(r);
       m_dirty=false;
      }
    void DrawOverlay(CGuiRenderer &r)

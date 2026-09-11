@@ -42,7 +42,68 @@ bool GuiFindFreeMagic(const string name,const ulong entropy,long &used[],long &c
 // Exclusive file handle serializes reservations across local terminals.
 // Never recycle reservations, including abandoned drafts. A missing remote
 // registry or broker history cannot be inferred from a hash.
-bool GuiReserveMagic(const string name,long &magic,string &error)
+string GuiNewSetId(const long magic)
+  {
+   static uint sequence=0;
+   string seed=TerminalInfoString(TERMINAL_DATA_PATH)+IntegerToString(ChartID())+
+               IntegerToString((long)GetMicrosecondCount())+IntegerToString(TimeLocal())+IntegerToString(++sequence);
+   return StringFormat("%08X%08X%08X%08X",GuiMagicHash(seed),GuiMagicHash(seed+"a"),GuiMagicHash(seed+"b"),(uint)magic);
+  }
+
+bool GuiValidSetId(const string id,const long magic)
+  {
+   if(magic<1 || magic>2147483647 || StringLen(id)!=32 || StringSubstr(id,24)!=StringFormat("%08X",(uint)magic)) return false;
+   for(int i=0;i<32;i++)
+     { ushort c=StringGetCharacter(id,i); if(!((c>='0' && c<='9') || (c>='A' && c<='F'))) return false; }
+   return true;
+  }
+
+// Caller holds magic-v1.bin exclusively, including during owner file I/O.
+bool GuiWriteMagicOwner(const long magic,const string id,const string root="UniEA")
+  {
+   int file=FileOpen(root+"\\owners\\"+IntegerToString(magic)+".txt",FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_COMMON);
+   if(file==INVALID_HANDLE) return false;
+   ResetLastError();
+   bool ok=FileWriteString(file,id)==32;
+   FileFlush(file); ok=ok && GetLastError()==0; FileClose(file);
+   return ok;
+  }
+
+bool GuiRestoreMagic(const long magic,const string id,string &error,const string root="UniEA")
+  {
+   error="";
+   if(!GuiValidSetId(id,magic)) { error="Identificação do set ou Magic inválido."; return false; }
+   int lock=FileOpen(root+"\\magic-v1.bin",FILE_READ|FILE_WRITE|FILE_BIN|FILE_COMMON);
+   if(lock==INVALID_HANDLE) { error="Registro de Magic ocupado ou indisponível."; return false; }
+   bool exists=false,ok=FileSize(lock)%8==0;
+   ResetLastError();
+   while(ok && !FileIsEnding(lock))
+     { long value=FileReadLong(lock); if(value<1 || value>2147483647) ok=false; if(value==magic) exists=true; }
+   ok=ok && GetLastError()==0;
+   string path=root+"\\owners\\"+IntegerToString(magic)+".txt";
+   bool owner_exists=FileIsExist(path,FILE_COMMON);
+   if(ok && owner_exists)
+     {
+      int file=FileOpen(path,FILE_READ|FILE_TXT|FILE_ANSI|FILE_COMMON);
+      ok=file!=INVALID_HANDLE;
+      if(ok) { ok=FileSize(file)==32 && FileReadString(file)==id; FileClose(file); }
+     }
+   else if(exists) ok=false; // Legacy reservation has no provable owner.
+   if(!ok)
+     { FileClose(lock); error="Magic já reservado por outro set ou registro inválido. O número foi preservado."; return false; }
+   if(!exists)
+     {
+      ResetLastError();
+      ok=FileSeek(lock,0,SEEK_END) && FileWriteLong(lock,magic)==8;
+      FileFlush(lock); ok=ok && GetLastError()==0;
+     }
+   if(ok && !owner_exists) ok=GuiWriteMagicOwner(magic,id,root);
+   FileClose(lock);
+   if(!ok) error="Não foi possível registrar a identidade do set.";
+   return ok;
+  }
+
+bool GuiReserveMagic(const string name,long &magic,string &error,string &set_id)
   {
    error="";
    if(!TerminalInfoInteger(TERMINAL_CONNECTED) || !HistorySelect(0,TimeCurrent()))
@@ -89,9 +150,12 @@ bool GuiReserveMagic(const string name,long &magic,string &error)
    bool saved=FileSeek(file,0,SEEK_END) && FileWriteLong(file,candidate)==8;
    FileFlush(file);
    saved=saved && GetLastError()==0;
+   string identity=GuiNewSetId(candidate);
+   if(saved) saved=GuiWriteMagicOwner(candidate,identity);
    FileClose(file);
    if(!saved) { error="Não foi possível persistir o Magic Number."; return false; }
    magic=candidate;
+   set_id=identity;
    return true;
   }
 #endif

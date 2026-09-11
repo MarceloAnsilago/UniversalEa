@@ -138,6 +138,16 @@
       "path":"Include\\CanvasGUI\\GuiManagementPage.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"Include\\CanvasGUI\\GuiMagicRegistry.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"Include\\CanvasGUI\\GuiSetFile.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ]
 }
