@@ -1,5 +1,11 @@
 # UniversalEa
 
+## ADX
+
+Os quatro slots de Indicadores oferecem ADX, com período padrão 14 e valores inteiros de 1 a 100000. O período é independente de Média Móvel e RSI e é preservado ao alternar o tipo ou desativar o slot. ADX aparece no resumo, no histórico em memória e no log de salvamento. Somente o período é exibido; os campos de preço, método, shift e níveis de RSI não se aplicam ao ADX.
+
+Assim como os indicadores existentes nesta etapa, ADX configura preferências da interface; ainda não calcula valores no gráfico nem gera sinais de negociação. `Tests/GuiStateTests.mq5` cobre validação, alternância e histórico. Validação visual: selecionar ADX nos quatro slots, editar o período, alternar para RSI e voltar, salvar e conferir o resumo; testar Tab/Shift+Tab e redimensionamento.
+
 Projeto UniEA para MetaTrader 5. O desenvolvimento ativo fica em Experts/Uni.
 
 Abra UniversalEa.code-workspace no VS Code para trabalhar neste repositorio. Arquivo principal: UniEA.mq5. Componentes: Include/CanvasGUI. Testes: Tests. A biblioteca padrao do MetaTrader 5 deve estar instalada em MQL5/Include.

@@ -93,5 +93,28 @@ void OnStart()
    Check(state.applications[saved].setup.entry_start==540 && state.applications[saved].setup.entry_end==1020 && state.applications[saved].setup.close_enabled && state.applications[saved].setup.close_time==1050,"Histórico preserva os horários e encerramento");
    Check(state.applications[saved].setup.trade_mode==GUI_SETUP_SWING_TRADE,"Histórico preserva modalidade após mudar setup");
    Check(state.applications[saved].setup.lot==0.25,"Histórico preserva lote após mudar setup");
+   state.Reset();
+   for(int slot=0;slot<4;slot++)
+     {
+      state.Choose(slot,GUI_TYPE,GUI_INDICATOR_ADX+1);
+      Check(state.Choice(slot,GUI_TYPE)==3 && state.Value(slot,GUI_PERIOD)=="14","ADX inicial em cada slot");
+      Check(state.Commit(slot,GUI_PERIOD,IntegerToString(20+slot),error),"Editar período ADX");
+      Check(!state.Commit(slot,GUI_PERIOD,"0",error) && !state.Commit(slot,GUI_PERIOD,"2.5",error) && !state.Commit(slot,GUI_PERIOD,"100001",error),"Rejeitar período ADX inválido");
+      Check(state.indicators[slot].adxPeriod==20+slot,"Erro preserva período ADX");
+      state.Choose(slot,GUI_TYPE,GUI_INDICATOR_RSI+1);
+      Check(state.Value(slot,GUI_PERIOD)=="14","ADX não altera RSI");
+      state.Choose(slot,GUI_TYPE,GUI_INDICATOR_MA+1);
+      Check(state.Value(slot,GUI_PERIOD)=="20","ADX não altera MA");
+      state.Choose(slot,GUI_TYPE,0);
+      state.Choose(slot,GUI_TYPE,GUI_INDICATOR_ADX+1);
+      Check(state.Value(slot,GUI_PERIOD)==IntegerToString(20+slot),"Reativar ADX preserva período");
+     }
+   Check(state.Apply(),"Salvar ADX nos quatro slots");
+   state.Commit(3,GUI_PERIOD,"99",error);
+   Check(state.applications[0].indicators[3].type==GUI_INDICATOR_ADX && state.applications[0].indicators[3].adxPeriod==23 && state.applied[3].adxPeriod==23,"Histórico ADX independente da edição");
+   Check(state.indicators[0].adxPeriod==20,"Período ADX independente entre slots");
+   Check(state.Apply() && state.applications[1].indicators[3].adxPeriod==99,"Reaplicar ADX");
+   state.Reset();
+   Check(state.indicators[3].adxPeriod==14 && state.indicators[3].type==GUI_INDICATOR_NONE,"Reset ADX");
    PrintFormat("[GuiStateTests] %d verificações, %d falhas",checks,failures);
   }

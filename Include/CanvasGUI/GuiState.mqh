@@ -3,7 +3,9 @@
 #include "GuiSetupState.mqh"
 #include "GuiRulesState.mqh"
 #include "GuiManagementState.mqh"
-enum ENUM_GUI_INDICATOR_TYPE { GUI_INDICATOR_NONE=-1, GUI_INDICATOR_MA, GUI_INDICATOR_RSI };
+enum ENUM_GUI_INDICATOR_TYPE { GUI_INDICATOR_NONE=-1, GUI_INDICATOR_MA, GUI_INDICATOR_RSI, GUI_INDICATOR_ADX };
+string GuiIndicatorName(const ENUM_GUI_INDICATOR_TYPE type)
+  { return type==GUI_INDICATOR_MA ? "Média Móvel" : (type==GUI_INDICATOR_RSI ? "RSI" : (type==GUI_INDICATOR_ADX ? "ADX" : "Não usar")); }
 enum ENUM_GUI_FIELD { GUI_TYPE, GUI_PERIOD, GUI_METHOD, GUI_PRICE, GUI_SHIFT, GUI_LOWER, GUI_UPPER };
 struct IndicatorConfig
   {
@@ -13,6 +15,7 @@ struct IndicatorConfig
    ENUM_APPLIED_PRICE maPrice;
    int maShift;
    int rsiPeriod;
+   int adxPeriod;
    ENUM_APPLIED_PRICE rsiPrice;
    double rsiLower,rsiUpper;
   };
@@ -62,6 +65,7 @@ public:
          indicators[i].maPrice=PRICE_CLOSE; indicators[i].maShift=0;
          indicators[i].rsiPeriod=14; indicators[i].rsiPrice=PRICE_CLOSE;
          indicators[i].rsiLower=30; indicators[i].rsiUpper=70;
+         indicators[i].adxPeriod=14;
         }
      }
    int Choice(const int card,const ENUM_GUI_FIELD field)
@@ -81,7 +85,7 @@ public:
    string Value(const int card,const ENUM_GUI_FIELD field)
      {
       IndicatorConfig c=indicators[card];
-      if(field==GUI_PERIOD) return IntegerToString(c.type==GUI_INDICATOR_MA ? c.maPeriod : c.rsiPeriod);
+      if(field==GUI_PERIOD) return IntegerToString(c.type==GUI_INDICATOR_MA ? c.maPeriod : (c.type==GUI_INDICATOR_ADX ? c.adxPeriod : c.rsiPeriod));
       if(field==GUI_SHIFT) return IntegerToString(c.maShift);
       return DoubleToString(field==GUI_LOWER ? c.rsiLower : c.rsiUpper,2);
      }
@@ -114,6 +118,7 @@ public:
       if(field==GUI_PERIOD)
         {
          if(indicators[card].type==GUI_INDICATOR_MA) indicators[card].maPeriod=(int)v;
+         else if(indicators[card].type==GUI_INDICATOR_ADX) indicators[card].adxPeriod=(int)v;
          else indicators[card].rsiPeriod=(int)v;
         }
       else if(field==GUI_SHIFT) indicators[card].maShift=(int)v;
@@ -137,8 +142,9 @@ public:
         {
          IndicatorConfig c=indicators[i];
          if(c.type==GUI_INDICATOR_NONE) continue;
-         PrintFormat("Indicador %d: %s",i+1,c.type==GUI_INDICATOR_MA ? "Média Móvel" : "RSI");
-         Print("Período: ",c.type==GUI_INDICATOR_MA ? c.maPeriod : c.rsiPeriod);
+         PrintFormat("Indicador %d: %s",i+1,GuiIndicatorName(c.type));
+         Print("Período: ",Value(i,GUI_PERIOD));
+         if(c.type==GUI_INDICATOR_ADX) continue;
          if(c.type==GUI_INDICATOR_MA) Print("Método: ",GuiMethodName((int)c.maMethod));
          Print("Preço: ",GuiPriceName((int)(c.type==GUI_INDICATOR_MA ? c.maPrice : c.rsiPrice)-1));
          if(c.type==GUI_INDICATOR_MA) Print("Shift: ",c.maShift);

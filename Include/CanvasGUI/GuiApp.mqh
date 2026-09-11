@@ -55,8 +55,9 @@ private:
          if(i>0) { GuiRect line; line.Set(x-10,r.y+44,1,r.h-58); m_renderer.Fill(line,GUI_BORDER); }
          m_renderer.Text(x,r.y+44,"INDICADOR "+IntegerToString(i+1),GUI_ACCENT,12,true,cw-16);
          m_renderer.Icon(GUI_ICON_INDICATOR,x,r.y+63,GUI_ACCENT,16);
-         m_renderer.Text(x+22,r.y+63,ma ? "Média Móvel" : "RSI",GUI_TEXT,13,true,cw-38);
-         m_renderer.Text(x,r.y+84,"Período: "+IntegerToString(ma ? c.maPeriod : c.rsiPeriod),GUI_TEXT,12,false,cw-16);
+         m_renderer.Text(x+22,r.y+63,GuiIndicatorName(c.type),GUI_TEXT,13,true,cw-38);
+         m_renderer.Text(x,r.y+84,"Período: "+IntegerToString(ma ? c.maPeriod : (c.type==GUI_INDICATOR_ADX ? c.adxPeriod : c.rsiPeriod)),GUI_TEXT,12,false,cw-16);
+         if(c.type==GUI_INDICATOR_ADX) continue;
          m_renderer.Text(x,r.y+102,"Preço: "+GuiPriceName((int)(ma ? c.maPrice : c.rsiPrice)-1),GUI_MUTED,12,false,cw-16);
          m_renderer.Text(x,r.y+120,ma ? "Método: "+GuiMethodName((int)c.maMethod) : "Inferior: "+DoubleToString(c.rsiLower,2),GUI_MUTED,12,false,cw-16);
          m_renderer.Text(x,r.y+138,ma ? "Shift: "+IntegerToString(c.maShift) : "Superior: "+DoubleToString(c.rsiUpper,2),GUI_MUTED,12,false,cw-16);
@@ -121,7 +122,11 @@ private:
         }
      }
    bool FieldVisible(const int index)
-     { return index>=0 && index<20 && index/5==m_active_indicator && (index%5==0 || m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE); }
+     {
+      if(index<0 || index>=20 || index/5!=m_active_indicator) return false;
+      ENUM_GUI_INDICATOR_TYPE type=m_state.indicators[m_active_indicator].type;
+      return index%5==0 || (type!=GUI_INDICATOR_NONE && (type!=GUI_INDICATOR_ADX || index%5==1));
+     }
    bool FocusAvailable(const int id)
      { return id>=0 && id<=12 && (id<4 || id>8 || FieldVisible(m_active_indicator*5+id-4)); }
    void SetFocus(const int id)
@@ -257,7 +262,7 @@ private:
      }
    void BuildIndicator(const int card)
      {
-      BindField(card,0,GUI_TYPE,"Indicador","Não usar|Média Móvel|RSI");
+      BindField(card,0,GUI_TYPE,"Indicador","Não usar|Média Móvel|RSI|ADX");
       BindField(card,1,GUI_PERIOD,"Período");
       if(m_state.indicators[card].type==GUI_INDICATOR_MA)
         {
@@ -311,7 +316,7 @@ private:
       if(changed && m_fields[i].field==GUI_TYPE)
         {
          BuildIndicator(card);
-         Log(StringFormat("Indicator%d alterado para %s",card+1,option==0 ? "Não usar" : (option==1 ? "Média Móvel" : "RSI")));
+         Log(StringFormat("Indicator%d alterado para %s",card+1,GuiIndicatorName(m_state.indicators[card].type)));
         }
       SetFocus(4+i%5);
       if(changed) { m_summary_dirty=true; m_summary_draft=true; }
@@ -632,11 +637,11 @@ public:
                else if(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE)
                  {
                   m_renderer.Icon(GUI_ICON_INDICATOR,c.x+24,c.y+38,GUI_ACCENT,16);
-                  m_renderer.Text(c.x+46,c.y+38,m_state.indicators[m_active_indicator].type==GUI_INDICATOR_MA ? "Média Móvel" : "RSI",GUI_ACCENT,14,true,c.w-70);
+                  m_renderer.Text(c.x+46,c.y+38,GuiIndicatorName(m_state.indicators[m_active_indicator].type),GUI_ACCENT,14,true,c.w-70);
                  }
               }
             if(card==0) m_fields[m_active_indicator*5].Draw(m_renderer,all);
-            else if(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE) for(int j=1;j<5;j++) m_fields[m_active_indicator*5+j].Draw(m_renderer,all);
+            else if(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE) for(int j=1;j<5;j++) if(FieldVisible(m_active_indicator*5+j)) m_fields[m_active_indicator*5+j].Draw(m_renderer,all);
            }
          if(m_full || m_apply.dirty) m_apply.Draw(m_renderer);
          if(m_full || m_back.dirty) m_back.Draw(m_renderer);
