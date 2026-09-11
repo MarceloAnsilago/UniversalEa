@@ -1,0 +1,11 @@
+*.ex5
+*.log
+*.tmp
+*.temp
+*.bak
+*.cache
+~*
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
