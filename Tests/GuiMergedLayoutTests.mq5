@@ -8,11 +8,11 @@ void OnStart()
    int widths[]={600,960,1120,1792};
    for(int i=0;i<ArraySize(widths);i++)
      {
-      CGuiLayout layout; layout.Calculate(widths[i],1600);
+      CGuiLayout layout; layout.Calculate(widths[i],1600); layout.StackIndicators(true);
       Check(layout.sidebar>0 && layout.left>layout.sidebar,"Left navigation remains visible");
-      Check(layout.indicator_rules.y>=layout.cards[1].y+layout.cards[1].h,"Rules follow indicators");
-      Check(layout.summary.y>=layout.indicator_rules.y+layout.indicator_rules.h,"Summary follows rules");
-      Check(layout.apply.y>=layout.summary.y+layout.summary.h && !layout.too_small,"Footer fits without overlap");
+      Check(layout.summary.y>=layout.cards[1].y+layout.cards[1].h,"Summary follows indicators");
+      Check(layout.indicator_rules.y>=layout.summary.y+layout.summary.h,"Rules follow summary");
+      Check(layout.apply.y>=layout.indicator_rules.y+layout.indicator_rules.h && !layout.too_small,"Footer fits without overlap");
      }
    CGuiLayout layout; layout.Calculate(1792,733); layout.StackIndicators(true);
    Check(!layout.too_small && layout.status.y+layout.status.h>733,"Merged page is scrollable at 1792x733");

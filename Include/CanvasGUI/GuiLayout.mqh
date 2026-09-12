@@ -138,9 +138,9 @@ public:
          cards[0].Set(left,top,content_width,196);
          cards[1].Set(left,top+212,content_width,parameters ? 216 : 0);
         }
-      indicator_rules.Set(left,cards[1].y+cards[1].h+24,content_width,content_width>=760 ? 384 : 580);
-      summary.Set(left,indicator_rules.y+indicator_rules.h+16,content_width,180);
-      apply.Set(left+content_width-204,summary.y+summary.h+16,204,44);
+      summary.Set(left,cards[1].y+cards[1].h+16,content_width,180);
+      indicator_rules.Set(left,summary.y+summary.h+24,content_width,content_width>=760 ? 384 : 580);
+      apply.Set(left+content_width-204,indicator_rules.y+indicator_rules.h+16,204,44);
       status.Set(left,apply.y+56,content_width,40);
       too_small=width<600 || height<320;
      }
