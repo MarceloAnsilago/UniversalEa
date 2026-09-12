@@ -1,0 +1,47 @@
+#property strict
+// Test-only visibility: exercise the real event routing and Canvas renderer.
+#define private public
+#include "../Include/CanvasGUI/GuiApp.mqh"
+#undef private
+int checks=0,failures=0;
+void Check(const bool ok,const string label)
+  { checks++; if(!ok) { failures++; Print("FAIL: ",label); } }
+void OnStart()
+  {
+   CGuiApp gui;
+   if(!gui.Create(ChartID(),false)) { Print("FAIL: GUI creation"); return; }
+   gui.m_step=1; gui.m_renderer.Resize(1792,733); gui.m_layout.Calculate(1792,733);
+   gui.Reflow(); gui.Render();
+   Check(!gui.m_layout.too_small && gui.m_scroll.maximum>0,"Content taller than viewport enables scrolling");
+   Check(gui.m_layout.cards[1].h==0,"No empty parameter panel for disabled indicator");
+   ResourceSave(gui.m_renderer.m_canvas.ResourceName(),"scroll-top.bmp");
+   GuiRect field=gui.m_fields[0].select.bounds;
+   gui.Click(field.x+20,field.y+20); gui.Key(40); gui.Key(13); gui.Render();
+   Check(gui.m_state.indicators[0].type==GUI_INDICATOR_MA,"Indicator selection through real controls");
+   Check(gui.m_layout.cards[1].y>=gui.m_layout.cards[0].y+gui.m_layout.cards[0].h &&
+         gui.m_layout.cards[1].w==gui.m_layout.cards[0].w,"Parameters stack below selector");
+   ResourceSave(gui.m_renderer.m_canvas.ResourceName(),"scroll-parameters.bmp");
+   long wheel_position=0; double wheel_delta=-120; string wheel_text="";
+   gui.Event(CHARTEVENT_MOUSE_WHEEL,wheel_position,wheel_delta,wheel_text);
+   Check(gui.m_scroll.offset==64,"Wheel scrolls content");
+   gui.ScrollTo(100000); gui.Render();
+   Check(gui.m_scroll.offset==gui.m_scroll.maximum && gui.m_layout.status.y+gui.m_layout.status.h<=733,"Bottom including footer is reachable");
+   ResourceSave(gui.m_renderer.m_canvas.ResourceName(),"scroll-bottom.bmp");
+   gui.ScrollTo(0);
+   GuiRect thumb=gui.m_scroll.thumb;
+   gui.Mouse(thumb.x+5,thumb.y+5,"1");
+   gui.Mouse(thumb.x+5,gui.m_scroll.track.y+gui.m_scroll.track.h,"1");
+   gui.Mouse(thumb.x+5,gui.m_scroll.track.y+gui.m_scroll.track.h,"0");
+   Check(gui.m_scroll.offset==gui.m_scroll.maximum && !gui.m_scroll_drag,"Dragging reaches bottom and releases");
+   gui.ScrollTo(0); gui.m_rules_focus=true; gui.m_rules.EnterFocus(true); gui.RevealFocus();
+   GuiRect focused; gui.m_rules.FocusBounds(focused);
+   Check(focused.y>=160 && focused.y+focused.h<=733,"Keyboard focus reveals offscreen rule field");
+   gui.m_rules.Click(focused.x+10,focused.y+10); gui.m_rules.Key(49);
+   string pending=gui.m_rules.m_text[1].Buffer();
+   gui.ScrollTo(0);
+   Check(gui.m_rules.m_text[1].Buffer()==pending && gui.m_rules.m_edit==1,"Scrolling preserves uncommitted edit");
+   gui.m_rules.Finish(false);
+   gui.ScrollTo(-100); Check(gui.m_scroll.offset==0,"Scroll clamps at top");
+   gui.Destroy();
+   PrintFormat("[GuiScrollInteractionTests] %d checks, %d failures",checks,failures);
+  }

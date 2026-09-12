@@ -1,5 +1,15 @@
 # UniversalEa
 
+## Navegação e página Indicadores
+
+A navegação usa uma barra vertical à esquerda: **Setup, Indicadores, Gestão, Filtros, Revisão e Ativação**. As três últimas etapas permanecem futuras. Regras deixa de ser uma etapa separada: os controles de tipo de ordem, unidade dos alvos, stop loss e take profit ficam no bloco **Regras de entrada e saída**, dentro de Indicadores. **Continuar** segue diretamente para Gestão e o retorno de Gestão abre Indicadores.
+
+O salvamento do histórico em Indicadores inclui as regras. Tab/Shift+Tab percorrem os parâmetros e o bloco de regras; erros de edição impedem avançar até serem corrigidos. Os arquivos de set continuam preservando os mesmos dados.
+
+**Rolagem vertical:** na página Indicadores, uma barra à esquerda do conteúdo permite arrastar o indicador de posição ou clicar no trilho. A roda do mouse e Page Up/Page Down também rolam a página. Seletor, parâmetros, regras, resumo e botões ficam empilhados; o painel de parâmetros não aparece quando o indicador está em “Não usar”. Cabeçalho e menu permanecem fixos. O foco por teclado traz o campo para a área visível, e rolar preserva textos ainda não confirmados. O resumo completo e os botões do rodapé são acessíveis mesmo em áreas baixas, como 1792 × 733.
+
+`GuiScrollInteractionTests.mq5` testa os controles e a renderização reais em um terminal portátil: seleção do indicador, roda, arraste, limites de rolagem, acesso ao rodapé, foco e preservação da edição. Os 10 testes passaram; imagens de topo, parâmetros e rodapé foram geradas e inspecionadas. O evento de roda do gráfico é habilitado durante o uso e sua configuração anterior é restaurada ao remover o EA. `GuiMergedLayoutTests.mq5` verifica os blocos e os controles incorporados.
+
 ## ADX
 
 Os quatro slots de Indicadores oferecem ADX, com período padrão 14 e valores inteiros de 1 a 100000. O período é independente de Média Móvel e RSI e é preservado ao alternar o tipo ou desativar o slot. ADX aparece no resumo, no histórico em memória e no log de salvamento. Somente o período é exibido; os campos de preço, método, shift e níveis de RSI não se aplicam ao ADX.

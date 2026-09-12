@@ -12,11 +12,13 @@ public:
       width=w; height=h; compact=(w>=960); columns=2;
       dense=h<(compact ? (w>=1120 ? 794 : 832) : 1144)+(!setup && !rules ? 40 : 0);
       if(management) dense=h<(w>=1120 ? 858 : 896);
+      if(!setup && !rules && !management) dense=h<1060;
       sidebar=w>=1120 ? 196 : 148;
       content_width=(int)MathMin(w-sidebar-48,1120);
       left=sidebar+(w-sidebar-content_width)/2;
       int top=dense ? (sidebar>0 ? 160 : 184) : (sidebar>0 ? 222 : 260);
       int card_height=dense ? 236 : 292;
+      if(!setup && !rules && !management && dense) card_height=216;
       int gap=dense ? 16 : 20;
       if(compact)
         {
@@ -101,9 +103,10 @@ public:
         }
       if(!setup && !rules && !management)
         {
-         int rule_height=content_width>=760 ? 156 : 232;
+         int rule_height=content_width>=760 ? 140 : 216;
          indicator_rules.Set(left,cards[1].y+cards[1].h+16,content_width,rule_height);
          summary.y=indicator_rules.y+indicator_rules.h+16;
+         if(dense) summary.h=64;
          apply.y=summary.y+summary.h+16;
          status.y=apply.y+56;
          too_small=(w<600 || h<status.y+status.h+8);
@@ -119,6 +122,17 @@ public:
       int field_width=pair ? (c.w-64)/2 : c.w-48;
       int x=c.x+24+(pair && (id==6 || id==9) ? field_width+16 : 0);
       r.Set(x,c.y+78+row*76,field_width,42);
+     }
+   void StackIndicators(const bool parameters,const int offset=0)
+     {
+      dense=true;
+      cards[0].Set(left,160-offset,content_width,196);
+      cards[1].Set(left,cards[0].y+cards[0].h+16,content_width,parameters ? 216 : 0);
+      indicator_rules.Set(left,cards[1].y+cards[1].h+(parameters ? 16 : 0),content_width,content_width>=760 ? 156 : 232);
+      summary.Set(left,indicator_rules.y+indicator_rules.h+16,content_width,180);
+      apply.Set(left+content_width-204,summary.y+summary.h+16,204,44);
+      status.Set(left,apply.y+56,content_width,40);
+      too_small=width<600 || height<320;
      }
    void SlotBounds(const int slot,GuiRect &r)
      {

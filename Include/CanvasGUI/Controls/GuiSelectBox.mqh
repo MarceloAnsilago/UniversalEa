@@ -30,10 +30,10 @@ public:
      { selected=0; hot=-1; row_height=30; indicator_icons=false; m_first_visible=0; m_visible_count=0; m_scroll_height=0; popup.Set(0,0,0,0); }
    void SetOptions(const string values) { StringSplit(values,'|',m_options); dirty=true; }
    void SetSelected(const int index) { selected=index; dirty=true; }
-   void Open(const int screen_height)
+   void Open(const int screen_height,const int top=4)
      {
       Close();
-      int count=ArraySize(m_options),available=screen_height-12;
+      int count=ArraySize(m_options),available=screen_height-top-8;
       if(!visible || !enabled || count<1 || available<38) return;
       row_height=30;
       m_scroll_height=count>8 || count*row_height+8>available ? 24 : 0;
@@ -44,7 +44,7 @@ public:
       int h=m_visible_count*row_height+8+2*m_scroll_height;
       int y=bounds.y+bounds.h+4;
       if(y+h>screen_height-8) y=bounds.y-h-4;
-      popup.Set(bounds.x,(int)MathMax(4,MathMin(y,screen_height-h-8)),bounds.w,h);
+      popup.Set(bounds.x,(int)MathMax(top,MathMin(y,screen_height-h-8)),bounds.w,h);
      }
    void Close() { active=false; hot=-1; dirty=true; }
    int OptionAt(const int x,const int y) const

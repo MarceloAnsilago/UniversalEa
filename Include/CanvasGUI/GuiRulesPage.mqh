@@ -29,7 +29,7 @@ private:
    void Begin(const int id)
      {
       Focus(id);
-      if(id>=0 && id<2) { m_select[id].Open(m_height); m_open=m_select[id].active ? id : -1; }
+      if(id>=0 && id<2) { m_select[id].Open(m_height,m_embedded ? 160 : 4); m_open=m_select[id].active ? id : -1; }
       else if(id>=2 && id<4) { m_edit=id-2; m_text[m_edit].Begin(); }
       m_dirty=true;
      }
@@ -93,6 +93,12 @@ public:
    bool HitEmbedded(const int x,const int y)
      { return m_embedded_bounds.Contains(x,y) || (m_open>=0 && m_select[m_open].popup.Contains(x,y)); }
    void LeaveFocus() { Focus(-1); }
+   bool FocusBounds(GuiRect &r)
+     {
+      if(m_focus<0 || m_focus>3) return false;
+      if(m_focus<2) r=m_select[m_focus].bounds; else r=m_text[m_focus-2].bounds;
+      return true;
+     }
    void PlaceEmbedded(CGuiLayout &layout)
      {
       m_embedded=true; m_embedded_bounds=layout.indicator_rules; m_height=layout.height;

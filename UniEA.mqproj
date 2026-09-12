@@ -148,6 +148,11 @@
       "path":"Include\\CanvasGUI\\GuiSetFile.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"Include\\CanvasGUI\\GuiScrollBar.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ]
 }

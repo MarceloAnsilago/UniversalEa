@@ -7,13 +7,17 @@
 #include "GuiRulesPage.mqh"
 #include "GuiManagementPage.mqh"
 #include "GuiSetFile.mqh"
+#include "GuiScrollBar.mqh"
 class CGuiApp
   {
 private:
    long m_chart;
    string m_name,m_message;
    bool m_debug,m_ready,m_saved,m_dirty,m_full,m_card_dirty[2],m_status_dirty,m_error;
-   long m_old_show,m_old_mouse,m_old_scroll,m_old_keyboard;
+   long m_old_show,m_old_mouse,m_old_scroll,m_old_keyboard,m_old_wheel;
+   CGuiScrollBar m_scroll;
+   bool m_scroll_drag,m_scroll_down;
+   int m_scroll_grab;
    int m_open,m_edit,m_focus;
    int m_active_indicator;
    bool m_summary_dirty,m_summary_draft;
@@ -26,6 +30,41 @@ private:
    CGuiButton m_back;
    int m_step;
    bool m_rules_focus;
+   void PositionIndicators()
+     {
+      m_layout.StackIndicators(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE);
+      m_scroll.Configure(m_layout.left-24,m_layout.height,m_layout.status.y+m_layout.status.h);
+      m_layout.StackIndicators(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE,m_scroll.offset);
+      for(int i=0;i<20;i++)
+        {
+         GuiRect r;
+         if(i%5==0) m_layout.IndicatorBounds(i/5,r); else m_layout.ParameterBounds(i/5,i%5-1,r);
+         m_fields[i].label.SetBounds(r.x,r.y-22,r.w,18);
+         m_fields[i].edit.SetBounds(r.x,r.y,r.w,r.h);
+         m_fields[i].select.SetBounds(r.x,r.y,r.w,r.h);
+        }
+      m_rules.PlaceEmbedded(m_layout); PlaceToggle();
+     }
+   void ScrollTo(const int offset)
+     {
+      if(m_step!=1 || m_collapsed || m_layout.too_small || !m_scroll.Set(offset)) return;
+      CloseSelect(); m_rules.CloseSelect();
+      PositionIndicators(); m_full=true; m_dirty=true;
+     }
+   void RevealFocus()
+     {
+      if(m_step!=1 || m_collapsed || m_layout.too_small) return;
+      GuiRect r;
+      if(m_rules_focus) { if(!m_rules.FocusBounds(r)) return; }
+      else if(m_focus>=0 && m_focus<4) r=m_slots[m_focus].bounds;
+      else if(m_focus>=4 && m_focus<=8) r=m_fields[m_active_indicator*5+m_focus-4].edit.bounds;
+      else if(m_focus==9) r=m_apply.bounds;
+      else if(m_focus==11) r=m_back.bounds;
+      else if(m_focus==12) r=m_next.bounds;
+      else return;
+      if(r.y<188) ScrollTo(m_scroll.offset+r.y-188);
+      else if(r.y+r.h>m_layout.height-16) ScrollTo(m_scroll.offset+r.y+r.h-m_layout.height+16);
+     }
    void SetupAction(const int action)
      {
       if(action==1) { ChangeStep(1); return; }
@@ -73,6 +112,7 @@ private:
       else if(!FinishEdit(true) || !m_rules.Ready()) { m_dirty=true; return; }
       CloseSelect(); m_setup.CloseSelect(); m_setup.ClearHover(); m_rules.CloseSelect(); m_management.CloseSelect(); m_rules.ClearHover(); m_management.ClearHover();
       m_step=step; m_focus=-1; m_rules_focus=false; m_rules.LeaveFocus();
+      m_scroll.Set(0); m_scroll_drag=false; m_scroll_down=false;
       m_state.setup=m_setup.state; m_state.rules=m_rules.state; m_state.management=m_management.state;
       m_layout.Calculate(m_layout.width,m_layout.height,m_step==0,false,m_step==3);
       Reflow();
@@ -92,6 +132,12 @@ private:
          if(c.type==GUI_INDICATOR_NONE) continue;
          bool ma=c.type==GUI_INDICATOR_MA;
          int x=r.x+20+i*cw;
+         if(r.h<100)
+           {
+            int period=ma ? c.maPeriod : (c.type==GUI_INDICATOR_ADX ? c.adxPeriod : c.rsiPeriod);
+            m_renderer.Text(x,r.y+36,IntegerToString(i+1)+" · "+GuiIndicatorName(c.type)+" ("+IntegerToString(period)+")",GUI_TEXT,12,false,cw-16);
+            continue;
+           }
          if(i>0) { GuiRect line; line.Set(x-10,r.y+44,1,r.h-58); m_renderer.Fill(line,GUI_BORDER); }
          m_renderer.Text(x,r.y+44,"INDICADOR "+IntegerToString(i+1),GUI_ACCENT,12,true,cw-16);
          m_renderer.Icon(GUI_ICON_INDICATOR,x,r.y+63,GUI_ACCENT,16);
@@ -229,6 +275,7 @@ private:
      {
       if(m_active_indicator==indicator) return;
       m_active_indicator=indicator;
+      if(m_step==1) PositionIndicators();
       for(int i=0;i<20;i++) m_fields[i].Hover(false);
       m_card_dirty[0]=true; m_card_dirty[1]=true; m_dirty=true;
      }
@@ -261,6 +308,7 @@ private:
       else
         {
          m_layout.Calculate(w,h,m_step==0,false,m_step==3);
+         if(m_step==1) PositionIndicators();
          m_setup.Place(m_layout); m_rules.PlaceEmbedded(m_layout); m_management.Place(m_layout);
          // Reposition without rebinding: preserve even the current edit buffer.
          for(int i=0;i<20;i++)
@@ -325,6 +373,7 @@ private:
      }
    void Reflow()
      {
+      if(m_step==1) PositionIndicators();
       for(int i=0;i<4;i++) BuildIndicator(i);
       GuiRect r=m_layout.apply; m_apply.SetBounds(r.x,r.y,r.w,r.h);
       PlaceToggle();
@@ -360,7 +409,7 @@ private:
       if(m_fields[i].field==GUI_TYPE) ActivateIndicator(card);
       if(changed && m_fields[i].field==GUI_TYPE)
         {
-         BuildIndicator(card);
+         PositionIndicators(); BuildIndicator(card);
          Log(StringFormat("Indicator%d alterado para %s",card+1,GuiIndicatorName(m_state.indicators[card].type)));
         }
       SetFocus(4+i%5);
@@ -373,6 +422,7 @@ private:
       if(m_collapsed) return;
       if(m_step>0 && m_layout.too_small && m_back.ContainsPoint(x,y)) { ChangeStep(m_step==3 ? 1 : 0); return; }
       if(m_layout.too_small) return;
+      if(m_step==1 && (m_scroll.track.Contains(x,y) || (x>=m_layout.sidebar && y<160))) return;
       if(m_layout.sidebar>0 && x>=12 && x<m_layout.sidebar-12)
          for(int step=0;step<3;step++)
             if(y>=136+step*46 && y<176+step*46) { ChangeStep(step); return; }
@@ -429,7 +479,7 @@ private:
          SetFocus(4+hit%5);
          if(m_fields[hit].field==GUI_TYPE) ActivateIndicator(m_fields[hit].card);
          if(m_fields[hit].is_select)
-           { m_fields[hit].select.Open(m_layout.height); m_open=m_fields[hit].select.active ? hit : -1; Log("Select aberto"); }
+           { m_fields[hit].select.Open(m_layout.height,160); m_open=m_fields[hit].select.active ? hit : -1; Log("Select aberto"); }
          else
            { m_edit=hit; m_fields[hit].edit.Begin(); Status("Digite o valor. Enter salva; Esc cancela."); }
          m_dirty=true;
@@ -476,6 +526,20 @@ private:
      }
    void Mouse(const int x,const int y,const string flags)
      {
+      if(m_step==1 && !m_collapsed && !m_layout.too_small)
+        {
+         bool down=(StringToInteger(flags)&1)!=0;
+         bool started=down && !m_scroll_down;
+         m_scroll_down=down;
+         if(!down) m_scroll_drag=false;
+         if(started && m_scroll.track.Contains(x,y))
+           {
+            if(m_scroll.thumb.Contains(x,y)) { m_scroll_drag=true; m_scroll_grab=y-m_scroll.thumb.y; }
+            else ScrollTo(m_scroll.offset+(y<m_scroll.thumb.y ? -1 : 1)*(m_scroll.viewport-48));
+            return;
+           }
+         if(m_scroll_drag) { ScrollTo(m_scroll.DragOffset(y,m_scroll_grab)); return; }
+        }
       if(m_toggle.SetHover(m_toggle.ContainsPoint(x,y))) m_dirty=true;
       bool toggle_down=((StringToInteger(flags)&1)!=0 && m_toggle.hover);
       if(toggle_down!=m_toggle.active) { m_toggle.active=toggle_down; m_toggle.dirty=true; m_dirty=true; }
@@ -483,6 +547,15 @@ private:
       if(m_step>0 && m_layout.too_small && m_back.SetHover(m_back.ContainsPoint(x,y))) m_dirty=true;
       if(m_layout.too_small) return;
       if(m_step==0) { m_setup.Mouse(x,y,flags); if(m_setup.Dirty()) m_dirty=true; return; }
+      if(m_step==1 && y<160)
+        {
+         m_rules.Mouse(-1,-1,"0");
+         if(m_rules.Dirty()) m_dirty=true;
+         for(int i=0;i<20;i++) if(m_fields[i].Hover(false)) m_dirty=true;
+         for(int i=0;i<4;i++) if(m_slots[i].SetHover(false)) { m_card_dirty[0]=true; m_dirty=true; }
+         if(m_apply.SetHover(false) || m_next.SetHover(false) || m_back.SetHover(false)) m_dirty=true;
+         return;
+        }
       if(m_step==2) { m_rules.Mouse(x,y,flags); if(m_rules.Dirty()) m_dirty=true; return; }
       if(m_step==3) { m_management.Mouse(x,y,flags); if(m_management.Dirty()) m_dirty=true; return; }
       if(m_open<0) m_rules.Mouse(x,y,flags);
@@ -621,7 +694,7 @@ private:
       m_layout.Calculate(w,h,m_step==0,false,m_step==3); Reflow(); Log(StringFormat("Canvas redimensionado: %dx%d",w,h));
      }
 public:
-   CGuiApp() { m_ready=false; m_saved=false; m_dirty=false; m_open=-1; m_edit=-1; m_focus=-1; m_error=false; m_collapsed=false; m_active_indicator=0; m_summary_dirty=false; m_summary_draft=true; m_first_application=0; m_step=0; m_rules_focus=false; }
+   CGuiApp() { m_ready=false; m_saved=false; m_dirty=false; m_open=-1; m_edit=-1; m_focus=-1; m_error=false; m_collapsed=false; m_active_indicator=0; m_summary_dirty=false; m_summary_draft=true; m_first_application=0; m_step=0; m_rules_focus=false; m_scroll_drag=false; m_scroll_down=false; m_scroll_grab=0; }
    bool Create(const long chart,const bool debug)
      {
       m_chart=chart; m_debug=debug; m_state.Reset(); m_name="CanvasGUI_"+IntegerToString(chart)+"_"+IntegerToString((long)GetTickCount64());
@@ -629,9 +702,11 @@ public:
       if(w<1 || h<1 || !m_renderer.Create(chart,m_name,w,h)) { Print("[GUI] Falha ao criar Canvas: ",GetLastError()); m_renderer.Destroy(); return false; }
       m_old_show=ChartGetInteger(chart,CHART_SHOW);
       m_old_mouse=ChartGetInteger(chart,CHART_EVENT_MOUSE_MOVE);
+      m_old_wheel=ChartGetInteger(chart,CHART_EVENT_MOUSE_WHEEL);
       m_old_scroll=ChartGetInteger(chart,CHART_MOUSE_SCROLL);
       m_old_keyboard=ChartGetInteger(chart,CHART_KEYBOARD_CONTROL); m_saved=true;
       if(!ChartSetInteger(chart,CHART_SHOW,false) || !ChartSetInteger(chart,CHART_EVENT_MOUSE_MOVE,true)
+         || !ChartSetInteger(chart,CHART_EVENT_MOUSE_WHEEL,true)
          || !ChartSetInteger(chart,CHART_MOUSE_SCROLL,false) || !ChartSetInteger(chart,CHART_KEYBOARD_CONTROL,false))
         { Print("[GUI] Falha ao configurar eventos do gráfico: ",GetLastError()); Destroy(); return false; }
       m_setup.Create(ChartPeriod(chart),ChartSymbol(chart)); m_state.setup=m_setup.state;
@@ -648,6 +723,7 @@ public:
         {
          ChartSetInteger(m_chart,CHART_SHOW,m_old_show);
          ChartSetInteger(m_chart,CHART_EVENT_MOUSE_MOVE,m_old_mouse);
+         ChartSetInteger(m_chart,CHART_EVENT_MOUSE_WHEEL,m_old_wheel);
          ChartSetInteger(m_chart,CHART_MOUSE_SCROLL,m_old_scroll);
          ChartSetInteger(m_chart,CHART_KEYBOARD_CONTROL,m_old_keyboard);
          m_saved=false; ChartRedraw(m_chart);
@@ -662,6 +738,7 @@ public:
          m_toggle.Draw(m_renderer); m_renderer.Present();
          m_full=false; m_dirty=false; return;
         }
+      if(m_step==1) m_full=true;
       m_renderer.RestoreOverlay();
       if(m_full)
         {
@@ -685,6 +762,7 @@ public:
          {
          for(int card=0;card<2;card++)
            {
+            if(card==1 && m_state.indicators[m_active_indicator].type==GUI_INDICATOR_NONE) continue;
             bool all=m_full || m_card_dirty[card];
             if(all)
               {
@@ -729,6 +807,13 @@ public:
          if(m_open>=0) { m_renderer.SaveOverlay(m_fields[m_open].select.popup); m_fields[m_open].select.DrawOverlay(m_renderer); }
          }
         }
+      if(m_step==1 && !m_layout.too_small)
+        {
+         GuiRect header; header.Set(m_layout.sidebar,76,m_layout.width-m_layout.sidebar,84);
+         m_renderer.Fill(header,GUI_BG); DrawShell();
+         m_renderer.Round(m_scroll.track,GUI_BORDER,6);
+         m_renderer.Round(m_scroll.thumb,m_scroll.maximum>0 ? GUI_ACCENT : GUI_MUTED,6);
+        }
       if(m_full || m_toggle.dirty) m_toggle.Draw(m_renderer);
       if(m_step>0 && m_layout.too_small) m_back.Draw(m_renderer);
       DrawWindowFrame();
@@ -741,7 +826,14 @@ public:
       if(id==CHARTEVENT_CHART_CHANGE) Resize();
       else if(id==CHARTEVENT_MOUSE_MOVE) Mouse((int)lparam,(int)dparam,sparam);
       else if(id==CHARTEVENT_CLICK) Click((int)lparam,(int)dparam);
-      else if(id==CHARTEVENT_KEYDOWN) Key((int)lparam);
+      else if(id==CHARTEVENT_MOUSE_WHEEL)
+        { if(dparam!=0) ScrollTo(m_scroll.offset-(int)MathRound(dparam/120.0*64)); }
+      else if(id==CHARTEVENT_KEYDOWN)
+        {
+         int key=(int)lparam;
+         if(m_step==1 && (key==33 || key==34)) ScrollTo(m_scroll.offset+(key==34 ? 1 : -1)*(m_scroll.viewport-48));
+         else { Key(key); RevealFocus(); }
+        }
       Render();
      }
   };
