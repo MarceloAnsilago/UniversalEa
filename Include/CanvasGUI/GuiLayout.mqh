@@ -126,9 +126,19 @@ public:
    void StackIndicators(const bool parameters,const int offset=0)
      {
       dense=true;
-      cards[0].Set(left,160-offset,content_width,196);
-      cards[1].Set(left,cards[0].y+cards[0].h+16,content_width,parameters ? 216 : 0);
-      indicator_rules.Set(left,cards[1].y+cards[1].h+(parameters ? 16 : 0),content_width,content_width>=760 ? 156 : 232);
+      int top=160-offset;
+      if(content_width>=720)
+        {
+         int cw=(content_width-24)/2;
+         cards[0].Set(left,top,cw,236);
+         cards[1].Set(left+cw+24,top,cw,236);
+        }
+      else
+        {
+         cards[0].Set(left,top,content_width,196);
+         cards[1].Set(left,top+212,content_width,parameters ? 216 : 0);
+        }
+      indicator_rules.Set(left,cards[1].y+cards[1].h+24,content_width,content_width>=760 ? 384 : 580);
       summary.Set(left,indicator_rules.y+indicator_rules.h+16,content_width,180);
       apply.Set(left+content_width-204,summary.y+summary.h+16,204,44);
       status.Set(left,apply.y+56,content_width,40);

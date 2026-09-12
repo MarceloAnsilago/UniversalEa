@@ -33,7 +33,7 @@ private:
    void PositionIndicators()
      {
       m_layout.StackIndicators(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE);
-      m_scroll.Configure(m_layout.left-24,m_layout.height,m_layout.status.y+m_layout.status.h);
+      m_scroll.Configure(m_layout.width-20,m_layout.height,m_layout.status.y+m_layout.status.h);
       m_layout.StackIndicators(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE,m_scroll.offset);
       for(int i=0;i<20;i++)
         {
@@ -762,7 +762,7 @@ public:
          {
          for(int card=0;card<2;card++)
            {
-            if(card==1 && m_state.indicators[m_active_indicator].type==GUI_INDICATOR_NONE) continue;
+
             bool all=m_full || m_card_dirty[card];
             if(all)
               {
