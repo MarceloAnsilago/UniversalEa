@@ -1,6 +1,6 @@
 #property strict
 #property version "1.00"
-#property description "Experimento de GUI Canvas. Sem trading ou indicadores reais."
+#property description "EA com GUI Canvas e inicialização de indicadores. Sem envio de ordens."
 #include "Include/CanvasGUI/GuiApp.mqh"
 #include "Include/MyUnEA.mqh"
 #include "Include/Configuration/UniInputOptions.mqh"
@@ -14,7 +14,7 @@ enum ENUM_UNI_MANAGEMENT_MODE
   };
 
 // Parametros de entrada: declarados para a futura carga da configuracao.
-// Os indicadores sao transferidos para MyUnEA; os demais grupos e a GUI aguardam integracao.
+// OnInit transfere estes valores para MyUnEA; a edicao pela GUI ainda e independente.
 // Identidade do arquivo e limites de volume sao dados internos, nao inputs.
 input group "Setup"
 input string InpName="Meu setup";                              // Nome do setup
@@ -146,15 +146,51 @@ bool ConfigureInputIndicators()
      }
    return true;
   }
-int OnInit() {
- if(!ConfigureInputIndicators()) return INIT_PARAMETERS_INCORRECT;
- return gui.Create(ChartID(),DebugGUI==UNI_YES) ? INIT_SUCCEEDED : INIT_FAILED;
- 
-  }
-void OnDeinit(const int reason) {
+// Inicializacao: configura primeiro a classe, depois cria seus recursos.
+int OnInit()
+  {
+   //--- 1. Identificar o ativo e transferir os parametros gerais do setup.
+   ea.setSymbol(_Symbol);
+   ea.setPeriod((ENUM_TIMEFRAMES)InpTimeframe);
+   ea.setMagic(InpMagic);
+   ea.setLOTS(InpLot);
+   ea.setSetup(InpName,InpMarket,InpDirection,InpTradeMode);
 
- gui.Destroy();
- 
+   //--- 2. Transferir horarios, regras e gestao para a classe.
+   ea.setSchedule(InpEntryStart,InpEntryEnd,InpCloseEnabled==UNI_YES,InpCloseTime);
+   // Os alvos ja estao em pontos ou percentual: nao multiplicar por 10 em ativos de 5 digitos.
+   ea.setRules(InpOrderMode,InpCandleFilter,InpTargetUnit,InpStopLoss,InpTakeProfit);
+   ea.setBreakeven((int)InpBreakevenMode,InpBreakevenTrigger,InpBreakevenOffset);
+   ea.setTrailing((int)InpTrailingMode,InpTrailingTrigger,InpTrailingDistance,InpTrailingStep);
+   ea.setMovingStop((int)InpMovingStopMode,InpMovingStopTrigger,InpMovingStopDistance,InpMovingStopStep);
+
+   //--- 3. Configurar os quatro indicadores com os parametros dos inputs.
+   if(!ConfigureInputIndicators()) return INIT_PARAMETERS_INCORRECT;
+
+   //--- 4. Validar o setup e criar os handles no ativo e periodo definidos acima.
+   string error;
+   int result=ea.doInit(error);
+   if(result!=INIT_SUCCEEDED)
+     {
+      Print("Falha na inicialização da MyUnEA: ",error);
+      return result;
+     }
+
+   //--- 5. Abrir a interface; se falhar, liberar os recursos da classe.
+   if(!gui.Create(ChartID(),DebugGUI==UNI_YES))
+     {
+      Print("Falha ao criar a interface gráfica.");
+      ea.doDeinit();
+      return INIT_FAILED;
+     }
+   return INIT_SUCCEEDED;
+  }
+
+// Finalizacao: desfaz a inicializacao, inclusive se OnInit tiver falhado.
+void OnDeinit(const int reason)
+  {
+   gui.Destroy();
+   ea.doDeinit();
   }
 void OnTick() {
 

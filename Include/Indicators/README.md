@@ -9,9 +9,13 @@ possui seu handle; nao copie instancias que possuem recursos ou ponteiros.
 slots (0 a 3). Um slot desativado usa NULL. Uma configuracao invalida preserva
 o objeto anterior. Os construtores e a fabrica nao criam handles.
 
-Os metodos Initialize e Update estao disponiveis, mas ainda nao sao chamados
-pelos eventos do EA. OnInit transfere os inputs dos indicadores para a classe
-e rejeita parametros ativos invalidos; os demais grupos aguardam integracao.
+OnInit transfere os inputs pelos setters da classe e configura os indicadores.
+Depois, doInit consulta os limites de volume, valida o setup e chama Initialize
+em cada indicador ativo. Falhas liberam os handles ja criados. OnDeinit chama
+doDeinit, que libera os handles e preserva os objetos para reinicializacao.
+Alterar configuracoes pelos setters tambem libera os handles anteriores.
+Update ainda nao e chamado por OnTick. A edicao pela GUI ainda e independente
+dos inputs e da configuracao ativa da classe.
 Initialize pode falhar; Update pode retornar false enquanto os dados nao estao
 prontos. A saida de Update fica vazia em caso de falha e usa ordem cronologica
 em caso de sucesso. MA e RSI usam buffer 0; ADX usa 0 (ADX), 1 (+DI) e 2 (-DI).
@@ -39,3 +43,6 @@ Referencia: https://www.mql5.com/en/docs/series/copybuffer
 
 `Tests/IndicatorArchitectureTests.mq5` verifica fabrica e slots sem negociacao.
 Compilar o script nao equivale a executar os testes.
+
+`Tests/MyUnEAInitTests.mq5` cobre o ciclo de vida e rejeicao de parametros,
+usando as especificacoes de volume do ativo do grafico e sem enviar ordens.

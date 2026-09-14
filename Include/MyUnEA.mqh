@@ -7,6 +7,8 @@
 class MyUnEA
   {
 private:
+   string m_symbol;                         // Ativo usado pelos indicadores.
+   bool m_initialized;                      // Recursos inicializados com sucesso.
    //--- Atributos: configuracoes e parametros da estrategia.
    // Cada instancia representa um setup configurado na interface.
    string m_name;                           // Nome do setup.
@@ -59,6 +61,49 @@ private:
    MyIndicator *m_indicators[4];
 
    //--- Metodos auxiliares: validacoes e preparacao dos dados.
+   // Confere limites e relacoes dos inputs antes de criar qualquer handle.
+   bool ValidateConfiguration(string &error)
+     {
+      error="";
+      if(StringLen(m_name)>48 || m_magic<1 || m_magic>2147483647)
+        { error="Nome: até 48 caracteres. Magic: 1 a 2147483647."; return false; }
+      if((int)m_market<0 || (int)m_market>1 || (int)m_direction<0 || (int)m_direction>2 ||
+         (int)m_trade_mode<0 || (int)m_trade_mode>1)
+        { error="Mercado, direção ou modalidade inválidos."; return false; }
+      if(PeriodSeconds(m_timeframe)<=0)
+        { error="Período da estratégia inválido."; return false; }
+      if(!MathIsValidNumber(m_lot) || m_lot<=0 || m_lot<m_volume_min-m_volume_step*1e-8 ||
+         m_lot>m_volume_max+m_volume_step*1e-8)
+        { error="Lote fora dos limites permitidos pelo ativo."; return false; }
+      double units=m_lot/m_volume_step;
+      double tolerance=MathMin(1e-5,MathMax(1e-8,8.0*2.2204460492503131e-16*MathAbs(units)));
+      if(!MathIsValidNumber(units) || MathAbs(units-MathRound(units))>tolerance)
+        { error="Lote deve respeitar o passo de volume do ativo."; return false; }
+      if(!ValidTime(m_entry_start) || !ValidTime(m_entry_end) || !ValidTime(m_close_time) ||
+         m_entry_start==m_entry_end)
+        { error="Horários: 00:00 a 23:55 em passos de 5 minutos; início e fim diferentes."; return false; }
+      if(m_close_enabled && (m_close_time-m_entry_start+1440)%1440<(m_entry_end-m_entry_start+1440)%1440)
+        { error="Encerramento deve ocorrer no fim das entradas ou depois."; return false; }
+      if((int)m_order_mode<0 || (int)m_order_mode>1 || (int)m_candle_filter<0 ||
+         (int)m_candle_filter>2 || (int)m_target_unit<0 || (int)m_target_unit>1 ||
+         !ValidAmount(m_stop_loss) || !ValidAmount(m_take_profit))
+        { error="Confira o tipo de ordem, filtro, unidade e alvos."; return false; }
+      if(m_breakeven_mode<0 || m_breakeven_mode>2 || !ValidAmount(m_breakeven_trigger) ||
+         !ValidAmount(m_breakeven_offset) ||
+         (m_breakeven_mode!=0 && (m_breakeven_trigger<=0 || m_breakeven_offset>=m_breakeven_trigger)))
+        { error="Breakeven: ativação positiva e proteção menor que a ativação."; return false; }
+      if(!ValidTrailing(m_trailing_mode,m_trailing_trigger,m_trailing_distance,m_trailing_step) ||
+         !ValidTrailing(m_moving_stop_mode,m_moving_stop_trigger,m_moving_stop_distance,m_moving_stop_step))
+        { error="Trailing e stop móvel: modo válido e valores positivos quando habilitados."; return false; }
+      return true;
+     }
+   bool ValidTime(const int value) { return value>=0 && value<=1435 && value%5==0; }
+   bool ValidAmount(const double value) { return MathIsValidNumber(value) && value>=0 && value<=100000000; }
+   bool ValidTrailing(const int mode,const double trigger,const double distance,const double step)
+     {
+      return mode>=0 && mode<=2 && ValidAmount(trigger) && ValidAmount(distance) && ValidAmount(step) &&
+             (mode==0 || (trigger>0 && distance>0 && step>0));
+     }
 
    //--- Metodos da estrategia: avaliacao dos sinais de entrada e saida.
 
@@ -77,6 +122,8 @@ public:
    // Nao recebe parametros e nao inicia operacoes de negociacao.
    MyUnEA()
      {
+      m_symbol="";
+      m_initialized=false;
       // Padroes locais da interface; a configuracao aplicada sera carregada depois.
       // Nao reserva Magic Number nem consulta o ativo durante a construcao.
       m_name="Meu setup";
@@ -135,12 +182,89 @@ public:
      }
 
    //--- Metodos de ciclo de vida: inicializacao e finalizacao.
-   // Futuros metodos para preparar o EA e liberar seus recursos ao finalizar.
+   // Libera handles, preservando objetos e parametros para uma nova inicializacao.
+   void doDeinit()
+     {
+      for(int i=0;i<4;i++) if(m_indicators[i]!=NULL) m_indicators[i].Release();
+      m_initialized=false;
+     }
+
+   // Consulta o ativo, valida os parametros e inicializa os indicadores ativos.
+   // Retorna um codigo INIT_* e informa a causa quando houver falha.
+   int doInit(string &error)
+     {
+      doDeinit(); error="";
+      if(m_symbol=="" || !SymbolSelect(m_symbol,true))
+        { error="Não foi possível selecionar o ativo."; return INIT_FAILED; }
+      if(!SymbolInfoDouble(m_symbol,SYMBOL_VOLUME_MIN,m_volume_min) ||
+         !SymbolInfoDouble(m_symbol,SYMBOL_VOLUME_MAX,m_volume_max) ||
+         !SymbolInfoDouble(m_symbol,SYMBOL_VOLUME_STEP,m_volume_step) ||
+         !MathIsValidNumber(m_volume_min) || !MathIsValidNumber(m_volume_max) ||
+         !MathIsValidNumber(m_volume_step) || m_volume_min<=0 ||
+         m_volume_max<m_volume_min || m_volume_step<=0)
+        { error="Limites de volume do ativo indisponíveis."; return INIT_FAILED; }
+      if(!ValidateConfiguration(error)) return INIT_PARAMETERS_INCORRECT;
+      for(int i=0;i<4;i++)
+         if(m_indicators[i]!=NULL)
+           {
+            ResetLastError();
+            if(!m_indicators[i].Initialize(m_symbol,m_timeframe))
+              {
+               int code=GetLastError();
+               error=StringFormat("Falha ao inicializar Indicador %d. Erro do terminal: %d.",i+1,code);
+               doDeinit(); return INIT_FAILED;
+              }
+           }
+      m_initialized=true;
+      return INIT_SUCCEEDED;
+     }
+
+   // Permite consultar se a etapa de inicializacao foi concluida.
+   bool IsInitialized() { return m_initialized; }
 
    //--- Metodos de processamento: ticks e demais eventos do EA.
    // Futuros metodos chamados pelo programa principal ao receber eventos.
 
    //--- Metodos de configuracao e consulta do estado.
+   // Define o ativo antes de inicializar os indicadores.
+   void setSymbol(const string value)
+     { doDeinit(); m_symbol=value; }
+
+   // Define o timeframe; PERIOD_CURRENT usa o periodo do grafico.
+   void setPeriod(const ENUM_TIMEFRAMES value)
+     { doDeinit(); m_timeframe=(value==PERIOD_CURRENT ? (ENUM_TIMEFRAMES)_Period : value); }
+
+   // Define o identificador das futuras operacoes.
+   void setMagic(const long value)
+     { doDeinit(); m_magic=value; }
+
+   // Define o volume solicitado, validado contra os limites do ativo em doInit.
+   void setLOTS(const double value)
+     { doDeinit(); m_lot=value; }
+
+   // Define o nome, mercado, direcao e modalidade do setup.
+   void setSetup(const string name,const ENUM_GUI_SETUP_MARKET market,const ENUM_GUI_SETUP_DIRECTION direction,const ENUM_GUI_SETUP_TRADE_MODE mode)
+     { doDeinit(); m_name=name; m_market=market; m_direction=direction; m_trade_mode=mode; }
+
+   // Define horarios em minutos desde 00:00, no horario do servidor.
+   void setSchedule(const int start,const int end,const bool close_enabled,const int close_time)
+     { doDeinit(); m_entry_start=start; m_entry_end=end; m_close_enabled=close_enabled; m_close_time=close_time; }
+
+   // Define regras e alvos na unidade escolhida; pontos nao sao convertidos em pips.
+   void setRules(const ENUM_GUI_ORDER_MODE order,const ENUM_GUI_CANDLE_FILTER candle,const ENUM_GUI_TARGET_UNIT unit,const double stop,const double take)
+     { doDeinit(); m_order_mode=order; m_candle_filter=candle; m_target_unit=unit; m_stop_loss=stop; m_take_profit=take; }
+
+   // Define o breakeven: modo 0 desativa, 1 usa pontos e 2 usa percentual.
+   void setBreakeven(const int mode,const double trigger,const double offset)
+     { doDeinit(); m_breakeven_mode=mode; m_breakeven_trigger=trigger; m_breakeven_offset=offset; }
+
+   // Define ativacao, distancia e passo do trailing stop.
+   void setTrailing(const int mode,const double trigger,const double distance,const double step)
+     { doDeinit(); m_trailing_mode=mode; m_trailing_trigger=trigger; m_trailing_distance=distance; m_trailing_step=step; }
+
+   // Define ativacao, distancia e passo do stop movel.
+   void setMovingStop(const int mode,const double trigger,const double distance,const double step)
+     { doDeinit(); m_moving_stop_mode=mode; m_moving_stop_trigger=trigger; m_moving_stop_distance=distance; m_moving_stop_step=step; }
    // Configura um slot (0 a 3) sem criar handles ou iniciar negociacao.
    // Parametros invalidos preservam o objeto anterior; NONE desativa o slot.
    bool ConfigureIndicator(const int slot,const IndicatorConfig &config,string &error)
@@ -149,6 +273,7 @@ public:
       if(slot<0 || slot>=4) { error="Slot de indicador invalido."; return false; }
       MyIndicator *candidate=MyIndicatorFactory::Create(config,error);
       if(error!="") return false;
+      doDeinit();
       if(m_indicators[slot]!=NULL) delete m_indicators[slot];
       m_indicators[slot]=candidate;
       return true;
