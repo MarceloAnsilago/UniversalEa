@@ -71,6 +71,70 @@ protected:
 
 public:
    //--- Construtor e destrutor.
+   MyUnEA()
+     {
+      // Padroes locais da interface; a configuracao aplicada sera carregada depois.
+      // Nao reserva Magic Number nem consulta o ativo durante a construcao.
+      m_name="Meu setup";
+      m_set_id="";
+      m_magic=1;
+      m_market=GUI_SETUP_FOREX;
+      m_timeframe=PERIOD_M1;
+      m_direction=GUI_SETUP_BUY_SELL;
+      m_trade_mode=GUI_SETUP_DAY_TRADE;
+      m_lot=0.01;
+
+      // Janela de entradas de 00:00 a 23:55, com encerramento desativado.
+      m_entry_start=0;
+      m_entry_end=1435;
+      m_close_enabled=false;
+      m_close_time=1435;
+
+      m_order_mode=GUI_ORDER_MARKET;
+      m_candle_filter=GUI_CANDLE_DISABLED;
+      m_target_unit=GUI_TARGET_POINTS;
+      m_stop_loss=0.0;
+      m_take_profit=0.0;
+
+      // As tres modalidades de gestao iniciam desativadas.
+      m_breakeven_mode=0;
+      m_breakeven_trigger=0.0;
+      m_breakeven_offset=0.0;
+      m_trailing_mode=0;
+      m_trailing_trigger=0.0;
+      m_trailing_distance=0.0;
+      m_trailing_step=0.0;
+      m_moving_stop_mode=0;
+      m_moving_stop_trigger=0.0;
+      m_moving_stop_distance=0.0;
+      m_moving_stop_step=0.0;
+
+      // Padroes de CGuiSetupState::Reset; substituir pelos limites do ativo
+      // ao carregar a configuracao, antes de permitir qualquer operacao.
+      m_volume_min=0.01;
+      m_volume_max=100.0;
+      m_volume_step=0.01;
+
+      // Slots desativados, preservando os parametros iniciais de cada tipo.
+      for(int i=0;i<4;i++)
+        {
+         m_indicators[i].type=GUI_INDICATOR_NONE;
+         m_indicators[i].maPeriod=20;
+         m_indicators[i].maMethod=MODE_EMA;
+         m_indicators[i].maPrice=PRICE_CLOSE;
+         m_indicators[i].maShift=0;
+         m_indicators[i].rsiPeriod=14;
+         m_indicators[i].rsiPrice=PRICE_CLOSE;
+         m_indicators[i].rsiLower=30.0;
+         m_indicators[i].rsiUpper=70.0;
+         m_indicators[i].adxPeriod=14;
+        }
+     }
+
+   ~MyUnEA()
+     {
+      // Ainda nao ha handles ou recursos alocados para liberar.
+     }
 
    //--- Metodos de ciclo de vida: inicializacao e finalizacao.
 
