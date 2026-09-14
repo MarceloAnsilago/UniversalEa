@@ -1,15 +1,64 @@
 #ifndef MY_UN_EA_MQH
 #define MY_UN_EA_MQH
 
+#include "CanvasGUI/GuiState.mqh"
+
 // Classe responsavel pela futura logica do Expert Advisor.
 class MyUnEA
   {
 private:
    //--- Atributos: configuracoes e parametros da estrategia.
+   // Cada instancia representa um setup configurado na interface.
+   string m_name;                           // Nome do setup.
+   string m_set_id;                         // Identidade do arquivo de configuracao.
+   long m_magic;                           // Magic Number do setup.
+   ENUM_GUI_SETUP_MARKET m_market;          // Forex ou B3.
+   ENUM_TIMEFRAMES m_timeframe;             // Periodo de operacao.
+   ENUM_GUI_SETUP_DIRECTION m_direction;    // Compra e venda, somente compra ou somente venda.
+   ENUM_GUI_SETUP_TRADE_MODE m_trade_mode;  // Day trade ou swing trade.
+   double m_lot;                           // Volume por operacao.
+
+   //--- Horarios: minutos desde 00:00, no horario do servidor.
+   int m_entry_start;                       // Inicio permitido para entradas.
+   int m_entry_end;                         // Fim permitido para entradas.
+   bool m_close_enabled;                    // Encerramento por horario habilitado.
+   int m_close_time;                        // Horario de encerramento.
+
+   //--- Regras de entrada e alvos.
+   ENUM_GUI_ORDER_MODE m_order_mode;        // Ordem a mercado ou pendente.
+   ENUM_GUI_CANDLE_FILTER m_candle_filter;  // Desativado, candle de alta ou de baixa.
+   ENUM_GUI_TARGET_UNIT m_target_unit;      // Pontos ou percentual para os alvos.
+   double m_stop_loss;                      // Zero desativa o stop loss.
+   double m_take_profit;                    // Zero desativa o take profit.
+
+   //--- Breakeven: modo 0 = desativado, 1 = pontos, 2 = percentual.
+   int m_breakeven_mode;
+   double m_breakeven_trigger;              // Ativacao (management.values[0]).
+   double m_breakeven_offset;               // Protecao (management.values[1]).
+
+   //--- Trailing stop: valores na unidade selecionada pelo modo.
+   int m_trailing_mode;                     // 0 = desativado, 1 = pontos, 2 = percentual.
+   double m_trailing_trigger;               // Ativacao (management.values[2]).
+   double m_trailing_distance;              // Distancia (management.values[3]).
+   double m_trailing_step;                  // Passo (management.values[4]).
+
+   //--- Stop movel: valores na unidade selecionada pelo modo.
+   int m_moving_stop_mode;                  // 0 = desativado, 1 = pontos, 2 = percentual.
+   double m_moving_stop_trigger;            // Ativacao (management.values[5]).
+   double m_moving_stop_distance;           // Distancia (management.values[6]).
+   double m_moving_stop_step;               // Passo (management.values[7]).
 
    //--- Atributos: estado interno e controle de execucao.
+   // Limites de volume do ativo usados pela interface para validar o lote.
+   double m_volume_min;
+   double m_volume_max;
+   double m_volume_step;
 
    //--- Atributos: indicadores e recursos utilizados pelo EA.
+   // Quatro slots, na mesma ordem da interface; NONE indica slot sem uso.
+   // IndicatorConfig armazena: type, maPeriod, maMethod, maPrice, maShift,
+   // rsiPeriod, rsiPrice, rsiLower, rsiUpper e adxPeriod.
+   IndicatorConfig m_indicators[4];
 
    //--- Metodos auxiliares: validacoes e preparacao dos dados.
 
