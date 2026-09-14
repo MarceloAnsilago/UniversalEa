@@ -3,6 +3,7 @@
 #property description "Experimento de GUI Canvas. Sem trading ou indicadores reais."
 #include "Include/CanvasGUI/GuiApp.mqh"
 #include "Include/MyUnEA.mqh"
+#include "Include/Configuration/UniInputOptions.mqh"
 
 // Modos de gestao com os mesmos valores usados pela interface.
 enum ENUM_UNI_MANAGEMENT_MODE
@@ -19,75 +20,75 @@ input group "Setup"
 input string InpName="Meu setup";                              // Nome do setup
 input long InpMagic=1;                                         // Magic Number: 1 a 2147483647
 input ENUM_GUI_SETUP_MARKET InpMarket=GUI_SETUP_FOREX;          // Mercado: Forex ou B3
-input ENUM_TIMEFRAMES InpTimeframe=PERIOD_M1;                   // Timeframe da estrategia
+input ENUM_UNI_TIMEFRAME InpTimeframe=UNI_PERIOD_M1;                   // Período da estratégia
 input ENUM_GUI_SETUP_DIRECTION InpDirection=GUI_SETUP_BUY_SELL; // Direcao permitida das operacoes
-input ENUM_GUI_SETUP_TRADE_MODE InpTradeMode=GUI_SETUP_DAY_TRADE; // Modalidade: day trade ou swing trade
+input ENUM_GUI_SETUP_TRADE_MODE InpTradeMode=GUI_SETUP_DAY_TRADE; // Modalidade: operações no mesmo dia ou em vários dias
 input double InpLot=0.01;                                      // Volume por operacao; respeitar limites e passo do ativo
 
 // Selecione o tipo em cada slot; configure seus parametros no grupo do indicador.
 // Cada grupo de parametros possui valores independentes para os slots 1 a 4.
 // Exemplo: dois slots com RSI podem usar periodos e niveis diferentes.
 input group "Indicador 1"
-input ENUM_GUI_INDICATOR_TYPE InpIndicator1Type=GUI_INDICATOR_NONE; // Indicador do slot 1; NONE = nao usar
+input ENUM_GUI_INDICATOR_TYPE InpIndicator1Type=GUI_INDICATOR_NONE; // Indicador do slot 1; Não usar = desativado
 
 input group "Indicador 2"
-input ENUM_GUI_INDICATOR_TYPE InpIndicator2Type=GUI_INDICATOR_NONE; // Indicador do slot 2; NONE = nao usar
+input ENUM_GUI_INDICATOR_TYPE InpIndicator2Type=GUI_INDICATOR_NONE; // Indicador do slot 2; Não usar = desativado
 
 input group "Indicador 3"
-input ENUM_GUI_INDICATOR_TYPE InpIndicator3Type=GUI_INDICATOR_NONE; // Indicador do slot 3; NONE = nao usar
+input ENUM_GUI_INDICATOR_TYPE InpIndicator3Type=GUI_INDICATOR_NONE; // Indicador do slot 3; Não usar = desativado
 
 input group "Indicador 4"
-input ENUM_GUI_INDICATOR_TYPE InpIndicator4Type=GUI_INDICATOR_NONE; // Indicador do slot 4; NONE = nao usar
+input ENUM_GUI_INDICATOR_TYPE InpIndicator4Type=GUI_INDICATOR_NONE; // Indicador do slot 4; Não usar = desativado
 
 input group "Media Movel - Parametros por slot"
 // Use os campos do slot que selecionou Media Movel; os demais ficam inativos na futura carga.
 //--- Media Movel: parametros exclusivos do slot 1.
 input int InpIndicator1MaPeriod=20; // Slot 1 - Periodo: 1 a 100000
-input ENUM_MA_METHOD InpIndicator1MaMethod=MODE_EMA; // Slot 1 - Metodo de calculo
-input ENUM_APPLIED_PRICE InpIndicator1MaPrice=PRICE_CLOSE; // Slot 1 - Preco aplicado
+input ENUM_UNI_MA_METHOD InpIndicator1MaMethod=UNI_MA_EMA; // Slot 1 - Metodo de calculo
+input ENUM_UNI_APPLIED_PRICE InpIndicator1MaPrice=UNI_PRICE_CLOSE; // Slot 1 - Preco aplicado
 input int InpIndicator1MaShift=0; // Slot 1 - Deslocamento em barras: -100000 a 100000
 
 //--- Media Movel: parametros exclusivos do slot 2.
 input int InpIndicator2MaPeriod=20; // Slot 2 - Periodo: 1 a 100000
-input ENUM_MA_METHOD InpIndicator2MaMethod=MODE_EMA; // Slot 2 - Metodo de calculo
-input ENUM_APPLIED_PRICE InpIndicator2MaPrice=PRICE_CLOSE; // Slot 2 - Preco aplicado
+input ENUM_UNI_MA_METHOD InpIndicator2MaMethod=UNI_MA_EMA; // Slot 2 - Metodo de calculo
+input ENUM_UNI_APPLIED_PRICE InpIndicator2MaPrice=UNI_PRICE_CLOSE; // Slot 2 - Preco aplicado
 input int InpIndicator2MaShift=0; // Slot 2 - Deslocamento em barras: -100000 a 100000
 
 //--- Media Movel: parametros exclusivos do slot 3.
 input int InpIndicator3MaPeriod=20; // Slot 3 - Periodo: 1 a 100000
-input ENUM_MA_METHOD InpIndicator3MaMethod=MODE_EMA; // Slot 3 - Metodo de calculo
-input ENUM_APPLIED_PRICE InpIndicator3MaPrice=PRICE_CLOSE; // Slot 3 - Preco aplicado
+input ENUM_UNI_MA_METHOD InpIndicator3MaMethod=UNI_MA_EMA; // Slot 3 - Metodo de calculo
+input ENUM_UNI_APPLIED_PRICE InpIndicator3MaPrice=UNI_PRICE_CLOSE; // Slot 3 - Preco aplicado
 input int InpIndicator3MaShift=0; // Slot 3 - Deslocamento em barras: -100000 a 100000
 
 //--- Media Movel: parametros exclusivos do slot 4.
 input int InpIndicator4MaPeriod=20; // Slot 4 - Periodo: 1 a 100000
-input ENUM_MA_METHOD InpIndicator4MaMethod=MODE_EMA; // Slot 4 - Metodo de calculo
-input ENUM_APPLIED_PRICE InpIndicator4MaPrice=PRICE_CLOSE; // Slot 4 - Preco aplicado
+input ENUM_UNI_MA_METHOD InpIndicator4MaMethod=UNI_MA_EMA; // Slot 4 - Metodo de calculo
+input ENUM_UNI_APPLIED_PRICE InpIndicator4MaPrice=UNI_PRICE_CLOSE; // Slot 4 - Preco aplicado
 input int InpIndicator4MaShift=0; // Slot 4 - Deslocamento em barras: -100000 a 100000
 
 input group "RSI - Parametros por slot"
 // Use os campos do slot que selecionou RSI; os demais ficam inativos na futura carga.
 //--- RSI: parametros exclusivos do slot 1.
 input int InpIndicator1RsiPeriod=14; // Slot 1 - Periodo: 1 a 100000
-input ENUM_APPLIED_PRICE InpIndicator1RsiPrice=PRICE_CLOSE; // Slot 1 - Preco aplicado
+input ENUM_UNI_APPLIED_PRICE InpIndicator1RsiPrice=UNI_PRICE_CLOSE; // Slot 1 - Preco aplicado
 input double InpIndicator1RsiLower=30.0; // Slot 1 - Nivel inferior: 0 a 100, menor que o superior
 input double InpIndicator1RsiUpper=70.0; // Slot 1 - Nivel superior: 0 a 100, maior que o inferior
 
 //--- RSI: parametros exclusivos do slot 2.
 input int InpIndicator2RsiPeriod=14; // Slot 2 - Periodo: 1 a 100000
-input ENUM_APPLIED_PRICE InpIndicator2RsiPrice=PRICE_CLOSE; // Slot 2 - Preco aplicado
+input ENUM_UNI_APPLIED_PRICE InpIndicator2RsiPrice=UNI_PRICE_CLOSE; // Slot 2 - Preco aplicado
 input double InpIndicator2RsiLower=30.0; // Slot 2 - Nivel inferior: 0 a 100, menor que o superior
 input double InpIndicator2RsiUpper=70.0; // Slot 2 - Nivel superior: 0 a 100, maior que o inferior
 
 //--- RSI: parametros exclusivos do slot 3.
 input int InpIndicator3RsiPeriod=14; // Slot 3 - Periodo: 1 a 100000
-input ENUM_APPLIED_PRICE InpIndicator3RsiPrice=PRICE_CLOSE; // Slot 3 - Preco aplicado
+input ENUM_UNI_APPLIED_PRICE InpIndicator3RsiPrice=UNI_PRICE_CLOSE; // Slot 3 - Preco aplicado
 input double InpIndicator3RsiLower=30.0; // Slot 3 - Nivel inferior: 0 a 100, menor que o superior
 input double InpIndicator3RsiUpper=70.0; // Slot 3 - Nivel superior: 0 a 100, maior que o inferior
 
 //--- RSI: parametros exclusivos do slot 4.
 input int InpIndicator4RsiPeriod=14; // Slot 4 - Periodo: 1 a 100000
-input ENUM_APPLIED_PRICE InpIndicator4RsiPrice=PRICE_CLOSE; // Slot 4 - Preco aplicado
+input ENUM_UNI_APPLIED_PRICE InpIndicator4RsiPrice=UNI_PRICE_CLOSE; // Slot 4 - Preco aplicado
 input double InpIndicator4RsiLower=30.0; // Slot 4 - Nivel inferior: 0 a 100, menor que o superior
 input double InpIndicator4RsiUpper=70.0; // Slot 4 - Nivel superior: 0 a 100, maior que o inferior
 
@@ -110,7 +111,7 @@ input int InpIndicator4AdxPeriod=14; // Slot 4 - Periodo: 1 a 100000
 input group "Horarios"
 input int InpEntryStart=0;         // Inicio das entradas: 0 = 00:00
 input int InpEntryEnd=1435;        // Fim das entradas: 1435 = 23:55
-input bool InpCloseEnabled=false; // Habilitar encerramento por horario
+input ENUM_UNI_YES_NO InpCloseEnabled=UNI_NO; // Habilitar encerramento por horario
 input int InpCloseTime=1435;       // Encerramento: minutos desde 00:00; usado quando habilitado
 
 input group "Regras de entrada e saida"
@@ -140,12 +141,12 @@ input double InpMovingStopDistance=0.0; // Distancia do preco: maior que zero qu
 input double InpMovingStopStep=0.0;     // Passo de ajuste: maior que zero quando habilitado
 
 input group "Diagnostico"
-input bool DebugGUI=true; // Habilitar mensagens de diagnostico da interface
+input ENUM_UNI_YES_NO DebugGUI=UNI_YES; // Habilitar mensagens de diagnostico da interface
 CGuiApp gui;
 // Instancia da classe responsavel pela logica do Expert Advisor.
 MyUnEA ea;
 int OnInit() {
- return gui.Create(ChartID(),DebugGUI) ? INIT_SUCCEEDED : INIT_FAILED;
+ return gui.Create(ChartID(),DebugGUI==UNI_YES) ? INIT_SUCCEEDED : INIT_FAILED;
  
   }
 void OnDeinit(const int reason) {
