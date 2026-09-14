@@ -70,7 +70,13 @@ protected:
    //--- Atributos e metodos destinados a futuras classes derivadas.
 
 public:
+   // Interface publica: metodos acessiveis pelo programa que utiliza a classe.
+
    //--- Construtor e destrutor.
+   // Construtor: executado automaticamente ao criar uma instancia de MyUnEA.
+   // Inicializa os atributos com os valores padrao da interface, incluindo
+   // horarios, regras, gestao desativada e os quatro slots de indicadores.
+   // Nao recebe parametros e nao inicia operacoes de negociacao.
    MyUnEA()
      {
       // Padroes locais da interface; a configuracao aplicada sera carregada depois.
@@ -131,18 +137,25 @@ public:
         }
      }
 
+   // Destrutor: executado automaticamente ao destruir a instancia de MyUnEA.
+   // Sera responsavel por liberar os recursos que a classe vier a adquirir.
+   // Por enquanto, permanece vazio porque a classe apenas armazena configuracoes.
    ~MyUnEA()
      {
       // Ainda nao ha handles ou recursos alocados para liberar.
      }
 
    //--- Metodos de ciclo de vida: inicializacao e finalizacao.
+   // Futuros metodos para preparar o EA e liberar seus recursos ao finalizar.
 
    //--- Metodos de processamento: ticks e demais eventos do EA.
+   // Futuros metodos chamados pelo programa principal ao receber eventos.
 
    //--- Metodos de configuracao e consulta do estado.
+   // Futuros metodos para definir parametros e consultar os atributos privados.
 
    //--- Metodos de integracao com a interface grafica.
+   // Futuros metodos para receber as configuracoes escolhidas pelo usuario.
   };
 
 #endif // MY_UN_EA_MQH
