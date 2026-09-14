@@ -1,8 +1,9 @@
 #ifndef CANVAS_GUI_RULES_STATE_MQH
 #define CANVAS_GUI_RULES_STATE_MQH
-enum ENUM_GUI_ORDER_MODE { GUI_ORDER_MARKET,GUI_ORDER_PENDING };
-enum ENUM_GUI_CANDLE_FILTER { GUI_CANDLE_DISABLED,GUI_CANDLE_BULLISH,GUI_CANDLE_BEARISH };
-enum ENUM_GUI_TARGET_UNIT { GUI_TARGET_POINTS,GUI_TARGET_PERCENT };
+#include "../Configuration/UniTypes.mqh"
+
+
+
 struct GuiRulesStorage
   { int unit,order,candle; double stop[2],take[2]; };
 class CGuiRulesState

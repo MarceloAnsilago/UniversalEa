@@ -1,7 +1,7 @@
 #ifndef MY_UN_EA_MQH
 #define MY_UN_EA_MQH
 
-#include "CanvasGUI/GuiState.mqh"
+#include "Indicators/MyIndicatorFactory.mqh"
 
 // Classe responsavel pela futura logica do Expert Advisor.
 class MyUnEA
@@ -55,10 +55,8 @@ private:
    double m_volume_step;
 
    //--- Atributos: indicadores e recursos utilizados pelo EA.
-   // Quatro slots, na mesma ordem da interface; NONE indica slot sem uso.
-   // IndicatorConfig armazena: type, maPeriod, maMethod, maPrice, maShift,
-   // rsiPeriod, rsiPrice, rsiLower, rsiUpper e adxPeriod.
-   IndicatorConfig m_indicators[4];
+   // Slots possuem objetos polimorficos; NULL representa um slot desativado.
+   MyIndicator *m_indicators[4];
 
    //--- Metodos auxiliares: validacoes e preparacao dos dados.
 
@@ -75,7 +73,7 @@ public:
    //--- Construtor e destrutor.
    // Construtor: executado automaticamente ao criar uma instancia de MyUnEA.
    // Inicializa os atributos com os valores padrao da interface, incluindo
-   // horarios, regras, gestao desativada e os quatro slots de indicadores.
+   // horarios, regras, gestao desativada e os quatro slots vazios.
    // Nao recebe parametros e nao inicia operacoes de negociacao.
    MyUnEA()
      {
@@ -121,28 +119,19 @@ public:
       m_volume_max=100.0;
       m_volume_step=0.01;
 
-      // Slots desativados, preservando os parametros iniciais de cada tipo.
-      for(int i=0;i<4;i++)
-        {
-         m_indicators[i].type=GUI_INDICATOR_NONE;
-         m_indicators[i].maPeriod=20;
-         m_indicators[i].maMethod=MODE_EMA;
-         m_indicators[i].maPrice=PRICE_CLOSE;
-         m_indicators[i].maShift=0;
-         m_indicators[i].rsiPeriod=14;
-         m_indicators[i].rsiPrice=PRICE_CLOSE;
-         m_indicators[i].rsiLower=30.0;
-         m_indicators[i].rsiUpper=70.0;
-         m_indicators[i].adxPeriod=14;
-        }
+      // Cada slot recebera somente o objeto do tipo selecionado.
+      for(int i=0;i<4;i++) m_indicators[i]=NULL;
      }
 
    // Destrutor: executado automaticamente ao destruir a instancia de MyUnEA.
-   // Sera responsavel por liberar os recursos que a classe vier a adquirir.
-   // Por enquanto, permanece vazio porque a classe apenas armazena configuracoes.
+   // Libera os objetos dos slots e seus recursos pelo destrutor virtual.
    ~MyUnEA()
      {
-      // Ainda nao ha handles ou recursos alocados para liberar.
+      for(int i=0;i<4;i++)
+        {
+         if(m_indicators[i]!=NULL) delete m_indicators[i];
+         m_indicators[i]=NULL;
+        }
      }
 
    //--- Metodos de ciclo de vida: inicializacao e finalizacao.
@@ -152,7 +141,18 @@ public:
    // Futuros metodos chamados pelo programa principal ao receber eventos.
 
    //--- Metodos de configuracao e consulta do estado.
-   // Futuros metodos para definir parametros e consultar os atributos privados.
+   // Configura um slot (0 a 3) sem criar handles ou iniciar negociacao.
+   // Parametros invalidos preservam o objeto anterior; NONE desativa o slot.
+   bool ConfigureIndicator(const int slot,const IndicatorConfig &config,string &error)
+     {
+      error="";
+      if(slot<0 || slot>=4) { error="Slot de indicador invalido."; return false; }
+      MyIndicator *candidate=MyIndicatorFactory::Create(config,error);
+      if(error!="") return false;
+      if(m_indicators[slot]!=NULL) delete m_indicators[slot];
+      m_indicators[slot]=candidate;
+      return true;
+     }
 
    //--- Metodos de integracao com a interface grafica.
    // Futuros metodos para receber as configuracoes escolhidas pelo usuario.

@@ -1,24 +1,14 @@
 #ifndef CANVAS_GUI_STATE_MQH
 #define CANVAS_GUI_STATE_MQH
+#include "../Configuration/UniTypes.mqh"
 #include "GuiSetupState.mqh"
 #include "GuiRulesState.mqh"
 #include "GuiManagementState.mqh"
-enum ENUM_GUI_INDICATOR_TYPE { GUI_INDICATOR_NONE=-1, GUI_INDICATOR_MA, GUI_INDICATOR_RSI, GUI_INDICATOR_ADX };
+
 string GuiIndicatorName(const ENUM_GUI_INDICATOR_TYPE type)
   { return type==GUI_INDICATOR_MA ? "Média Móvel" : (type==GUI_INDICATOR_RSI ? "RSI" : (type==GUI_INDICATOR_ADX ? "ADX" : "Não usar")); }
 enum ENUM_GUI_FIELD { GUI_TYPE, GUI_PERIOD, GUI_METHOD, GUI_PRICE, GUI_SHIFT, GUI_LOWER, GUI_UPPER };
-struct IndicatorConfig
-  {
-   ENUM_GUI_INDICATOR_TYPE type;
-   int maPeriod;
-   ENUM_MA_METHOD maMethod;
-   ENUM_APPLIED_PRICE maPrice;
-   int maShift;
-   int rsiPeriod;
-   int adxPeriod;
-   ENUM_APPLIED_PRICE rsiPrice;
-   double rsiLower,rsiUpper;
-  };
+
 struct GuiAppliedConfiguration
   {
    CGuiSetupState setup;

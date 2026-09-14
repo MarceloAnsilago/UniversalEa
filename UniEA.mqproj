@@ -158,6 +158,36 @@
       "path":"Include\\MyUnEA.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"Include\\Configuration\\UniTypes.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"Include\\Indicators\\MyIndicatorFactory.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"Include\\Indicators\\MyMA.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"Include\\Indicators\\MyIndicator.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"Include\\Indicators\\MyRSI.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"Include\\Indicators\\MyADX.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ]
 }
