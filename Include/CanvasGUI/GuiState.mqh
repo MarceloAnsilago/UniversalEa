@@ -65,6 +65,28 @@ public:
       if(field==GUI_METHOD) return (int)c.maMethod;
       return (int)(c.type==GUI_INDICATOR_MA ? c.maPrice : c.rsiPrice)-1;
      }
+   // Selecao interativa: apenas medias moveis podem ocupar varios indicadores.
+   // A regra tambem cobre novos tipos, sem precisar listar RSI, ADX etc.
+   bool TryChoose(const int card,const ENUM_GUI_FIELD field,const int index,string &error)
+     {
+      error="";
+      if(card<0 || card>=4) { error="Indicador inválido."; return false; }
+      if(field==GUI_TYPE)
+        {
+         ENUM_GUI_INDICATOR_TYPE type=(ENUM_GUI_INDICATOR_TYPE)(index-1);
+         if(type!=GUI_INDICATOR_NONE && type!=GUI_INDICATOR_MA)
+            for(int i=0;i<4;i++)
+               if(i!=card && indicators[i].type==type)
+                 {
+                  error=GuiIndicatorName(type)+" já foi selecionado no Indicador "+IntegerToString(i+1)+". Apenas a Média Móvel pode ser repetida.";
+                  return false;
+                 }
+        }
+      Choose(card,field,index);
+      return true;
+     }
+   // Atribuicao de baixo nivel, tambem usada por testes de armazenamento.
+   // A interface deve usar TryChoose para avisar e rejeitar duplicidades.
    void Choose(const int card,const ENUM_GUI_FIELD field,const int index)
      {
       if(field==GUI_TYPE) indicators[card].type=(ENUM_GUI_INDICATOR_TYPE)(index-1);

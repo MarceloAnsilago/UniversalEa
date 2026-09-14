@@ -14,7 +14,7 @@ enum ENUM_UNI_MANAGEMENT_MODE
   };
 
 // Parametros de entrada: declarados para a futura carga da configuracao.
-// A transferencia destes valores para MyUnEA e para a GUI sera implementada depois.
+// Os indicadores sao transferidos para MyUnEA; os demais grupos e a GUI aguardam integracao.
 // Identidade do arquivo e limites de volume sao dados internos, nao inputs.
 input group "Setup"
 input string InpName="Meu setup";                              // Nome do setup
@@ -26,8 +26,8 @@ input ENUM_GUI_SETUP_TRADE_MODE InpTradeMode=GUI_SETUP_DAY_TRADE; // Modalidade:
 input double InpLot=0.01;                                      // Volume por operacao; respeitar limites e passo do ativo
 
 // Selecione o tipo em cada indicador; configure seus parametros no grupo do indicador.
-// Cada grupo de parametros possui valores independentes para os indicadores 1 a 4.
-// Exemplo: dois indicadores com RSI podem usar periodos e niveis diferentes.
+// Apenas a Media Movel possui parametros independentes por indicador.
+// RSI, ADX e futuros tipos usam um grupo compartilhado quando repetidos nos inputs.
 input group "▪▪▪▪▪ Indicador 1 ▪▪▪▪▪"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator1Type=GUI_INDICATOR_NONE; // Tipo do Indicador 1; Não usar = desativado
 
@@ -70,53 +70,16 @@ input ENUM_UNI_MA_METHOD InpIndicator4MaMethod=UNI_MA_EMA; // Indicador 4 │ M�
 input ENUM_UNI_APPLIED_PRICE InpIndicator4MaPrice=UNI_PRICE_CLOSE; // Indicador 4 │ Preço aplicado
 input int InpIndicator4MaShift=0; // Indicador 4 │ Deslocamento em barras: -100000 a 100000
 
-input group "RSI — Parâmetros por indicador"
-// Use os campos do indicador que selecionou RSI; os demais ficam inativos na futura carga.
-// Linha apenas visual; nao participa da configuracao nem da otimizacao.
-sinput string InpSeparatorRsi1="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 1 ▪▪▪
-input int InpIndicator1RsiPeriod=14; // Indicador 1 │ Período: 1 a 100000
-input ENUM_UNI_APPLIED_PRICE InpIndicator1RsiPrice=UNI_PRICE_CLOSE; // Indicador 1 │ Preço aplicado
-input double InpIndicator1RsiLower=30.0; // Indicador 1 │ Nível inferior: 0 a 100, menor que o superior
-input double InpIndicator1RsiUpper=70.0; // Indicador 1 │ Nível superior: 0 a 100, maior que o inferior
+input group "RSI — Parâmetros compartilhados"
+// Todas as selecoes de RSI nos inputs usam estes mesmos parametros.
+input int InpRsiPeriod=14; // Período: 1 a 100000
+input ENUM_UNI_APPLIED_PRICE InpRsiPrice=UNI_PRICE_CLOSE; // Preço aplicado
+input double InpRsiLower=30.0; // Nível inferior: 0 a 100, menor que o superior
+input double InpRsiUpper=70.0; // Nível superior: 0 a 100, maior que o inferior
 
-// Linha apenas visual; nao participa da configuracao nem da otimizacao.
-sinput string InpSeparatorRsi2="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 2 ▪▪▪
-input int InpIndicator2RsiPeriod=14; // Indicador 2 │ Período: 1 a 100000
-input ENUM_UNI_APPLIED_PRICE InpIndicator2RsiPrice=UNI_PRICE_CLOSE; // Indicador 2 │ Preço aplicado
-input double InpIndicator2RsiLower=30.0; // Indicador 2 │ Nível inferior: 0 a 100, menor que o superior
-input double InpIndicator2RsiUpper=70.0; // Indicador 2 │ Nível superior: 0 a 100, maior que o inferior
-
-// Linha apenas visual; nao participa da configuracao nem da otimizacao.
-sinput string InpSeparatorRsi3="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 3 ▪▪▪
-input int InpIndicator3RsiPeriod=14; // Indicador 3 │ Período: 1 a 100000
-input ENUM_UNI_APPLIED_PRICE InpIndicator3RsiPrice=UNI_PRICE_CLOSE; // Indicador 3 │ Preço aplicado
-input double InpIndicator3RsiLower=30.0; // Indicador 3 │ Nível inferior: 0 a 100, menor que o superior
-input double InpIndicator3RsiUpper=70.0; // Indicador 3 │ Nível superior: 0 a 100, maior que o inferior
-
-// Linha apenas visual; nao participa da configuracao nem da otimizacao.
-sinput string InpSeparatorRsi4="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 4 ▪▪▪
-input int InpIndicator4RsiPeriod=14; // Indicador 4 │ Período: 1 a 100000
-input ENUM_UNI_APPLIED_PRICE InpIndicator4RsiPrice=UNI_PRICE_CLOSE; // Indicador 4 │ Preço aplicado
-input double InpIndicator4RsiLower=30.0; // Indicador 4 │ Nível inferior: 0 a 100, menor que o superior
-input double InpIndicator4RsiUpper=70.0; // Indicador 4 │ Nível superior: 0 a 100, maior que o inferior
-
-input group "ADX — Parâmetros por indicador"
-// Use os campos do indicador que selecionou ADX; os demais ficam inativos na futura carga.
-// Linha apenas visual; nao participa da configuracao nem da otimizacao.
-sinput string InpSeparatorAdx1="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 1 ▪▪▪
-input int InpIndicator1AdxPeriod=14; // Indicador 1 │ Período: 1 a 100000
-
-// Linha apenas visual; nao participa da configuracao nem da otimizacao.
-sinput string InpSeparatorAdx2="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 2 ▪▪▪
-input int InpIndicator2AdxPeriod=14; // Indicador 2 │ Período: 1 a 100000
-
-// Linha apenas visual; nao participa da configuracao nem da otimizacao.
-sinput string InpSeparatorAdx3="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 3 ▪▪▪
-input int InpIndicator3AdxPeriod=14; // Indicador 3 │ Período: 1 a 100000
-
-// Linha apenas visual; nao participa da configuracao nem da otimizacao.
-sinput string InpSeparatorAdx4="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 4 ▪▪▪
-input int InpIndicator4AdxPeriod=14; // Indicador 4 │ Período: 1 a 100000
+input group "ADX — Parâmetros compartilhados"
+// Todas as selecoes de ADX nos inputs usam este mesmo periodo.
+input int InpAdxPeriod=14; // Período: 1 a 100000
 
 // Horarios em minutos desde 00:00 no servidor, de 0 a 1435, em passos de 5.
 // Exemplo: 09:30 = 570. Inicio e fim devem ser diferentes.
@@ -157,7 +120,33 @@ input ENUM_UNI_YES_NO DebugGUI=UNI_YES; // Habilitar mensagens de diagnostico da
 CGuiApp gui;
 // Instancia da classe responsavel pela logica do Expert Advisor.
 MyUnEA ea;
+// Monta a configuracao de cada indicador a partir dos inputs.
+// MA usa os parametros da sua posicao; os demais tipos usam o grupo unico.
+bool ConfigureInputIndicators()
+  {
+   ENUM_GUI_INDICATOR_TYPE types[]={InpIndicator1Type,InpIndicator2Type,InpIndicator3Type,InpIndicator4Type};
+   int periods[]={InpIndicator1MaPeriod,InpIndicator2MaPeriod,InpIndicator3MaPeriod,InpIndicator4MaPeriod};
+   int shifts[]={InpIndicator1MaShift,InpIndicator2MaShift,InpIndicator3MaShift,InpIndicator4MaShift};
+   ENUM_UNI_MA_METHOD methods[]={InpIndicator1MaMethod,InpIndicator2MaMethod,InpIndicator3MaMethod,InpIndicator4MaMethod};
+   ENUM_UNI_APPLIED_PRICE prices[]={InpIndicator1MaPrice,InpIndicator2MaPrice,InpIndicator3MaPrice,InpIndicator4MaPrice};
+   for(int i=0;i<4;i++)
+     {
+      IndicatorConfig config;
+      config.type=types[i];
+      config.maPeriod=periods[i]; config.maShift=shifts[i];
+      config.maMethod=(ENUM_MA_METHOD)methods[i];
+      config.maPrice=(ENUM_APPLIED_PRICE)prices[i];
+      config.rsiPeriod=InpRsiPeriod; config.rsiPrice=(ENUM_APPLIED_PRICE)InpRsiPrice;
+      config.rsiLower=InpRsiLower; config.rsiUpper=InpRsiUpper;
+      config.adxPeriod=InpAdxPeriod;
+      string error;
+      if(!ea.ConfigureIndicator(i,config,error))
+        { PrintFormat("Indicador %d: %s",i+1,error); return false; }
+     }
+   return true;
+  }
 int OnInit() {
+ if(!ConfigureInputIndicators()) return INIT_PARAMETERS_INCORRECT;
  return gui.Create(ChartID(),DebugGUI==UNI_YES) ? INIT_SUCCEEDED : INIT_FAILED;
  
   }

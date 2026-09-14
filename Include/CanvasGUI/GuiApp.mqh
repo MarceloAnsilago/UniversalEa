@@ -404,7 +404,9 @@ private:
       if(m_open<0 || option<0) return;
       int i=m_open,card=m_fields[i].card;
       bool changed=m_fields[i].select.selected!=option;
-      m_state.Choose(card,m_fields[i].field,option);
+      string error;
+      if(!m_state.TryChoose(card,m_fields[i].field,option,error))
+        { CloseSelect(); Status(error,true); return; }
       m_fields[i].select.SetSelected(option); CloseSelect();
       if(m_fields[i].field==GUI_TYPE) ActivateIndicator(card);
       if(changed && m_fields[i].field==GUI_TYPE)

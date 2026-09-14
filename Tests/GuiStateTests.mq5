@@ -7,6 +7,20 @@ void Check(const bool condition,const string label)
 void OnStart()
   {
    CGuiState state; state.Reset(); string error;
+   // A selecao interativa permite repetir apenas MA; rejeicoes preservam o estado.
+   Check(state.TryChoose(0,GUI_TYPE,GUI_INDICATOR_RSI+1,error),"Selecionar primeiro RSI");
+   Check(!state.TryChoose(1,GUI_TYPE,GUI_INDICATOR_RSI+1,error) &&
+         state.indicators[1].type==GUI_INDICATOR_NONE && StringFind(error,"Indicador 1")>=0,"RSI repetido avisa e preserva selecao");
+   Check(state.TryChoose(0,GUI_TYPE,GUI_INDICATOR_RSI+1,error),"Manter RSI no mesmo indicador");
+   Check(state.TryChoose(1,GUI_TYPE,GUI_INDICATOR_ADX+1,error),"Selecionar primeiro ADX");
+   Check(!state.TryChoose(2,GUI_TYPE,GUI_INDICATOR_ADX+1,error) && error!="","ADX repetido bloqueado");
+   Check(state.TryChoose(0,GUI_TYPE,GUI_INDICATOR_NONE+1,error),"Liberar RSI");
+   Check(state.TryChoose(2,GUI_TYPE,GUI_INDICATOR_RSI+1,error),"RSI liberado pode mudar de indicador");
+   for(int i=0;i<4;i++) Check(state.TryChoose(i,GUI_TYPE,GUI_INDICATOR_MA+1,error),"Quatro medias permitidas");
+   // Tipo futuro segue a regra geral de unicidade, sem excecao especifica.
+   state.indicators[0].type=(ENUM_GUI_INDICATOR_TYPE)99;
+   Check(!state.TryChoose(1,GUI_TYPE,100,error),"Novo tipo nao pode repetir");
+   state.Reset();
    for(int i=0;i<4;i++) Check(state.indicators[i].type==GUI_INDICATOR_NONE && state.Choice(i,GUI_TYPE)==0,"Não usar padrão");
    state.Choose(0,GUI_TYPE,GUI_INDICATOR_MA+1);
    state.Choose(1,GUI_TYPE,GUI_INDICATOR_RSI+1);
