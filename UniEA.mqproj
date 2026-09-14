@@ -153,6 +153,11 @@
       "path":"Include\\CanvasGUI\\GuiScrollBar.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"Include\\MyUnEA.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ]
 }

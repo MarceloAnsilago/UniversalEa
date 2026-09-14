@@ -2,9 +2,12 @@
 #property version "1.00"
 #property description "Experimento de GUI Canvas. Sem trading ou indicadores reais."
 #include "Include/CanvasGUI/GuiApp.mqh"
+#include "Include/MyUnEA.mqh"
 
 input bool DebugGUI=true;
 CGuiApp gui;
+// Instancia da classe responsavel pela logica do Expert Advisor.
+MyUnEA ea;
 int OnInit() {
  return gui.Create(ChartID(),DebugGUI) ? INIT_SUCCEEDED : INIT_FAILED;
  
