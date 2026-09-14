@@ -25,86 +25,98 @@ input ENUM_GUI_SETUP_DIRECTION InpDirection=GUI_SETUP_BUY_SELL; // Direcao permi
 input ENUM_GUI_SETUP_TRADE_MODE InpTradeMode=GUI_SETUP_DAY_TRADE; // Modalidade: operações no mesmo dia ou em vários dias
 input double InpLot=0.01;                                      // Volume por operacao; respeitar limites e passo do ativo
 
-// Selecione o tipo em cada slot; configure seus parametros no grupo do indicador.
-// Cada grupo de parametros possui valores independentes para os slots 1 a 4.
-// Exemplo: dois slots com RSI podem usar periodos e niveis diferentes.
-input group "Indicador 1"
-input ENUM_GUI_INDICATOR_TYPE InpIndicator1Type=GUI_INDICATOR_NONE; // Indicador do slot 1; Não usar = desativado
+// Selecione o tipo em cada indicador; configure seus parametros no grupo do indicador.
+// Cada grupo de parametros possui valores independentes para os indicadores 1 a 4.
+// Exemplo: dois indicadores com RSI podem usar periodos e niveis diferentes.
+input group "▪▪▪▪▪ Indicador 1 ▪▪▪▪▪"
+input ENUM_GUI_INDICATOR_TYPE InpIndicator1Type=GUI_INDICATOR_NONE; // Tipo do Indicador 1; Não usar = desativado
 
-input group "Indicador 2"
-input ENUM_GUI_INDICATOR_TYPE InpIndicator2Type=GUI_INDICATOR_NONE; // Indicador do slot 2; Não usar = desativado
+input group "▪▪▪▪▪ Indicador 2 ▪▪▪▪▪"
+input ENUM_GUI_INDICATOR_TYPE InpIndicator2Type=GUI_INDICATOR_NONE; // Tipo do Indicador 2; Não usar = desativado
 
-input group "Indicador 3"
-input ENUM_GUI_INDICATOR_TYPE InpIndicator3Type=GUI_INDICATOR_NONE; // Indicador do slot 3; Não usar = desativado
+input group "▪▪▪▪▪ Indicador 3 ▪▪▪▪▪"
+input ENUM_GUI_INDICATOR_TYPE InpIndicator3Type=GUI_INDICATOR_NONE; // Tipo do Indicador 3; Não usar = desativado
 
-input group "Indicador 4"
-input ENUM_GUI_INDICATOR_TYPE InpIndicator4Type=GUI_INDICATOR_NONE; // Indicador do slot 4; Não usar = desativado
+input group "▪▪▪▪▪ Indicador 4 ▪▪▪▪▪"
+input ENUM_GUI_INDICATOR_TYPE InpIndicator4Type=GUI_INDICATOR_NONE; // Tipo do Indicador 4; Não usar = desativado
 
-input group "Media Movel - Parametros por slot"
-// Use os campos do slot que selecionou Media Movel; os demais ficam inativos na futura carga.
-//--- Media Movel: parametros exclusivos do slot 1.
-input int InpIndicator1MaPeriod=20; // Slot 1 - Periodo: 1 a 100000
-input ENUM_UNI_MA_METHOD InpIndicator1MaMethod=UNI_MA_EMA; // Slot 1 - Metodo de calculo
-input ENUM_UNI_APPLIED_PRICE InpIndicator1MaPrice=UNI_PRICE_CLOSE; // Slot 1 - Preco aplicado
-input int InpIndicator1MaShift=0; // Slot 1 - Deslocamento em barras: -100000 a 100000
+input group "Média Móvel — Parâmetros por indicador"
+// Use os campos do indicador que selecionou Media Movel; os demais ficam inativos na futura carga.
+// Linha apenas visual; nao participa da configuracao nem da otimizacao.
+sinput string InpSeparatorMa1="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 1 ▪▪▪
+input int InpIndicator1MaPeriod=20; // Indicador 1 │ Período: 1 a 100000
+input ENUM_UNI_MA_METHOD InpIndicator1MaMethod=UNI_MA_EMA; // Indicador 1 │ Método de cálculo
+input ENUM_UNI_APPLIED_PRICE InpIndicator1MaPrice=UNI_PRICE_CLOSE; // Indicador 1 │ Preço aplicado
+input int InpIndicator1MaShift=0; // Indicador 1 │ Deslocamento em barras: -100000 a 100000
 
-//--- Media Movel: parametros exclusivos do slot 2.
-input int InpIndicator2MaPeriod=20; // Slot 2 - Periodo: 1 a 100000
-input ENUM_UNI_MA_METHOD InpIndicator2MaMethod=UNI_MA_EMA; // Slot 2 - Metodo de calculo
-input ENUM_UNI_APPLIED_PRICE InpIndicator2MaPrice=UNI_PRICE_CLOSE; // Slot 2 - Preco aplicado
-input int InpIndicator2MaShift=0; // Slot 2 - Deslocamento em barras: -100000 a 100000
+// Linha apenas visual; nao participa da configuracao nem da otimizacao.
+sinput string InpSeparatorMa2="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 2 ▪▪▪
+input int InpIndicator2MaPeriod=20; // Indicador 2 │ Período: 1 a 100000
+input ENUM_UNI_MA_METHOD InpIndicator2MaMethod=UNI_MA_EMA; // Indicador 2 │ Método de cálculo
+input ENUM_UNI_APPLIED_PRICE InpIndicator2MaPrice=UNI_PRICE_CLOSE; // Indicador 2 │ Preço aplicado
+input int InpIndicator2MaShift=0; // Indicador 2 │ Deslocamento em barras: -100000 a 100000
 
-//--- Media Movel: parametros exclusivos do slot 3.
-input int InpIndicator3MaPeriod=20; // Slot 3 - Periodo: 1 a 100000
-input ENUM_UNI_MA_METHOD InpIndicator3MaMethod=UNI_MA_EMA; // Slot 3 - Metodo de calculo
-input ENUM_UNI_APPLIED_PRICE InpIndicator3MaPrice=UNI_PRICE_CLOSE; // Slot 3 - Preco aplicado
-input int InpIndicator3MaShift=0; // Slot 3 - Deslocamento em barras: -100000 a 100000
+// Linha apenas visual; nao participa da configuracao nem da otimizacao.
+sinput string InpSeparatorMa3="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 3 ▪▪▪
+input int InpIndicator3MaPeriod=20; // Indicador 3 │ Período: 1 a 100000
+input ENUM_UNI_MA_METHOD InpIndicator3MaMethod=UNI_MA_EMA; // Indicador 3 │ Método de cálculo
+input ENUM_UNI_APPLIED_PRICE InpIndicator3MaPrice=UNI_PRICE_CLOSE; // Indicador 3 │ Preço aplicado
+input int InpIndicator3MaShift=0; // Indicador 3 │ Deslocamento em barras: -100000 a 100000
 
-//--- Media Movel: parametros exclusivos do slot 4.
-input int InpIndicator4MaPeriod=20; // Slot 4 - Periodo: 1 a 100000
-input ENUM_UNI_MA_METHOD InpIndicator4MaMethod=UNI_MA_EMA; // Slot 4 - Metodo de calculo
-input ENUM_UNI_APPLIED_PRICE InpIndicator4MaPrice=UNI_PRICE_CLOSE; // Slot 4 - Preco aplicado
-input int InpIndicator4MaShift=0; // Slot 4 - Deslocamento em barras: -100000 a 100000
+// Linha apenas visual; nao participa da configuracao nem da otimizacao.
+sinput string InpSeparatorMa4="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 4 ▪▪▪
+input int InpIndicator4MaPeriod=20; // Indicador 4 │ Período: 1 a 100000
+input ENUM_UNI_MA_METHOD InpIndicator4MaMethod=UNI_MA_EMA; // Indicador 4 │ Método de cálculo
+input ENUM_UNI_APPLIED_PRICE InpIndicator4MaPrice=UNI_PRICE_CLOSE; // Indicador 4 │ Preço aplicado
+input int InpIndicator4MaShift=0; // Indicador 4 │ Deslocamento em barras: -100000 a 100000
 
-input group "RSI - Parametros por slot"
-// Use os campos do slot que selecionou RSI; os demais ficam inativos na futura carga.
-//--- RSI: parametros exclusivos do slot 1.
-input int InpIndicator1RsiPeriod=14; // Slot 1 - Periodo: 1 a 100000
-input ENUM_UNI_APPLIED_PRICE InpIndicator1RsiPrice=UNI_PRICE_CLOSE; // Slot 1 - Preco aplicado
-input double InpIndicator1RsiLower=30.0; // Slot 1 - Nivel inferior: 0 a 100, menor que o superior
-input double InpIndicator1RsiUpper=70.0; // Slot 1 - Nivel superior: 0 a 100, maior que o inferior
+input group "RSI — Parâmetros por indicador"
+// Use os campos do indicador que selecionou RSI; os demais ficam inativos na futura carga.
+// Linha apenas visual; nao participa da configuracao nem da otimizacao.
+sinput string InpSeparatorRsi1="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 1 ▪▪▪
+input int InpIndicator1RsiPeriod=14; // Indicador 1 │ Período: 1 a 100000
+input ENUM_UNI_APPLIED_PRICE InpIndicator1RsiPrice=UNI_PRICE_CLOSE; // Indicador 1 │ Preço aplicado
+input double InpIndicator1RsiLower=30.0; // Indicador 1 │ Nível inferior: 0 a 100, menor que o superior
+input double InpIndicator1RsiUpper=70.0; // Indicador 1 │ Nível superior: 0 a 100, maior que o inferior
 
-//--- RSI: parametros exclusivos do slot 2.
-input int InpIndicator2RsiPeriod=14; // Slot 2 - Periodo: 1 a 100000
-input ENUM_UNI_APPLIED_PRICE InpIndicator2RsiPrice=UNI_PRICE_CLOSE; // Slot 2 - Preco aplicado
-input double InpIndicator2RsiLower=30.0; // Slot 2 - Nivel inferior: 0 a 100, menor que o superior
-input double InpIndicator2RsiUpper=70.0; // Slot 2 - Nivel superior: 0 a 100, maior que o inferior
+// Linha apenas visual; nao participa da configuracao nem da otimizacao.
+sinput string InpSeparatorRsi2="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 2 ▪▪▪
+input int InpIndicator2RsiPeriod=14; // Indicador 2 │ Período: 1 a 100000
+input ENUM_UNI_APPLIED_PRICE InpIndicator2RsiPrice=UNI_PRICE_CLOSE; // Indicador 2 │ Preço aplicado
+input double InpIndicator2RsiLower=30.0; // Indicador 2 │ Nível inferior: 0 a 100, menor que o superior
+input double InpIndicator2RsiUpper=70.0; // Indicador 2 │ Nível superior: 0 a 100, maior que o inferior
 
-//--- RSI: parametros exclusivos do slot 3.
-input int InpIndicator3RsiPeriod=14; // Slot 3 - Periodo: 1 a 100000
-input ENUM_UNI_APPLIED_PRICE InpIndicator3RsiPrice=UNI_PRICE_CLOSE; // Slot 3 - Preco aplicado
-input double InpIndicator3RsiLower=30.0; // Slot 3 - Nivel inferior: 0 a 100, menor que o superior
-input double InpIndicator3RsiUpper=70.0; // Slot 3 - Nivel superior: 0 a 100, maior que o inferior
+// Linha apenas visual; nao participa da configuracao nem da otimizacao.
+sinput string InpSeparatorRsi3="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 3 ▪▪▪
+input int InpIndicator3RsiPeriod=14; // Indicador 3 │ Período: 1 a 100000
+input ENUM_UNI_APPLIED_PRICE InpIndicator3RsiPrice=UNI_PRICE_CLOSE; // Indicador 3 │ Preço aplicado
+input double InpIndicator3RsiLower=30.0; // Indicador 3 │ Nível inferior: 0 a 100, menor que o superior
+input double InpIndicator3RsiUpper=70.0; // Indicador 3 │ Nível superior: 0 a 100, maior que o inferior
 
-//--- RSI: parametros exclusivos do slot 4.
-input int InpIndicator4RsiPeriod=14; // Slot 4 - Periodo: 1 a 100000
-input ENUM_UNI_APPLIED_PRICE InpIndicator4RsiPrice=UNI_PRICE_CLOSE; // Slot 4 - Preco aplicado
-input double InpIndicator4RsiLower=30.0; // Slot 4 - Nivel inferior: 0 a 100, menor que o superior
-input double InpIndicator4RsiUpper=70.0; // Slot 4 - Nivel superior: 0 a 100, maior que o inferior
+// Linha apenas visual; nao participa da configuracao nem da otimizacao.
+sinput string InpSeparatorRsi4="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 4 ▪▪▪
+input int InpIndicator4RsiPeriod=14; // Indicador 4 │ Período: 1 a 100000
+input ENUM_UNI_APPLIED_PRICE InpIndicator4RsiPrice=UNI_PRICE_CLOSE; // Indicador 4 │ Preço aplicado
+input double InpIndicator4RsiLower=30.0; // Indicador 4 │ Nível inferior: 0 a 100, menor que o superior
+input double InpIndicator4RsiUpper=70.0; // Indicador 4 │ Nível superior: 0 a 100, maior que o inferior
 
-input group "ADX - Parametros por slot"
-// Use os campos do slot que selecionou ADX; os demais ficam inativos na futura carga.
-//--- ADX: parametros exclusivos do slot 1.
-input int InpIndicator1AdxPeriod=14; // Slot 1 - Periodo: 1 a 100000
+input group "ADX — Parâmetros por indicador"
+// Use os campos do indicador que selecionou ADX; os demais ficam inativos na futura carga.
+// Linha apenas visual; nao participa da configuracao nem da otimizacao.
+sinput string InpSeparatorAdx1="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 1 ▪▪▪
+input int InpIndicator1AdxPeriod=14; // Indicador 1 │ Período: 1 a 100000
 
-//--- ADX: parametros exclusivos do slot 2.
-input int InpIndicator2AdxPeriod=14; // Slot 2 - Periodo: 1 a 100000
+// Linha apenas visual; nao participa da configuracao nem da otimizacao.
+sinput string InpSeparatorAdx2="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 2 ▪▪▪
+input int InpIndicator2AdxPeriod=14; // Indicador 2 │ Período: 1 a 100000
 
-//--- ADX: parametros exclusivos do slot 3.
-input int InpIndicator3AdxPeriod=14; // Slot 3 - Periodo: 1 a 100000
+// Linha apenas visual; nao participa da configuracao nem da otimizacao.
+sinput string InpSeparatorAdx3="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 3 ▪▪▪
+input int InpIndicator3AdxPeriod=14; // Indicador 3 │ Período: 1 a 100000
 
-//--- ADX: parametros exclusivos do slot 4.
-input int InpIndicator4AdxPeriod=14; // Slot 4 - Periodo: 1 a 100000
+// Linha apenas visual; nao participa da configuracao nem da otimizacao.
+sinput string InpSeparatorAdx4="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 4 ▪▪▪
+input int InpIndicator4AdxPeriod=14; // Indicador 4 │ Período: 1 a 100000
 
 // Horarios em minutos desde 00:00 no servidor, de 0 a 1435, em passos de 5.
 // Exemplo: 09:30 = 570. Inicio e fim devem ser diferentes.

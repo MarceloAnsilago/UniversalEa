@@ -188,6 +188,11 @@
       "path":"Include\\Indicators\\MyADX.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"Include\\Configuration\\UniInputOptions.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ]
 }
