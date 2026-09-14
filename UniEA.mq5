@@ -25,6 +25,43 @@ input ENUM_GUI_SETUP_DIRECTION InpDirection=GUI_SETUP_BUY_SELL; // Direcao permi
 input ENUM_GUI_SETUP_TRADE_MODE InpTradeMode=GUI_SETUP_DAY_TRADE; // Modalidade: operações no mesmo dia ou em vários dias
 input double InpLot=0.01;                                      // Volume por operacao; respeitar limites e passo do ativo
 
+// Horarios em minutos desde 00:00 no servidor, de 0 a 1435, em passos de 5.
+// Exemplo: 09:30 = 570. Inicio e fim devem ser diferentes.
+input group "Horarios"
+input int InpEntryStart=0;         // Inicio das entradas: 0 = 00:00
+input int InpEntryEnd=1435;        // Fim das entradas: 1435 = 23:55
+input ENUM_UNI_YES_NO InpCloseEnabled=UNI_NO; // Habilitar encerramento por horario
+input int InpCloseTime=1435;       // Encerramento: minutos desde 00:00; usado quando habilitado
+
+input group "Regras de entrada e saida"
+input ENUM_GUI_ORDER_MODE InpOrderMode=GUI_ORDER_MARKET;           // Tipo de ordem: a mercado ou pendente
+input ENUM_GUI_CANDLE_FILTER InpCandleFilter=GUI_CANDLE_DISABLED;   // Filtro: desativado, candle de alta ou de baixa
+input ENUM_GUI_TARGET_UNIT InpTargetUnit=GUI_TARGET_POINTS;        // Unidade do stop loss e take profit
+input double InpStopLoss=0.0;                                      // Stop loss na unidade selecionada; 0 desativa
+input double InpTakeProfit=0.0;                                    // Take profit na unidade selecionada; 0 desativa
+
+// Valores de gestao usam a unidade do respectivo modo.
+// A base de calculo percentual sera definida na implementacao da gestao.
+input group "Breakeven"
+input ENUM_UNI_MANAGEMENT_MODE InpBreakevenMode=UNI_MANAGEMENT_DISABLED; // Modo do breakeven
+input double InpBreakevenTrigger=0.0; // Ativacao: maior que zero quando habilitado
+input double InpBreakevenOffset=0.0;  // Protecao: menor que a ativacao; 0 = preco de entrada
+
+input group "Trailing stop"
+input ENUM_UNI_MANAGEMENT_MODE InpTrailingMode=UNI_MANAGEMENT_DISABLED; // Modo do trailing stop
+input double InpTrailingTrigger=0.0;  // Ativacao: maior que zero quando habilitado
+input double InpTrailingDistance=0.0; // Distancia do preco: maior que zero quando habilitado
+input double InpTrailingStep=0.0;     // Passo de ajuste: maior que zero quando habilitado
+
+input group "Stop movel"
+input ENUM_UNI_MANAGEMENT_MODE InpMovingStopMode=UNI_MANAGEMENT_DISABLED; // Modo do stop movel
+input double InpMovingStopTrigger=0.0;  // Ativacao: maior que zero quando habilitado
+input double InpMovingStopDistance=0.0; // Distancia do preco: maior que zero quando habilitado
+input double InpMovingStopStep=0.0;     // Passo de ajuste: maior que zero quando habilitado
+
+input group "Diagnostico"
+input ENUM_UNI_YES_NO DebugGUI=UNI_YES; // Habilitar mensagens de diagnostico da interface
+
 // Selecione o tipo em cada indicador; configure seus parametros no grupo do indicador.
 // Apenas a Media Movel possui parametros independentes por indicador.
 // RSI, ADX e futuros tipos usam um grupo compartilhado quando repetidos nos inputs.
@@ -81,42 +118,6 @@ input group "ADX — Parâmetros compartilhados"
 // Todas as selecoes de ADX nos inputs usam este mesmo periodo.
 input int InpAdxPeriod=14; // Período: 1 a 100000
 
-// Horarios em minutos desde 00:00 no servidor, de 0 a 1435, em passos de 5.
-// Exemplo: 09:30 = 570. Inicio e fim devem ser diferentes.
-input group "Horarios"
-input int InpEntryStart=0;         // Inicio das entradas: 0 = 00:00
-input int InpEntryEnd=1435;        // Fim das entradas: 1435 = 23:55
-input ENUM_UNI_YES_NO InpCloseEnabled=UNI_NO; // Habilitar encerramento por horario
-input int InpCloseTime=1435;       // Encerramento: minutos desde 00:00; usado quando habilitado
-
-input group "Regras de entrada e saida"
-input ENUM_GUI_ORDER_MODE InpOrderMode=GUI_ORDER_MARKET;           // Tipo de ordem: a mercado ou pendente
-input ENUM_GUI_CANDLE_FILTER InpCandleFilter=GUI_CANDLE_DISABLED;   // Filtro: desativado, candle de alta ou de baixa
-input ENUM_GUI_TARGET_UNIT InpTargetUnit=GUI_TARGET_POINTS;        // Unidade do stop loss e take profit
-input double InpStopLoss=0.0;                                      // Stop loss na unidade selecionada; 0 desativa
-input double InpTakeProfit=0.0;                                    // Take profit na unidade selecionada; 0 desativa
-
-// Valores de gestao usam a unidade do respectivo modo.
-// A base de calculo percentual sera definida na implementacao da gestao.
-input group "Breakeven"
-input ENUM_UNI_MANAGEMENT_MODE InpBreakevenMode=UNI_MANAGEMENT_DISABLED; // Modo do breakeven
-input double InpBreakevenTrigger=0.0; // Ativacao: maior que zero quando habilitado
-input double InpBreakevenOffset=0.0;  // Protecao: menor que a ativacao; 0 = preco de entrada
-
-input group "Trailing stop"
-input ENUM_UNI_MANAGEMENT_MODE InpTrailingMode=UNI_MANAGEMENT_DISABLED; // Modo do trailing stop
-input double InpTrailingTrigger=0.0;  // Ativacao: maior que zero quando habilitado
-input double InpTrailingDistance=0.0; // Distancia do preco: maior que zero quando habilitado
-input double InpTrailingStep=0.0;     // Passo de ajuste: maior que zero quando habilitado
-
-input group "Stop movel"
-input ENUM_UNI_MANAGEMENT_MODE InpMovingStopMode=UNI_MANAGEMENT_DISABLED; // Modo do stop movel
-input double InpMovingStopTrigger=0.0;  // Ativacao: maior que zero quando habilitado
-input double InpMovingStopDistance=0.0; // Distancia do preco: maior que zero quando habilitado
-input double InpMovingStopStep=0.0;     // Passo de ajuste: maior que zero quando habilitado
-
-input group "Diagnostico"
-input ENUM_UNI_YES_NO DebugGUI=UNI_YES; // Habilitar mensagens de diagnostico da interface
 CGuiApp gui;
 // Instancia da classe responsavel pela logica do Expert Advisor.
 MyUnEA ea;
