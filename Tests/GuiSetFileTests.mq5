@@ -14,7 +14,7 @@ void OnStart()
    original.setup.timeframe=PERIOD_H4; original.setup.lot=0.25;
    original.setup.entry_start=540; original.setup.entry_end=1020;
    original.setup.close_enabled=true; original.setup.close_time=1050;
-   original.indicators[0].type=GUI_INDICATOR_ADX; original.indicators[0].adxPeriod=27;
+   original.indicators[0].type=GUI_INDICATOR_ADX; original.indicators[0].adxPeriod=27; original.indicators[0].adxMinimum=22.5;
    original.indicators[3].type=GUI_INDICATOR_RSI; original.indicators[3].rsiLower=22.5;
    original.rules.stop_loss=123; original.rules.take_profit=456;
    original.rules.Choose(4,1); original.rules.stop_loss=1.5; original.rules.take_profit=2.5;
@@ -24,7 +24,7 @@ void OnStart()
    Check(GuiLoadSet(path,loaded,error,root),"Carregar joao: "+error);
    Check(loaded.setup.name=="joao" && loaded.setup.magic==1234567 && loaded.setup.set_id==original.setup.set_id,"Restaurar identidade e Magic exatos");
    Check(loaded.setup.lot==0.25 && loaded.setup.timeframe==PERIOD_H4 && loaded.setup.entry_start==540 && loaded.setup.close_time==1050,"Restaurar setup");
-   Check(loaded.indicators[0].adxPeriod==27 && loaded.indicators[3].rsiLower==22.5,"Restaurar quatro indicadores");
+   Check(loaded.indicators[0].adxPeriod==27 && loaded.indicators[0].adxMinimum==22.5 && loaded.indicators[3].rsiLower==22.5,"Restaurar quatro indicadores e limiar ADX");
    Check(loaded.rules.stop_loss==1.5 && loaded.management.values[0]==2 && loaded.management.Unit(0)=="%","Restaurar regras e gestão em percentual");
    loaded.rules.Choose(4,0); loaded.management.Choose(0,1);
    Check(loaded.rules.stop_loss==123 && loaded.rules.take_profit==456 && loaded.management.values[0]==100 && loaded.management.values[1]==20,"Preservar bancos de valores em pontos");
@@ -59,6 +59,58 @@ void OnStart()
    Check(file!=INVALID_HANDLE && !GuiLoadSet(path,loaded,error,root),"Registro ocupado impede carregar sem substituir Magic");
    if(file!=INVALID_HANDLE) FileClose(file);
    Check(GuiLoadSet(path,loaded,error,root),"Carregar após liberar registro");
+   // Migracao do formato antigo: campos existentes permanecem, limiar recebe 25.
+   GuiSetRecord current_record,migrated;
+   GuiEncodeSet(original,current_record,error);
+   GuiSetRecordV1 legacy;
+   ZeroMemory(legacy); legacy.signature=current_record.signature; legacy.version=1;
+   for(int i=0;i<49;i++) legacy.name[i]=current_record.name[i];
+   for(int i=0;i<33;i++) legacy.identity[i]=current_record.identity[i];
+   legacy.magic=current_record.magic;
+   legacy.market=current_record.market;
+   legacy.timeframe=current_record.timeframe;
+   legacy.direction=current_record.direction;
+   legacy.trade_mode=current_record.trade_mode;
+   legacy.lot=current_record.lot;
+   legacy.entry_start=current_record.entry_start;
+   legacy.entry_end=current_record.entry_end;
+   legacy.close_enabled=current_record.close_enabled;
+   legacy.close_time=current_record.close_time;
+   legacy.rules=current_record.rules;
+   legacy.management=current_record.management;
+   for(int i=0;i<4;i++)
+     {
+      legacy.indicators[i].type=current_record.indicators[i].type;
+      legacy.indicators[i].maPeriod=current_record.indicators[i].maPeriod;
+      legacy.indicators[i].maMethod=current_record.indicators[i].maMethod;
+      legacy.indicators[i].maPrice=current_record.indicators[i].maPrice;
+      legacy.indicators[i].maShift=current_record.indicators[i].maShift;
+      legacy.indicators[i].rsiPeriod=current_record.indicators[i].rsiPeriod;
+      legacy.indicators[i].adxPeriod=current_record.indicators[i].adxPeriod;
+      legacy.indicators[i].rsiPrice=current_record.indicators[i].rsiPrice;
+      legacy.indicators[i].rsiLower=current_record.indicators[i].rsiLower;
+      legacy.indicators[i].rsiUpper=current_record.indicators[i].rsiUpper;
+     }
+   CGuiState migrated_state;
+   Check(GuiUpgradeSetV1(legacy,migrated) && GuiDecodeSet(migrated,migrated_state,error) &&
+         migrated_state.indicators[0].adxMinimum==25 && migrated_state.indicators[0].adxPeriod==27 &&
+         migrated_state.setup.magic==original.setup.magic,"Migrar v1 preservando configuracao");
+   // Exercer tambem leitura binaria e checksum do formato v1.
+   string legacy_path=root+"\\legacy.set";
+   int legacy_file=FileOpen(legacy_path,FILE_READ|FILE_WRITE|FILE_BIN|FILE_COMMON);
+   bool legacy_ok=false;
+   if(legacy_file!=INVALID_HANDLE)
+     {
+      uint checksum=0;
+      legacy_ok=FileWriteStruct(legacy_file,legacy)==sizeof(GuiSetRecordV1) &&
+                GuiSetChecksum(legacy_file,checksum,sizeof(GuiSetRecordV1)) &&
+                FileSeek(legacy_file,sizeof(GuiSetRecordV1),SEEK_SET) &&
+                FileWriteInteger(legacy_file,(int)checksum)==4;
+      FileClose(legacy_file);
+     }
+   Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) &&
+         migrated.version==2 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
+   FileDelete(legacy_path,FILE_COMMON);
    FileDelete(path,FILE_COMMON); FileDelete(corrupt,FILE_COMMON);
    FileDelete(root+"\\owners\\1234567.txt",FILE_COMMON);
    FileDelete(root+"\\magic-v1.bin",FILE_COMMON); FileDelete(root+"\\sets.lock",FILE_COMMON);

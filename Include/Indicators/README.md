@@ -93,7 +93,7 @@ acima da media da vela 1, e venda quando esta abaixo. Igualdade e neutra.
 Nao exige cruzamento nem inclinacao; a vela atual nao entra na comparacao.
 MyUnEA.checkBuy/checkSell exigem confirmacao de todos os indicadores ativos
 e respeitam a direcao permitida no setup. Sem indicadores, nao ha sinal.
-ADX e tipos futuros permanecem sem confirmacao ate terem regras proprias.
+Tipos futuros permanecem sem confirmacao ate terem regras proprias.
 OnTick avalia uma vez por nova barra e apenas registra sinais no log.
 Horarios, posicionamento e envio de ordens ainda nao fazem parte dessa decisao.
 Tests/IndicatorSignalTests.mq5 verifica a regra da media com valores simulados.
@@ -107,3 +107,12 @@ da sobrevenda/sobrecompra pode confirmar o respectivo cruzamento.
 A Canvas identifica Sobrevenda/Sobrecompra e mostra a regra no resumo.
 A integracao das edicoes da GUI com a classe continua pendente.
 Tests/RsiSignalTests.mq5 cobre cruzamentos, igualdade e niveis personalizados.
+ADX confirma compra quando +DI[1] > -DI[1] e ADX[1] > minimo; confirma venda
+quando -DI[1] > +DI[1] com a mesma exigencia de forca. Nao exige novo cruzamento.
+DI iguais ou ADX menor/igual ao minimo nao sinalizam. InpAdxMinimum e o campo
+ADX minimo da Canvas sao configuraveis de 0 a 100, padrao 25. Um minimo 20
+substitui 25, sem manter um segundo limite fixo. Periodos, parametros de MA,
+niveis RSI e limiar ADX sao inputs otimizaveis; os padroes sao referencias.
+Sets da GUI agora usam versao 2. Arquivos v1 preservam seus campos e recebem
+ADX minimo 25 na migracao. A ligacao da edicao Canvas a classe segue pendente.
+Tests/AdxSignalTests.mq5 cobre direcao, limiar personalizado e valores invalidos.

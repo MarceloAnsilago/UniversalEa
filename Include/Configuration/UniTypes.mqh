@@ -55,5 +55,6 @@ struct IndicatorConfig
    int adxPeriod;
    ENUM_APPLIED_PRICE rsiPrice;
    double rsiLower,rsiUpper;
+   double adxMinimum; // Forca minima exigida: ADX deve ser estritamente maior.
   };
 #endif

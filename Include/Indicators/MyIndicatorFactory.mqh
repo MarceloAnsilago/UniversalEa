@@ -40,7 +40,7 @@ public:
            }
          case GUI_INDICATOR_ADX:
            {
-            MyADXConfig settings; settings.period=config.adxPeriod;
+            MyADXConfig settings; settings.period=config.adxPeriod; settings.minimum=config.adxMinimum;
             MyADX *indicator=new MyADX(settings);
             if(indicator==NULL) { error="Falha ao alocar ADX."; return NULL; }
             if(indicator.Validate()) return indicator;

@@ -120,6 +120,7 @@ input double InpRsiUpper=70.0; // Sobrecompra: venda ao cruzar para baixo (padr�
 input group "ADX — Parâmetros compartilhados"
 // Todas as selecoes de ADX nos inputs usam este mesmo periodo.
 input int InpAdxPeriod=14; // Período: 1 a 100000
+input double InpAdxMinimum=25.0; // ADX mínimo (0 a 100): exige valor acima; otimizável
 
 CGuiApp gui;
 // Instancia da classe responsavel pela logica do Expert Advisor.
@@ -142,7 +143,7 @@ bool ConfigureInputIndicators()
       config.maPrice=(ENUM_APPLIED_PRICE)prices[i];
       config.rsiPeriod=InpRsiPeriod; config.rsiPrice=(ENUM_APPLIED_PRICE)InpRsiPrice;
       config.rsiLower=InpRsiLower; config.rsiUpper=InpRsiUpper;
-      config.adxPeriod=InpAdxPeriod;
+      config.adxPeriod=InpAdxPeriod; config.adxMinimum=InpAdxMinimum;
       string error;
       if(!ea.ConfigureIndicator(i,config,error))
         { PrintFormat("Indicador %d: %s",i+1,error); return false; }
@@ -228,7 +229,7 @@ void OnTick()
    // Em hedge, os dois lados podem estar abertos simultaneamente.
    //--- 5. Avaliar as regras individuais; todos os indicadores devem confirmar.
    // A Media Movel compara fechamento e media; RSI avalia cruzamentos nas velas 2 e 1.
-   // ADX ainda aguarda sua regra e, quando selecionado, nao confirma sinais.
+   // ADX confirma forca acima do minimo e direcao pelas linhas +DI e -DI.
    // Esta etapa apenas registra o sinal; a execucao de ordens sera implementada depois.
    if(ea.checkBuy()) Print("Sinal de compra: todos os indicadores ativos confirmaram.");
    else if(ea.checkSell()) Print("Sinal de venda: todos os indicadores ativos confirmaram.");

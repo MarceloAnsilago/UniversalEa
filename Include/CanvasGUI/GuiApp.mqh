@@ -143,7 +143,13 @@ private:
          m_renderer.Icon(GUI_ICON_INDICATOR,x,r.y+63,GUI_ACCENT,16);
          m_renderer.Text(x+22,r.y+63,GuiIndicatorName(c.type),GUI_TEXT,13,true,cw-38);
          m_renderer.Text(x,r.y+84,"Período: "+IntegerToString(ma ? c.maPeriod : (c.type==GUI_INDICATOR_ADX ? c.adxPeriod : c.rsiPeriod)),GUI_TEXT,12,false,cw-16);
-         if(c.type==GUI_INDICATOR_ADX) continue;
+         if(c.type==GUI_INDICATOR_ADX)
+           {
+            m_renderer.Text(x,r.y+102,"ADX > "+DoubleToString(c.adxMinimum,2),GUI_MUTED,12,false,cw-16);
+            m_renderer.Text(x,r.y+120,"Compra: +DI > -DI",GUI_MUTED,12,false,cw-16);
+            m_renderer.Text(x,r.y+138,"Venda: -DI > +DI",GUI_MUTED,12,false,cw-16);
+            continue;
+           }
          m_renderer.Text(x,r.y+102,"Preço: "+GuiPriceName((int)(ma ? c.maPrice : c.rsiPrice)-1),GUI_MUTED,12,false,cw-16);
          m_renderer.Text(x,r.y+120,ma ? "Método: "+GuiMethodName((int)c.maMethod) : "Compra ↑ "+DoubleToString(c.rsiLower,2),GUI_MUTED,12,false,cw-16);
          m_renderer.Text(x,r.y+138,ma ? "Shift: "+IntegerToString(c.maShift) : "Venda ↓ "+DoubleToString(c.rsiUpper,2),GUI_MUTED,12,false,cw-16);
@@ -214,7 +220,7 @@ private:
      {
       if(index<0 || index>=20 || index/5!=m_active_indicator) return false;
       ENUM_GUI_INDICATOR_TYPE type=m_state.indicators[m_active_indicator].type;
-      return index%5==0 || (type!=GUI_INDICATOR_NONE && (type!=GUI_INDICATOR_ADX || index%5==1));
+      return index%5==0 || (type!=GUI_INDICATOR_NONE && (type!=GUI_INDICATOR_ADX || index%5<=2));
      }
    bool FocusAvailable(const int id)
      { return id>=0 && id<=12 && (id<4 || id>8 || FieldVisible(m_active_indicator*5+id-4)); }
@@ -359,6 +365,11 @@ private:
      {
       BindField(card,0,GUI_TYPE,"Indicador","Não usar|Média Móvel|RSI|ADX");
       BindField(card,1,GUI_PERIOD,"Período");
+      if(m_state.indicators[card].type==GUI_INDICATOR_ADX)
+        {
+         BindField(card,2,GUI_ADX_MINIMUM,"ADX mínimo");
+         m_card_dirty[0]=true; m_card_dirty[1]=true; m_dirty=true; return;
+        }
       if(m_state.indicators[card].type==GUI_INDICATOR_MA)
         {
          BindField(card,2,GUI_METHOD,"Método","SMA|EMA|SMMA|LWMA");

@@ -49,9 +49,9 @@ void OnStart()
    MyRSIConfig rsi_config;
    rsi_config.period=14; rsi_config.price=PRICE_CLOSE; rsi_config.lower=30; rsi_config.upper=70;
    MyRSI rsi(rsi_config);
-   MyADXConfig adx_config; adx_config.period=14;
+   MyADXConfig adx_config; adx_config.period=14; adx_config.minimum=25;
    MyADX adx(adx_config);
    Check(!rsi.CheckBuy(rates,values) && !rsi.CheckSell(rates,values),"RSI exige valor da barra 2");
-   Check(!adx.CheckBuy(rates,values) && !adx.CheckSell(rates,values),"ADX aguarda regra especifica");
+   Check(!adx.CheckBuy(rates,values) && !adx.CheckSell(rates,values),"ADX exige os tres buffers");
    PrintFormat("IndicatorSignalTests: %d falhas",failures);
   }

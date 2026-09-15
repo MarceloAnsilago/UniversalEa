@@ -7,6 +7,10 @@ void Check(const bool condition,const string label)
 void OnStart()
   {
    CGuiState state; state.Reset(); string error;
+   Check(state.indicators[0].adxMinimum==25,"ADX minimo padrao");
+   Check(state.Commit(0,GUI_ADX_MINIMUM,"20,5",error) && state.indicators[0].adxMinimum==20.5,"Editar ADX minimo decimal");
+   Check(!state.Commit(0,GUI_ADX_MINIMUM,"101",error) && state.indicators[0].adxMinimum==20.5,"Rejeitar ADX minimo fora da escala");
+   state.Reset();
    // A selecao interativa permite repetir apenas MA; rejeicoes preservam o estado.
    Check(state.TryChoose(0,GUI_TYPE,GUI_INDICATOR_RSI+1,error),"Selecionar primeiro RSI");
    Check(!state.TryChoose(1,GUI_TYPE,GUI_INDICATOR_RSI+1,error) &&

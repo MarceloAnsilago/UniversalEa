@@ -16,10 +16,71 @@ struct GuiSetRecord
    GuiManagementStorage management;
   };
 
+// Formato binario original, preservado para migrar os sets da versao 1.
+struct GuiIndicatorConfigV1
+  {
+   ENUM_GUI_INDICATOR_TYPE type;
+   int maPeriod;
+   ENUM_MA_METHOD maMethod;
+   ENUM_APPLIED_PRICE maPrice;
+   int maShift;
+   int rsiPeriod;
+   int adxPeriod;
+   ENUM_APPLIED_PRICE rsiPrice;
+   double rsiLower,rsiUpper;
+  };
+struct GuiSetRecordV1
+  {
+   uint signature,version;
+   ushort name[49],identity[33];
+   long magic;
+   int market,timeframe,direction,trade_mode;
+   double lot;
+   int entry_start,entry_end,close_enabled,close_time;
+   GuiIndicatorConfigV1 indicators[4];
+   GuiRulesStorage rules;
+   GuiManagementStorage management;
+  };
+
+bool GuiUpgradeSetV1(const GuiSetRecordV1 &old,GuiSetRecord &data)
+  {
+   if(old.signature!=0x554E4953 || old.version!=1) return false;
+   ZeroMemory(data); data.signature=old.signature; data.version=2;
+   for(int i=0;i<49;i++) data.name[i]=old.name[i];
+   for(int i=0;i<33;i++) data.identity[i]=old.identity[i];
+   data.magic=old.magic;
+   data.market=old.market;
+   data.timeframe=old.timeframe;
+   data.direction=old.direction;
+   data.trade_mode=old.trade_mode;
+   data.lot=old.lot;
+   data.entry_start=old.entry_start;
+   data.entry_end=old.entry_end;
+   data.close_enabled=old.close_enabled;
+   data.close_time=old.close_time;
+   data.rules=old.rules;
+   data.management=old.management;
+   for(int i=0;i<4;i++)
+     {
+      data.indicators[i].type=old.indicators[i].type;
+      data.indicators[i].maPeriod=old.indicators[i].maPeriod;
+      data.indicators[i].maMethod=old.indicators[i].maMethod;
+      data.indicators[i].maPrice=old.indicators[i].maPrice;
+      data.indicators[i].maShift=old.indicators[i].maShift;
+      data.indicators[i].rsiPeriod=old.indicators[i].rsiPeriod;
+      data.indicators[i].adxPeriod=old.indicators[i].adxPeriod;
+      data.indicators[i].rsiPrice=old.indicators[i].rsiPrice;
+      data.indicators[i].rsiLower=old.indicators[i].rsiLower;
+      data.indicators[i].rsiUpper=old.indicators[i].rsiUpper;
+      data.indicators[i].adxMinimum=25.0; // Padrao para arquivos anteriores ao novo campo.
+     }
+   return true;
+  }
+
 bool GuiDecodeSet(const GuiSetRecord &data,CGuiState &state,string &error)
   {
    error="Arquivo de set inválido ou de versão incompatível.";
-   if(data.signature!=0x554E4953 || data.version!=1 || data.name[48]!=0 || data.identity[32]!=0) return false;
+   if(data.signature!=0x554E4953 || data.version!=2 || data.name[48]!=0 || data.identity[32]!=0) return false;
    string name=ShortArrayToString(data.name),id=ShortArrayToString(data.identity);
    if(!GuiValidSetId(id,data.magic) || (data.close_enabled!=0 && data.close_enabled!=1)) return false;
    CGuiState candidate; candidate.Reset();
@@ -40,7 +101,8 @@ bool GuiDecodeSet(const GuiSetRecord &data,CGuiState &state,string &error)
          c.maPeriod<1 || c.maPeriod>100000 || c.rsiPeriod<1 || c.rsiPeriod>100000 || c.adxPeriod<1 || c.adxPeriod>100000 ||
          c.maMethod<MODE_SMA || c.maMethod>MODE_LWMA || c.maPrice<PRICE_CLOSE || c.maPrice>PRICE_WEIGHTED ||
          c.rsiPrice<PRICE_CLOSE || c.rsiPrice>PRICE_WEIGHTED || c.maShift< -100000 || c.maShift>100000 ||
-         !MathIsValidNumber(c.rsiLower) || !MathIsValidNumber(c.rsiUpper) || c.rsiLower<0 || c.rsiUpper>100 || c.rsiLower>=c.rsiUpper)
+         !MathIsValidNumber(c.rsiLower) || !MathIsValidNumber(c.rsiUpper) || c.rsiLower<0 || c.rsiUpper>100 || c.rsiLower>=c.rsiUpper ||
+         !MathIsValidNumber(c.adxMinimum) || c.adxMinimum<0 || c.adxMinimum>100)
         { error="Parâmetros de indicador inválidos no set."; return false; }
       candidate.indicators[i]=c;
      }
@@ -52,7 +114,7 @@ bool GuiEncodeSet(CGuiState &state,GuiSetRecord &data,string &error)
   {
    if(StringLen(state.setup.name)>48) { error="Nome do set deve ter no máximo 48 caracteres."; return false; }
    if(!GuiValidSetId(state.setup.set_id,state.setup.magic)) { error="O set ainda não possui identificação válida."; return false; }
-   ZeroMemory(data); data.signature=0x554E4953; data.version=1;
+   ZeroMemory(data); data.signature=0x554E4953; data.version=2;
    StringToShortArray(state.setup.name,data.name,0,49); StringToShortArray(state.setup.set_id,data.identity,0,33);
    data.magic=state.setup.magic; data.market=state.setup.market; data.timeframe=(int)state.setup.timeframe;
    data.direction=state.setup.direction; data.trade_mode=state.setup.trade_mode; data.lot=state.setup.lot;
@@ -63,10 +125,11 @@ bool GuiEncodeSet(CGuiState &state,GuiSetRecord &data,string &error)
    CGuiState check; return GuiDecodeSet(data,check,error);
   }
 
-bool GuiSetChecksum(const int file,uint &checksum)
+bool GuiSetChecksum(const int file,uint &checksum,const int record_size=0)
   {
+   int size=record_size>0 ? record_size : sizeof(GuiSetRecord);
    uchar bytes[];
-   if(!FileSeek(file,0,SEEK_SET) || FileReadArray(file,bytes,0,sizeof(GuiSetRecord))!=sizeof(GuiSetRecord)) return false;
+   if(!FileSeek(file,0,SEEK_SET) || FileReadArray(file,bytes,0,size)!=size) return false;
    checksum=2166136261;
    for(int i=0;i<ArraySize(bytes);i++) checksum=(checksum^bytes[i])*16777619;
    return true;
@@ -78,9 +141,17 @@ bool GuiReadSetRecord(const string path,GuiSetRecord &data,string &error)
    int file=FileOpen(path,FILE_READ|FILE_BIN|FILE_COMMON);
    if(file==INVALID_HANDLE) return false;
    ResetLastError();
-   bool ok=FileSize(file)==sizeof(GuiSetRecord)+4 && FileReadStruct(file,data)==sizeof(GuiSetRecord);
+   bool legacy=FileSize(file)==sizeof(GuiSetRecordV1)+4;
+   int record_size=legacy ? sizeof(GuiSetRecordV1) : sizeof(GuiSetRecord);
+   bool ok=false;
+   if(legacy)
+     {
+      GuiSetRecordV1 previous;
+      ok=FileReadStruct(file,previous)==sizeof(GuiSetRecordV1) && GuiUpgradeSetV1(previous,data);
+     }
+   else ok=FileSize(file)==sizeof(GuiSetRecord)+4 && FileReadStruct(file,data)==sizeof(GuiSetRecord);
    uint expected=(uint)FileReadInteger(file),actual=0;
-   ok=ok && GuiSetChecksum(file,actual) && actual==expected && GetLastError()==0;
+   ok=ok && GuiSetChecksum(file,actual,record_size) && actual==expected && GetLastError()==0;
    FileClose(file);
    if(ok) error="";
    return ok;
