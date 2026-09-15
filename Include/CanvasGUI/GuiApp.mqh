@@ -32,13 +32,13 @@ private:
    bool m_rules_focus;
    void PositionIndicators()
      {
-      m_layout.StackIndicators(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE);
+      m_layout.StackIndicators(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE,0,m_state.indicators[m_active_indicator].type==GUI_INDICATOR_MA);
       m_scroll.Configure(m_layout.width-20,m_layout.height,m_layout.status.y+m_layout.status.h);
-      m_layout.StackIndicators(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE,m_scroll.offset);
-      for(int i=0;i<20;i++)
+      m_layout.StackIndicators(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE,m_scroll.offset,m_state.indicators[m_active_indicator].type==GUI_INDICATOR_MA);
+      for(int i=0;i<24;i++)
         {
          GuiRect r;
-         if(i%5==0) m_layout.IndicatorBounds(i/5,r); else m_layout.ParameterBounds(i/5,i%5-1,r);
+         if(i%6==0) m_layout.IndicatorBounds(i/6,r); else m_layout.ParameterBounds(i/6,i%6-1,r);
          m_fields[i].label.SetBounds(r.x,r.y-22,r.w,18);
          m_fields[i].edit.SetBounds(r.x,r.y,r.w,r.h);
          m_fields[i].select.SetBounds(r.x,r.y,r.w,r.h);
@@ -57,10 +57,10 @@ private:
       GuiRect r;
       if(m_rules_focus) { if(!m_rules.FocusBounds(r)) return; }
       else if(m_focus>=0 && m_focus<4) r=m_slots[m_focus].bounds;
-      else if(m_focus>=4 && m_focus<=8) r=m_fields[m_active_indicator*5+m_focus-4].edit.bounds;
-      else if(m_focus==9) r=m_apply.bounds;
-      else if(m_focus==11) r=m_back.bounds;
-      else if(m_focus==12) r=m_next.bounds;
+      else if(m_focus>=4 && m_focus<=9) r=m_fields[m_active_indicator*6+m_focus-4].edit.bounds;
+      else if(m_focus==10) r=m_apply.bounds;
+      else if(m_focus==12) r=m_back.bounds;
+      else if(m_focus==13) r=m_next.bounds;
       else return;
       if(r.y<188) ScrollTo(m_scroll.offset+r.y-188);
       else if(r.y+r.h>m_layout.height-16) ScrollTo(m_scroll.offset+r.y+r.h-m_layout.height+16);
@@ -153,6 +153,8 @@ private:
          m_renderer.Text(x,r.y+102,"Preço: "+GuiPriceName((int)(ma ? c.maPrice : c.rsiPrice)-1),GUI_MUTED,12,false,cw-16);
          m_renderer.Text(x,r.y+120,ma ? "Método: "+GuiMethodName((int)c.maMethod) : "Compra ↑ "+DoubleToString(c.rsiLower,2),GUI_MUTED,12,false,cw-16);
          m_renderer.Text(x,r.y+138,ma ? "Shift: "+IntegerToString(c.maShift) : "Venda ↓ "+DoubleToString(c.rsiUpper,2),GUI_MUTED,12,false,cw-16);
+         if(c.type==GUI_INDICATOR_MA)
+            m_renderer.Text(x,r.y+156,"Inclinação: "+IntegerToString(c.maSlopeBars)+" velas",GUI_MUTED,11,false,cw-16);
          if(c.type==GUI_INDICATOR_RSI)
             m_renderer.Text(x,r.y+156,"Cruzamento no fechamento",GUI_MUTED,11,false,cw-16);
         }
@@ -218,26 +220,26 @@ private:
      }
    bool FieldVisible(const int index)
      {
-      if(index<0 || index>=20 || index/5!=m_active_indicator) return false;
+      if(index<0 || index>=24 || index/6!=m_active_indicator) return false;
       ENUM_GUI_INDICATOR_TYPE type=m_state.indicators[m_active_indicator].type;
-      return index%5==0 || (type!=GUI_INDICATOR_NONE && (type!=GUI_INDICATOR_ADX || index%5<=2));
+      return index%6==0 || (type==GUI_INDICATOR_MA || (type==GUI_INDICATOR_RSI && index%6<=4) || (type==GUI_INDICATOR_ADX && index%6<=2));
      }
    bool FocusAvailable(const int id)
-     { return id>=0 && id<=12 && (id<4 || id>8 || FieldVisible(m_active_indicator*5+id-4)); }
+     { return id>=0 && id<=13 && (id<4 || id>9 || FieldVisible(m_active_indicator*6+id-4)); }
    void SetFocus(const int id)
      {
       m_focus=id;
       for(int i=0;i<4;i++) { m_slots[i].focused=id==i; m_slots[i].dirty=true; }
-      for(int i=0;i<20;i++)
+      for(int i=0;i<24;i++)
         {
-         bool focused=i/5==m_active_indicator && id==4+i%5;
+         bool focused=i/6==m_active_indicator && id==4+i%6;
          m_fields[i].select.focused=focused; m_fields[i].select.dirty=true;
          m_fields[i].edit.focused=focused; m_fields[i].edit.dirty=true;
         }
-      m_apply.focused=id==9; m_apply.dirty=true;
-      m_toggle.focused=id==10; m_toggle.dirty=true;
-      m_back.focused=id==11; m_back.dirty=true;
-      m_next.focused=id==12; m_next.dirty=true;
+      m_apply.focused=id==10; m_apply.dirty=true;
+      m_toggle.focused=id==11; m_toggle.dirty=true;
+      m_back.focused=id==12; m_back.dirty=true;
+      m_next.focused=id==13; m_next.dirty=true;
       m_card_dirty[0]=true; m_card_dirty[1]=true; m_dirty=true;
      }
    void TabFocus(const bool backward)
@@ -249,20 +251,20 @@ private:
          if(option>=0) SelectOption(option); else CloseSelect();
         }
       int previous=m_focus,id=m_focus;
-      if(id<0) id=backward ? 0 : 12;
-      for(int i=0;i<13;i++)
+      if(id<0) id=backward ? 0 : 13;
+      for(int i=0;i<14;i++)
         {
-         id=(id+(backward ? 12 : 1))%13;
+         id=(id+(backward ? 13 : 1))%14;
          if(FocusAvailable(id)) break;
         }
       SetFocus(id);
-      if((!backward && id==9) || (backward && previous==9))
+      if((!backward && id==10) || (backward && previous==10))
         {
          SetFocus(-1); m_rules_focus=true; m_rules.EnterFocus(backward); return;
         }
-      if(id>=4 && id<=8)
+      if(id>=4 && id<=9)
         {
-         int field=m_active_indicator*5+id-4;
+         int field=m_active_indicator*6+id-4;
          if(!m_fields[field].is_select)
            { m_edit=field; m_fields[field].edit.Begin(); }
         }
@@ -271,11 +273,11 @@ private:
      {
       GuiRect r;
       if(m_focus>=0 && m_focus<4) r=m_slots[m_focus].bounds;
-      else if(m_focus>=4 && m_focus<=8) r=m_fields[m_active_indicator*5+m_focus-4].select.bounds;
-      else if(m_focus==9) r=m_apply.bounds;
-      else if(m_focus==10) r=m_toggle.bounds;
-      else if(m_focus==11) r=m_back.bounds;
-      else if(m_focus==12) r=m_next.bounds;
+      else if(m_focus>=4 && m_focus<=9) r=m_fields[m_active_indicator*6+m_focus-4].select.bounds;
+      else if(m_focus==10) r=m_apply.bounds;
+      else if(m_focus==11) r=m_toggle.bounds;
+      else if(m_focus==12) r=m_back.bounds;
+      else if(m_focus==13) r=m_next.bounds;
       else return;
       Click(r.x+r.w/2,r.y+r.h/2);
      }
@@ -284,13 +286,13 @@ private:
       if(m_active_indicator==indicator) return;
       m_active_indicator=indicator;
       if(m_step==1) PositionIndicators();
-      for(int i=0;i<20;i++) m_fields[i].Hover(false);
+      for(int i=0;i<24;i++) m_fields[i].Hover(false);
       m_card_dirty[0]=true; m_card_dirty[1]=true; m_dirty=true;
      }
    CGuiRenderer m_renderer;
    CGuiLayout m_layout;
    CGuiState m_state;
-   CGuiField m_fields[20];
+   CGuiField m_fields[24];
    CGuiButton m_apply;
    CGuiButton m_toggle;
    bool m_collapsed;
@@ -310,7 +312,7 @@ private:
       m_toggle.hover=false; m_toggle.active=false;
       m_apply.hover=false; m_apply.active=false; m_apply.dirty=true;
       m_next.hover=false; m_next.active=false; m_next.dirty=true;
-      for(int i=0;i<20;i++) m_fields[i].Hover(false);
+      for(int i=0;i<24;i++) m_fields[i].Hover(false);
       if(collapse)
         { m_toggle.caption="EXIBIR INTERFACE"; m_toggle.SetBounds(0,0,176,40); }
       else
@@ -319,11 +321,11 @@ private:
          if(m_step==1) PositionIndicators();
          m_setup.Place(m_layout); m_rules.PlaceEmbedded(m_layout); m_management.Place(m_layout);
          // Reposition without rebinding: preserve even the current edit buffer.
-         for(int i=0;i<20;i++)
+         for(int i=0;i<24;i++)
            {
             GuiRect r;
-            if(i%5==0) m_layout.IndicatorBounds(i/5,r);
-            else m_layout.ParameterBounds(i/5,i%5-1,r);
+            if(i%6==0) m_layout.IndicatorBounds(i/6,r);
+            else m_layout.ParameterBounds(i/6,i%6-1,r);
             m_fields[i].label.SetBounds(r.x,r.y-22,r.w,18);
             m_fields[i].edit.SetBounds(r.x,r.y,r.w,r.h);
             m_fields[i].select.SetBounds(r.x,r.y,r.w,r.h);
@@ -358,8 +360,8 @@ private:
      {
       GuiRect r;
       if(slot==0) m_layout.IndicatorBounds(card,r); else m_layout.ParameterBounds(card,slot-1,r);
-      m_fields[card*5+slot].Bind(m_state,card,key,title,r,options);
-      m_fields[card*5+slot].select.indicator_icons=(key==GUI_TYPE);
+      m_fields[card*6+slot].Bind(m_state,card,key,title,r,options);
+      m_fields[card*6+slot].select.indicator_icons=(key==GUI_TYPE);
      }
    void BuildIndicator(const int card)
      {
@@ -375,6 +377,7 @@ private:
          BindField(card,2,GUI_METHOD,"Método","SMA|EMA|SMMA|LWMA");
          BindField(card,3,GUI_PRICE,"Preço aplicado","Close|Open|High|Low|Median|Typical|Weighted");
          BindField(card,4,GUI_SHIFT,"Shift");
+         BindField(card,5,GUI_MA_SLOPE_BARS,"Velas de inclinação");
         }
       else
         {
@@ -427,13 +430,13 @@ private:
          PositionIndicators(); BuildIndicator(card);
          Log(StringFormat("Indicator%d alterado para %s",card+1,GuiIndicatorName(m_state.indicators[card].type)));
         }
-      SetFocus(4+i%5);
+      SetFocus(4+i%6);
       if(changed) { m_summary_dirty=true; m_summary_draft=true; }
       if(changed) Status("Configuração alterada. Salve para registrar.");
      }
    void Click(const int x,const int y)
      {
-      if(m_toggle.ContainsPoint(x,y)) { SetFocus(10); ToggleInterface(); return; }
+      if(m_toggle.ContainsPoint(x,y)) { SetFocus(11); ToggleInterface(); return; }
       if(m_collapsed) return;
       if(m_step>0 && m_layout.too_small && m_back.ContainsPoint(x,y)) { ChangeStep(m_step==3 ? 1 : 0); return; }
       if(m_layout.too_small) return;
@@ -486,12 +489,12 @@ private:
             return;
            }
       int hit=-1;
-      for(int i=0;i<20;i++) if(FieldVisible(i) && m_fields[i].ContainsPoint(x,y)) { hit=i; break; }
+      for(int i=0;i<24;i++) if(FieldVisible(i) && m_fields[i].ContainsPoint(x,y)) { hit=i; break; }
       if(hit==m_edit && m_edit>=0) return;
       if(!FinishEdit(true)) return;
       if(hit>=0)
         {
-         SetFocus(4+hit%5);
+         SetFocus(4+hit%6);
          if(m_fields[hit].field==GUI_TYPE) ActivateIndicator(m_fields[hit].card);
          if(m_fields[hit].is_select)
            { m_fields[hit].select.Open(m_layout.height,160); m_open=m_fields[hit].select.active ? hit : -1; Log("Select aberto"); }
@@ -502,7 +505,7 @@ private:
       else if(m_apply.ContainsPoint(x,y))
         {
          if(!m_rules.Ready()) { m_dirty=true; return; }
-         SetFocus(9);
+         SetFocus(10);
          m_state.setup=m_setup.state; m_state.rules=m_rules.state; m_state.management=m_management.state;
          if(!m_state.Apply()) { Status("Não foi possível guardar a aplicação.",true); return; }
          m_first_application=(int)MathMax(0,ArraySize(m_state.applications)-1);
@@ -514,7 +517,7 @@ private:
      {
       if(action==4) { ChangeStep(3); return; }
       if(action==2) { ChangeStep(1); return; }
-      if(action==3) { m_focus=10; m_toggle.focused=true; m_toggle.dirty=true; return; }
+      if(action==3) { m_focus=11; m_toggle.focused=true; m_toggle.dirty=true; return; }
       if(action!=1) return;
       m_state.setup=m_setup.state; m_state.rules=m_rules.state; m_state.management=m_management.state;
       bool saved=m_state.Apply(); m_rules.Saved(saved);
@@ -528,7 +531,7 @@ private:
    void ManagementAction(const int action)
      {
       if(action==2) { ChangeStep(1); return; }
-      if(action==3) { m_focus=10; m_toggle.focused=true; m_toggle.dirty=true; return; }
+      if(action==3) { m_focus=11; m_toggle.focused=true; m_toggle.dirty=true; return; }
       if(action!=1) return;
       m_state.setup=m_setup.state; m_state.rules=m_rules.state; m_state.management=m_management.state;
       bool saved=m_state.Apply(); m_management.Saved(saved);
@@ -566,7 +569,7 @@ private:
         {
          m_rules.Mouse(-1,-1,"0");
          if(m_rules.Dirty()) m_dirty=true;
-         for(int i=0;i<20;i++) if(m_fields[i].Hover(false)) m_dirty=true;
+         for(int i=0;i<24;i++) if(m_fields[i].Hover(false)) m_dirty=true;
          for(int i=0;i<4;i++) if(m_slots[i].SetHover(false)) { m_card_dirty[0]=true; m_dirty=true; }
          if(m_apply.SetHover(false) || m_next.SetHover(false) || m_back.SetHover(false)) m_dirty=true;
          return;
@@ -583,7 +586,7 @@ private:
       for(int slot=0;slot<4;slot++)
          if(m_slots[slot].SetHover(!overlay && m_slots[slot].ContainsPoint(x,y)))
            { m_card_dirty[0]=true; m_dirty=true; }
-      for(int i=0;i<20;i++) if(m_fields[i].Hover(FieldVisible(i) && !overlay && m_fields[i].ContainsPoint(x,y))) m_dirty=true;
+      for(int i=0;i<24;i++) if(m_fields[i].Hover(FieldVisible(i) && !overlay && m_fields[i].ContainsPoint(x,y))) m_dirty=true;
       if(m_apply.SetHover(!overlay && m_apply.ContainsPoint(x,y))) m_dirty=true;
       bool down=((StringToInteger(flags)&1)!=0 && m_apply.hover && m_open<0);
       if(down!=m_apply.active) { m_apply.active=down; m_apply.dirty=true; m_dirty=true; }
@@ -600,7 +603,7 @@ private:
       if(m_layout.too_small) { if(m_step>0 && key==27) ChangeStep(m_step==3 ? 1 : 0); return; }
       if(m_step==0)
         {
-         if(m_focus==10)
+         if(m_focus==11)
            {
             if(key==13 || key==32) ToggleInterface();
             else if(key==9)
@@ -613,14 +616,14 @@ private:
            {
             int action=m_setup.Key(key);
             if(action==1 || action==3 || action==4) SetupAction(action);
-            else if(action==2) { m_focus=10; m_toggle.focused=true; m_toggle.dirty=true; }
+            else if(action==2) { m_focus=11; m_toggle.focused=true; m_toggle.dirty=true; }
            }
          if(m_setup.Dirty() || m_toggle.dirty) m_dirty=true;
          return;
         }
       if(m_step==2)
         {
-         if(m_focus==10)
+         if(m_focus==11)
            {
             if(key==13 || key==32) ToggleInterface();
             else if(key==9)
@@ -635,7 +638,7 @@ private:
         }
       if(m_step==3)
         {
-         if(m_focus==10)
+         if(m_focus==11)
            {
             if(key==13 || key==32) ToggleInterface();
             else if(key==9)
@@ -657,7 +660,7 @@ private:
             m_rules_focus=false; m_rules.LeaveFocus();
             if(back)
               { int id=8; while(id>4 && !FocusAvailable(id)) id--; SetFocus(id); }
-            else SetFocus(9);
+            else SetFocus(10);
            }
          if(m_rules.Dirty()) m_dirty=true;
          return;
@@ -682,9 +685,9 @@ private:
          return;
         }
       if(key==13 || key==32) { ActivateFocus(); return; }
-      if(m_focus>=4 && m_focus<=8)
+      if(m_focus>=4 && m_focus<=9)
         {
-         int field=m_active_indicator*5+m_focus-4;
+         int field=m_active_indicator*6+m_focus-4;
          if(m_fields[field].is_select)
            { if(key==38 || key==40) ActivateFocus(); }
          else if((key>=48 && key<=57) || (key>=96 && key<=105) || key==189 || key==109 || key==8 || key==46 || key==190 || key==188 || key==110)
@@ -804,8 +807,8 @@ public:
                   m_renderer.Text(c.x+46,c.y+38,GuiIndicatorName(m_state.indicators[m_active_indicator].type),GUI_ACCENT,14,true,c.w-70);
                  }
               }
-            if(card==0) m_fields[m_active_indicator*5].Draw(m_renderer,all);
-            else if(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE) for(int j=1;j<5;j++) if(FieldVisible(m_active_indicator*5+j)) m_fields[m_active_indicator*5+j].Draw(m_renderer,all);
+            if(card==0) m_fields[m_active_indicator*6].Draw(m_renderer,all);
+            else if(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE) for(int j=1;j<6;j++) if(FieldVisible(m_active_indicator*6+j)) m_fields[m_active_indicator*6+j].Draw(m_renderer,all);
            }
          m_rules.RenderEmbedded(m_renderer,m_full);
          if(m_full || m_apply.dirty) m_apply.Draw(m_renderer);

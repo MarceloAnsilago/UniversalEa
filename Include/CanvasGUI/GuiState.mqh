@@ -7,7 +7,7 @@
 
 string GuiIndicatorName(const ENUM_GUI_INDICATOR_TYPE type)
   { return type==GUI_INDICATOR_MA ? "Média Móvel" : (type==GUI_INDICATOR_RSI ? "RSI" : (type==GUI_INDICATOR_ADX ? "ADX" : "Não usar")); }
-enum ENUM_GUI_FIELD { GUI_TYPE, GUI_PERIOD, GUI_METHOD, GUI_PRICE, GUI_SHIFT, GUI_LOWER, GUI_UPPER, GUI_ADX_MINIMUM };
+enum ENUM_GUI_FIELD { GUI_TYPE, GUI_PERIOD, GUI_METHOD, GUI_PRICE, GUI_SHIFT, GUI_LOWER, GUI_UPPER, GUI_ADX_MINIMUM, GUI_MA_SLOPE_BARS };
 
 struct GuiAppliedConfiguration
   {
@@ -52,7 +52,7 @@ public:
         {
          indicators[i].type=GUI_INDICATOR_NONE;
          indicators[i].maPeriod=20; indicators[i].maMethod=MODE_EMA;
-         indicators[i].maPrice=PRICE_CLOSE; indicators[i].maShift=0;
+         indicators[i].maPrice=PRICE_CLOSE; indicators[i].maShift=0; indicators[i].maSlopeBars=3;
          indicators[i].rsiPeriod=14; indicators[i].rsiPrice=PRICE_CLOSE;
          indicators[i].rsiLower=30; indicators[i].rsiUpper=70;
          indicators[i].adxPeriod=14; indicators[i].adxMinimum=25.0;
@@ -99,6 +99,7 @@ public:
       IndicatorConfig c=indicators[card];
       if(field==GUI_PERIOD) return IntegerToString(c.type==GUI_INDICATOR_MA ? c.maPeriod : (c.type==GUI_INDICATOR_ADX ? c.adxPeriod : c.rsiPeriod));
       if(field==GUI_SHIFT) return IntegerToString(c.maShift);
+      if(field==GUI_MA_SLOPE_BARS) return IntegerToString(c.maSlopeBars);
       if(field==GUI_ADX_MINIMUM) return DoubleToString(c.adxMinimum,2);
       return DoubleToString(field==GUI_LOWER ? c.rsiLower : c.rsiUpper,2);
      }
@@ -107,7 +108,7 @@ public:
      {
       StringReplace(value,",",".");
       int digits=0,dots=0;
-      bool integer=(field==GUI_PERIOD || field==GUI_SHIFT);
+      bool integer=(field==GUI_PERIOD || field==GUI_SHIFT || field==GUI_MA_SLOPE_BARS);
       for(int i=0;i<StringLen(value);i++)
         {
          ushort c=StringGetCharacter(value,i);
@@ -122,6 +123,8 @@ public:
       double v=StringToDouble(value);
       if(field==GUI_PERIOD && (v<1 || v>100000)) { error="Período: 1 a 100000."; return false; }
       if(field==GUI_SHIFT && (v< -100000 || v>100000)) { error="Shift: -100000 a 100000."; return false; }
+      if(field==GUI_MA_SLOPE_BARS && (v<2 || v>100000))
+        { error="Inclinação: 2 a 100000 velas fechadas."; return false; }
       if(field==GUI_ADX_MINIMUM && (!MathIsValidNumber(v) || v<0 || v>100))
         { error="ADX mínimo: 0 a 100."; return false; }
       if(field==GUI_LOWER || field==GUI_UPPER)
@@ -137,6 +140,7 @@ public:
          else indicators[card].rsiPeriod=(int)v;
         }
       else if(field==GUI_SHIFT) indicators[card].maShift=(int)v;
+      else if(field==GUI_MA_SLOPE_BARS) indicators[card].maSlopeBars=(int)v;
       else if(field==GUI_LOWER) indicators[card].rsiLower=v;
       else if(field==GUI_UPPER) indicators[card].rsiUpper=v;
       else if(field==GUI_ADX_MINIMUM) indicators[card].adxMinimum=v;

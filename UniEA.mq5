@@ -88,6 +88,7 @@ input int InpIndicator1MaPeriod=20; // Indicador 1 │ Período: 1 a 100000
 input ENUM_UNI_MA_METHOD InpIndicator1MaMethod=UNI_MA_EMA; // Indicador 1 │ Método de cálculo
 input ENUM_UNI_APPLIED_PRICE InpIndicator1MaPrice=UNI_PRICE_CLOSE; // Indicador 1 │ Preço aplicado
 input int InpIndicator1MaShift=0; // Indicador 1 │ Deslocamento em barras: -100000 a 100000
+input int InpIndicator1MaSlopeBars=3; // Indicador 1 │ Inclinação: 2 a 100000 velas fechadas
 
 // Linha apenas visual; nao participa da configuracao nem da otimizacao.
 sinput string InpSeparatorMa2="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 2 ▪▪▪
@@ -95,6 +96,7 @@ input int InpIndicator2MaPeriod=20; // Indicador 2 │ Período: 1 a 100000
 input ENUM_UNI_MA_METHOD InpIndicator2MaMethod=UNI_MA_EMA; // Indicador 2 │ Método de cálculo
 input ENUM_UNI_APPLIED_PRICE InpIndicator2MaPrice=UNI_PRICE_CLOSE; // Indicador 2 │ Preço aplicado
 input int InpIndicator2MaShift=0; // Indicador 2 │ Deslocamento em barras: -100000 a 100000
+input int InpIndicator2MaSlopeBars=3; // Indicador 2 │ Inclinação: 2 a 100000 velas fechadas
 
 // Linha apenas visual; nao participa da configuracao nem da otimizacao.
 sinput string InpSeparatorMa3="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 3 ▪▪▪
@@ -102,6 +104,7 @@ input int InpIndicator3MaPeriod=20; // Indicador 3 │ Período: 1 a 100000
 input ENUM_UNI_MA_METHOD InpIndicator3MaMethod=UNI_MA_EMA; // Indicador 3 │ Método de cálculo
 input ENUM_UNI_APPLIED_PRICE InpIndicator3MaPrice=UNI_PRICE_CLOSE; // Indicador 3 │ Preço aplicado
 input int InpIndicator3MaShift=0; // Indicador 3 │ Deslocamento em barras: -100000 a 100000
+input int InpIndicator3MaSlopeBars=3; // Indicador 3 │ Inclinação: 2 a 100000 velas fechadas
 
 // Linha apenas visual; nao participa da configuracao nem da otimizacao.
 sinput string InpSeparatorMa4="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 4 ▪▪▪
@@ -109,6 +112,7 @@ input int InpIndicator4MaPeriod=20; // Indicador 4 │ Período: 1 a 100000
 input ENUM_UNI_MA_METHOD InpIndicator4MaMethod=UNI_MA_EMA; // Indicador 4 │ Método de cálculo
 input ENUM_UNI_APPLIED_PRICE InpIndicator4MaPrice=UNI_PRICE_CLOSE; // Indicador 4 │ Preço aplicado
 input int InpIndicator4MaShift=0; // Indicador 4 │ Deslocamento em barras: -100000 a 100000
+input int InpIndicator4MaSlopeBars=3; // Indicador 4 │ Inclinação: 2 a 100000 velas fechadas
 
 input group "RSI — Parâmetros compartilhados"
 // Todas as selecoes de RSI nos inputs usam estes mesmos parametros.
@@ -131,6 +135,7 @@ bool ConfigureInputIndicators()
   {
    ENUM_GUI_INDICATOR_TYPE types[]={InpIndicator1Type,InpIndicator2Type,InpIndicator3Type,InpIndicator4Type};
    int periods[]={InpIndicator1MaPeriod,InpIndicator2MaPeriod,InpIndicator3MaPeriod,InpIndicator4MaPeriod};
+   int slopes[]={InpIndicator1MaSlopeBars,InpIndicator2MaSlopeBars,InpIndicator3MaSlopeBars,InpIndicator4MaSlopeBars};
    int shifts[]={InpIndicator1MaShift,InpIndicator2MaShift,InpIndicator3MaShift,InpIndicator4MaShift};
    ENUM_UNI_MA_METHOD methods[]={InpIndicator1MaMethod,InpIndicator2MaMethod,InpIndicator3MaMethod,InpIndicator4MaMethod};
    ENUM_UNI_APPLIED_PRICE prices[]={InpIndicator1MaPrice,InpIndicator2MaPrice,InpIndicator3MaPrice,InpIndicator4MaPrice};
@@ -138,7 +143,7 @@ bool ConfigureInputIndicators()
      {
       IndicatorConfig config;
       config.type=types[i];
-      config.maPeriod=periods[i]; config.maShift=shifts[i];
+      config.maSlopeBars=slopes[i]; config.maPeriod=periods[i]; config.maShift=shifts[i];
       config.maMethod=(ENUM_MA_METHOD)methods[i];
       config.maPrice=(ENUM_APPLIED_PRICE)prices[i];
       config.rsiPeriod=InpRsiPeriod; config.rsiPrice=(ENUM_APPLIED_PRICE)InpRsiPrice;

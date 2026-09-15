@@ -22,6 +22,7 @@ public:
            {
             MyMAConfig settings;
             settings.period=config.maPeriod; settings.shift=config.maShift;
+            settings.slopeBars=config.maSlopeBars;
             settings.method=config.maMethod; settings.price=config.maPrice;
             MyMA *indicator=new MyMA(settings);
             if(indicator==NULL) { error="Falha ao alocar MA."; return NULL; }

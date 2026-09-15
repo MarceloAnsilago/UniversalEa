@@ -123,7 +123,7 @@ public:
       int x=c.x+24+(pair && (id==6 || id==9) ? field_width+16 : 0);
       r.Set(x,c.y+78+row*76,field_width,42);
      }
-   void StackIndicators(const bool parameters,const int offset=0)
+   void StackIndicators(const bool parameters,const int offset=0,const bool slope=false)
      {
       dense=true;
       int top=160-offset;
@@ -138,6 +138,7 @@ public:
          cards[0].Set(left,top,content_width,196);
          cards[1].Set(left,top+212,content_width,parameters ? 216 : 0);
         }
+      if(parameters && slope) cards[1].h+=76; // Terceira linha para inclinacao da media.
       summary.Set(left,cards[1].y+cards[1].h+16,content_width,180);
       indicator_rules.Set(left,summary.y+summary.h+24,content_width,content_width>=760 ? 384 : 580);
       apply.Set(left+content_width-204,indicator_rules.y+indicator_rules.h+16,204,44);

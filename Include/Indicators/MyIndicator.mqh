@@ -17,6 +17,8 @@ public:
    virtual bool Initialize(const string symbol,const ENUM_TIMEFRAMES timeframe)=0;
    // Informa quantas linhas precisam ser lidas: MA/RSI = 1; ADX = 3.
    int BufferCount() { return m_buffer_count; }
+   // Quantidade de valores por buffer, incluindo a barra atual.
+   virtual int RequiredValues() { return 3; }
    // Regras individuais: rates[0] e a vela atual, rates[1] a ultima fechada.
    // Novos indicadores sobrescrevem estes metodos. Sem regra definida,
    // o tipo nao confirma nenhuma direcao (RSI e ADX por enquanto).

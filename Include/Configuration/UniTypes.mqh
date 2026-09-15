@@ -56,5 +56,6 @@ struct IndicatorConfig
    ENUM_APPLIED_PRICE rsiPrice;
    double rsiLower,rsiUpper;
    double adxMinimum; // Forca minima exigida: ADX deve ser estritamente maior.
+   int maSlopeBars; // Quantidade de velas fechadas para inclinacao consecutiva (minimo 2).
   };
 #endif
