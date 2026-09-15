@@ -2,6 +2,7 @@
 #define MY_UN_EA_MQH
 
 #include "Indicators/MyIndicatorFactory.mqh"
+#include "Configuration/UniPositionState.mqh"
 
 // Classe responsavel pela futura logica do Expert Advisor.
 class MyUnEA
@@ -54,6 +55,8 @@ private:
    MqlTick m_latest_price;                  // Última cotação válida recebida neste processamento.
    MqlRates m_rates[];                      // Velas: [0] atual, [1] última fechada, [2] anterior.
    datetime m_previous_bar_time;            // Abertura da última vela reconhecida pelo EA.
+   UniPositionSummary m_position_summary;   // Compras e vendas deste ativo e Magic.
+   bool m_positions_valid;                  // Distingue leitura valida sem posicoes de falha.
    // Limites de volume do ativo usados pela interface para validar o lote.
    double m_volume_min;
    double m_volume_max;
@@ -144,6 +147,8 @@ public:
       m_initialized=false;
       ZeroMemory(m_latest_price);
       m_previous_bar_time=0;
+      ZeroMemory(m_position_summary);
+      m_positions_valid=false;
       // Padroes locais da interface; a configuracao aplicada sera carregada depois.
       // Nao reserva Magic Number nem consulta o ativo durante a construcao.
       m_name="Meu setup";
@@ -210,6 +215,8 @@ public:
       ZeroMemory(m_latest_price);
       ArrayFree(m_rates);
       m_previous_bar_time=0;
+      ZeroMemory(m_position_summary);
+      m_positions_valid=false;
      }
 
    // Consulta o ativo, valida os parametros e inicializa os indicadores ativos.
@@ -245,6 +252,67 @@ public:
    // Permite consultar se a etapa de inicializacao foi concluida.
    bool IsInitialized() { return m_initialized; }
 
+   // Identifica o modelo da conta; nao altera configuracoes da corretora.
+   bool IsHedgingAccount()
+     { return AccountInfoInteger(ACCOUNT_MARGIN_MODE)==ACCOUNT_MARGIN_MODE_RETAIL_HEDGING; }
+
+   // Le todas as posicoes por ticket, incluindo compras e vendas simultaneas.
+   // Em netting existe uma posicao por ativo; aplica-se o Magic dessa posicao.
+   // Ordens pendentes nao sao posicoes e serao tratadas em outra etapa.
+   bool EvaluatePositions(string &error)
+     {
+      error="";
+      m_positions_valid=false;
+      ZeroMemory(m_position_summary);
+      if(!m_initialized)
+        { error="Inicialize a MyUnEA antes de consultar as posições."; return false; }
+
+      //--- 1. Capturar todas as posicoes. Nunca selecionar apenas pelo simbolo.
+      int total=PositionsTotal();
+      UniPositionRecord positions[];
+      if(ArrayResize(positions,total)!=total)
+        { error="Sem memória para consultar as posições."; return false; }
+      for(int i=0;i<total;i++)
+        {
+         ResetLastError();
+         ulong ticket=PositionGetTicket(i);
+         if(ticket==0 || !PositionSelectByTicket(ticket))
+           { error="A lista de posições mudou ou não pôde ser lida. Tentando no próximo tick."; return false; }
+
+         //--- 2. Ler os dados da posicao selecionada e verificar o resultado.
+         long type;
+         positions[i].ticket=ticket;
+         if(!PositionGetString(POSITION_SYMBOL,positions[i].symbol) ||
+            !PositionGetInteger(POSITION_MAGIC,positions[i].magic) ||
+            !PositionGetInteger(POSITION_TYPE,type) ||
+            !PositionGetDouble(POSITION_VOLUME,positions[i].volume))
+           { error="Não foi possível ler os dados de uma posição."; return false; }
+         positions[i].type=(ENUM_POSITION_TYPE)type;
+         // Uma reorganizacao da lista nao pode contar o mesmo ticket duas vezes.
+         for(int j=0;j<i;j++)
+            if(positions[j].ticket==ticket)
+              { error="A lista de posições mudou durante a leitura."; return false; }
+        }
+      if(PositionsTotal()!=total)
+        { error="A quantidade de posições mudou durante a leitura."; return false; }
+
+      //--- 3. Ignorar outros ativos/Magics e contar cada lado separadamente.
+      if(!UniSummarizePositions(positions,m_symbol,m_magic,m_position_summary))
+        { error="Dados de posição inválidos; aguardando uma nova leitura."; return false; }
+      m_positions_valid=true;
+      return true;
+     }
+
+   // Entrega a ultima leitura completa. Retorna false se ainda nao for valida.
+   // O chamador deve verificar o retorno antes de usar os indicadores booleanos.
+   bool GetPositionSummary(UniPositionSummary &summary)
+     {
+      ZeroMemory(summary);
+      if(!m_positions_valid) return false;
+      summary=m_position_summary;
+      return true;
+     }
+
    //--- Metodos de processamento: ticks e demais eventos do EA.
    // Prepara a cotação e as velas seguindo o fluxo do OnTick.
    // Retorna true uma vez por nova vela; false indica espera ou falha.
@@ -260,6 +328,11 @@ public:
       // Descartar o retrato anterior para não reutilizar dados após uma falha.
       ZeroMemory(m_latest_price);
       ArrayFree(m_rates);
+
+      // Avaliar posicionamento a cada tick, antes dos filtros de historico e barra.
+      // Isso permite acompanhar fechamentos e compras/vendas na mesma vela.
+      // Uma falha impede continuar e nao consome a nova barra.
+      if(!EvaluatePositions(error)) return false;
 
       //--- 2. Exigir pelo menos 60 velas, como no exemplo de referência.
       // Este é o mínimo do fluxo; a prontidão dos buffers será verificada

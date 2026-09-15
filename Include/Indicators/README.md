@@ -60,3 +60,17 @@ nao foram conectadas. A futura gestao por tick deve preceder o filtro de vela.
 `Tests/MyUnEATickTests.mq5` verifica o controle por instancia e reinicializacao
 em um grafico com historico disponivel. Referencia de leitura:
 https://www.mql5.com/pt/docs/series/copyrates
+
+Antes do filtro de historico/nova barra, doTick chama EvaluatePositions.
+A leitura percorre PositionsTotal por ticket e filtra por ativo e Magic.
+GetPositionSummary retorna flags de compra/venda, contagens e volumes separados;
+seu retorno deve ser verificado para distinguir falha de ausencia de posicoes.
+Em hedge, os dois lados podem estar abertos. IsHedgingAccount consulta o modelo
+da conta. Em netting, o filtro usa o Magic informado pela posicao agregada:
+nao separa participacoes de varios EAs que negociem o mesmo ativo nessa posicao.
+Ordens pendentes e modificacao/fechamento por ticket ainda nao foram implementados.
+O resumo e um retrato da leitura; deve ser atualizado antes de futuras operacoes.
+
+`Tests/PositionStateTests.mq5` testa a agregacao com posicoes simuladas, incluindo
+hedge, filtro por ativo/Magic e ausencia de posicoes, sem realizar negociacoes.
+Referencia: https://www.mql5.com/en/docs/trading/positiongetticket
