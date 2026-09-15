@@ -193,6 +193,16 @@
       "path":"Include\\Configuration\\UniInputOptions.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"Include\\Configuration\\UniPositionState.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"Include\\Indicators\\MyIndicatorData.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ]
 }

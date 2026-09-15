@@ -200,7 +200,7 @@ void OnDeinit(const int reason)
 // Recebe cada tick do gráfico e delega o processamento para a classe do EA.
 void OnTick()
   {
-   //--- 1. Avaliar posições, verificar histórico, obter cotação e copiar velas.
+   //--- 1. Avaliar posições, obter cotação, velas e buffers dos indicadores.
    // A leitura de posições acontece a cada tick, inclusive na mesma barra.
    // A classe usa o ativo e o período configurados durante OnInit.
    string error;
@@ -222,6 +222,8 @@ void OnTick()
    if(!new_bar) return;
 
    //--- 4. Dados prontos e nova vela reconhecida.
+   // ea.GetIndicatorValue(indicador,buffer,barra,valor) consulta os valores lidos.
+   // Exemplo: indicador 0, buffer 0, barra 1 = valor da ultima vela fechada.
    // ea.GetPositionSummary() permite consultar compras e vendas deste EA.
    // Em hedge, os dois lados podem estar abertos simultaneamente.
    // As chamadas da estratégia serão acrescentadas nesta etapa.

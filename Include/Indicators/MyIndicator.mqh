@@ -14,6 +14,8 @@ public:
    virtual ~MyIndicator() { Release(); }
    // Cada tipo cria seu handle para o ativo e timeframe informados.
    virtual bool Initialize(const string symbol,const ENUM_TIMEFRAMES timeframe)=0;
+   // Informa quantas linhas precisam ser lidas: MA/RSI = 1; ADX = 3.
+   int BufferCount() { return m_buffer_count; }
    // Copia valores de um buffer: barra 0 = atual, barra 1 = ultima fechada.
    // Saida em ordem cronologica: indice 0 e o valor mais antigo solicitado.
    // Retorna false se os dados ainda nao estiverem prontos; limpa a saida.
@@ -23,6 +25,7 @@ public:
       ArraySetAsSeries(values,false);
       if(m_handle==INVALID_HANDLE || buffer<0 || buffer>=m_buffer_count || start<0 || count<1)
          return false;
+      if(BarsCalculated(m_handle)<start+count) return false;
       if(CopyBuffer(m_handle,buffer,start,count,values)!=count)
         { ArrayFree(values); return false; }
       return true;

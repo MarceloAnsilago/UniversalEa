@@ -2,6 +2,7 @@
 #define MY_UN_EA_MQH
 
 #include "Indicators/MyIndicatorFactory.mqh"
+#include "Indicators/MyIndicatorData.mqh"
 #include "Configuration/UniPositionState.mqh"
 
 // Classe responsavel pela futura logica do Expert Advisor.
@@ -65,8 +66,16 @@ private:
    //--- Atributos: indicadores e recursos utilizados pelo EA.
    // Slots possuem objetos polimorficos; NULL representa um slot desativado.
    MyIndicator *m_indicators[4];
+   MyIndicatorData m_indicator_data[4];     // Valores por indicador, buffer e barra.
+   bool m_buffers_ready;                    // Todos os indicadores ativos foram lidos.
 
    //--- Metodos auxiliares: validacoes e preparacao dos dados.
+   // Descarta todas as leituras juntas; evita misturar ticks diferentes.
+   void ClearBuffers()
+     {
+      m_buffers_ready=false;
+      for(int i=0;i<4;i++) m_indicator_data[i].Clear();
+     }
    // Detecta e registra uma nova barra usando seu horario de abertura.
    // Deve ser chamado somente depois de obter todos os dados necessarios.
    bool IsNewBar(const datetime current_bar_time)
@@ -145,6 +154,7 @@ public:
      {
       m_symbol="";
       m_initialized=false;
+      ClearBuffers();
       ZeroMemory(m_latest_price);
       m_previous_bar_time=0;
       ZeroMemory(m_position_summary);
@@ -210,6 +220,7 @@ public:
    // Libera handles, preservando objetos e parametros para uma nova inicializacao.
    void doDeinit()
      {
+      ClearBuffers();
       for(int i=0;i<4;i++) if(m_indicators[i]!=NULL) m_indicators[i].Release();
       m_initialized=false;
       ZeroMemory(m_latest_price);
@@ -314,12 +325,48 @@ public:
      }
 
    //--- Metodos de processamento: ticks e demais eventos do EA.
+   // Le os tres valores mais recentes de todos os buffers dos indicadores ativos.
+   // MA e RSI: buffer 0. ADX: 0 = ADX, 1 = +DI, 2 = -DI.
+   // Usa os handles individuais; medias repetidas preservam seus parametros.
+   bool getBuffers(string &error)
+     {
+      ClearBuffers(); error="";
+      if(!m_initialized || ArraySize(m_rates)!=3)
+        { error="Prepare a cotação e as velas antes de ler os buffers."; return false; }
+      for(int i=0;i<4;i++)
+        {
+         if(m_indicators[i]==NULL) continue; // Ignorar a opcao Nao usar.
+         string detail;
+         if(!m_indicator_data[i].Load(m_indicators[i],detail))
+           {
+            error=StringFormat("Indicador %d: %s",i+1,detail);
+            ClearBuffers(); return false;
+           }
+        }
+      // Se a barra mudou durante as copias, recomecar no proximo tick.
+      datetime times[];
+      if(CopyTime(m_symbol,m_timeframe,0,1,times)!=1 || times[0]!=m_rates[0].time)
+        { error="A barra mudou durante a leitura dos buffers. Aguardando novo tick."; ClearBuffers(); return false; }
+      m_buffers_ready=true;
+      return true;
+     }
+
+   // Consulta a leitura completa: indicador 0..3, buffer conforme o tipo, barra 0..2.
+   // Barra 0 ainda varia; usar 1 e 2 para comparar velas fechadas.
+   bool GetIndicatorValue(const int indicator,const int buffer,const int bar,double &value)
+     {
+      value=EMPTY_VALUE;
+      if(!m_buffers_ready || indicator<0 || indicator>=4) return false;
+      return m_indicator_data[indicator].Get(buffer,bar,value);
+     }
+
    // Prepara a cotação e as velas seguindo o fluxo do OnTick.
    // Retorna true uma vez por nova vela; false indica espera ou falha.
    // Em caso de falha, error explica o motivo. Na mesma vela, error fica vazio.
    bool doTick(string &error)
      {
       error="";
+      ClearBuffers();
 
       //--- 1. Processar somente depois de uma inicialização bem-sucedida.
       if(!m_initialized)
@@ -335,8 +382,8 @@ public:
       if(!EvaluatePositions(error)) return false;
 
       //--- 2. Exigir pelo menos 60 velas, como no exemplo de referência.
-      // Este é o mínimo do fluxo; a prontidão dos buffers será verificada
-      // na futura leitura dos indicadores, que podem exigir mais histórico.
+      // Este é o mínimo do fluxo; getBuffers verifica a prontidão dos valores,
+      // pois os indicadores podem exigir mais histórico.
       int bars=Bars(m_symbol,m_timeframe);
       if(bars<60)
         {
@@ -382,7 +429,11 @@ public:
       // A futura gestão de posições a cada tick deve ficar antes deste filtro.
       // Assim, breakeven e trailing não dependerão da abertura de uma vela.
 
-      //--- 6. Liberar a etapa de novas entradas apenas uma vez por barra.
+      //--- 6. Ler os buffers antes de registrar a nova barra.
+      // Se uma copia falhar, o proximo tick podera tentar a mesma barra novamente.
+      if(!getBuffers(error)) return false;
+
+      //--- 7. Liberar a etapa de novas entradas apenas uma vez por barra.
       // A abertura vem da vela [0] do periodo escolhido nos inputs.
       // IsNewBar compara e registra o horario nesta instancia da classe.
       // Futuras leituras de buffers que possam falhar devem preceder esta

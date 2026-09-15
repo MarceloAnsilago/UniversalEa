@@ -14,7 +14,7 @@ Depois, doInit consulta os limites de volume, valida o setup e chama Initialize
 em cada indicador ativo. Falhas liberam os handles ja criados. OnDeinit chama
 doDeinit, que libera os handles e preserva os objetos para reinicializacao.
 Alterar configuracoes pelos setters tambem libera os handles anteriores.
-Update ainda nao e chamado por OnTick. A edicao pela GUI ainda e independente
+OnTick chama getBuffers antes de registrar a nova barra. A edicao pela GUI ainda e independente
 dos inputs e da configuracao ativa da classe.
 Initialize pode falhar; Update pode retornar false enquanto os dados nao estao
 prontos. A saida de Update fica vazia em caso de falha e usa ordem cronologica
@@ -54,8 +54,8 @@ no tick seguinte; a mesma mensagem nao e repetida continuamente no log.
 O primeiro retrato valido conta como nova vela. Depois, o retorno true ocorre
 somente quando o horario de abertura muda. doDeinit limpa esse controle.
 O minimo de 60 velas segue o exemplo desta etapa; nao garante que os buffers
-dos indicadores estejam prontos. Sua leitura e as regras de negociacao ainda
-nao foram conectadas. A futura gestao por tick deve preceder o filtro de vela.
+dos indicadores estejam prontos. getBuffers verifica a leitura completa e valores
+validos; as regras de negociacao ainda nao foram conectadas. A futura gestao por tick deve preceder o filtro de vela.
 
 `Tests/MyUnEATickTests.mq5` verifica o controle por instancia e reinicializacao
 em um grafico com historico disponivel. Referencia de leitura:
@@ -74,3 +74,14 @@ O resumo e um retrato da leitura; deve ser atualizado antes de futuras operacoes
 `Tests/PositionStateTests.mq5` testa a agregacao com posicoes simuladas, incluindo
 hedge, filtro por ativo/Magic e ausencia de posicoes, sem realizar negociacoes.
 Referencia: https://www.mql5.com/en/docs/trading/positiongetticket
+
+getBuffers le tres valores de cada buffer dos quatro indicadores ativos, usando
+MyIndicatorData. GetIndicatorValue consulta indicador 0..3, buffer e barra 0..2.
+A barra 0 corresponde a atual; 1 e 2 sao fechadas. MA e RSI usam buffer 0;
+ADX usa 0 (ADX), 1 (+DI) e 2 (-DI). A leitura de MA respeita o deslocamento do
+handle, sem compensacao adicional de shift ao chamar CopyBuffer.
+Falha, copia parcial, EMPTY_VALUE ou numero invalido descarta a leitura completa.
+Uma nova tentativa ocorre no proximo tick, sem registrar prematuramente a barra.
+Os erros seguem o fluxo existente de error/Print, sem alertas repetidos.
+Tests/IndicatorBufferTests.mq5 cobre ordenacao, multiplos buffers, falhas e
+recuperacao com fonte simulada. Compilar nao equivale a executar os testes.
