@@ -46,3 +46,17 @@ Compilar o script nao equivale a executar os testes.
 
 `Tests/MyUnEAInitTests.mq5` cobre o ciclo de vida e rejeicao de parametros,
 usando as especificacoes de volume do ativo do grafico e sem enviar ordens.
+
+OnTick chama MyUnEA.doTick: exige 60 velas, obtem a cotacao e copia exatamente
+tres velas no ativo e periodo configurados. Os indices 0, 1 e 2 representam
+a vela atual e as duas ultimas fechadas. Uma falha permite tentar novamente
+no tick seguinte; a mesma mensagem nao e repetida continuamente no log.
+O primeiro retrato valido conta como nova vela. Depois, o retorno true ocorre
+somente quando o horario de abertura muda. doDeinit limpa esse controle.
+O minimo de 60 velas segue o exemplo desta etapa; nao garante que os buffers
+dos indicadores estejam prontos. Sua leitura e as regras de negociacao ainda
+nao foram conectadas. A futura gestao por tick deve preceder o filtro de vela.
+
+`Tests/MyUnEATickTests.mq5` verifica o controle por instancia e reinicializacao
+em um grafico com historico disponivel. Referencia de leitura:
+https://www.mql5.com/pt/docs/series/copyrates

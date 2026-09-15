@@ -195,9 +195,33 @@ void OnDeinit(const int reason)
    gui.Destroy();
    ea.doDeinit();
   }
-void OnTick() {
 
 
-}
+// Recebe cada tick do gráfico e delega o processamento para a classe do EA.
+void OnTick()
+  {
+   //--- 1. Verificar histórico, obter cotação e copiar as três últimas velas.
+   // A classe usa o ativo e o período configurados durante OnInit.
+   string error;
+   bool new_bar=ea.doTick(error);
+
+   //--- 2. Registrar uma falha apenas quando a mensagem mudar.
+   // Evita abrir alertas ou repetir o mesmo aviso a cada tick enquanto espera.
+   static string previous_error="";
+   if(error!="")
+     {
+      if(error!=previous_error) Print("OnTick: ",error);
+      previous_error=error;
+      return;
+     }
+   previous_error="";
+
+   //--- 3. Encerrar este evento se a vela atual já tiver sido reconhecida.
+   // O EA continua ativo e receberá normalmente os próximos ticks.
+   if(!new_bar) return;
+
+   //--- 4. Dados prontos e nova vela reconhecida.
+   // As chamadas da estratégia serão acrescentadas nesta etapa.
+  }
 void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
   { gui.Event(id,lparam,dparam,sparam); }

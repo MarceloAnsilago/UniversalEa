@@ -51,6 +51,9 @@ private:
    double m_moving_stop_step;               // Passo (management.values[7]).
 
    //--- Atributos: estado interno e controle de execucao.
+   MqlTick m_latest_price;                  // Última cotação válida recebida neste processamento.
+   MqlRates m_rates[];                      // Velas: [0] atual, [1] última fechada, [2] anterior.
+   datetime m_previous_bar_time;            // Abertura da última vela reconhecida pelo EA.
    // Limites de volume do ativo usados pela interface para validar o lote.
    double m_volume_min;
    double m_volume_max;
@@ -124,6 +127,8 @@ public:
      {
       m_symbol="";
       m_initialized=false;
+      ZeroMemory(m_latest_price);
+      m_previous_bar_time=0;
       // Padroes locais da interface; a configuracao aplicada sera carregada depois.
       // Nao reserva Magic Number nem consulta o ativo durante a construcao.
       m_name="Meu setup";
@@ -187,6 +192,9 @@ public:
      {
       for(int i=0;i<4;i++) if(m_indicators[i]!=NULL) m_indicators[i].Release();
       m_initialized=false;
+      ZeroMemory(m_latest_price);
+      ArrayFree(m_rates);
+      m_previous_bar_time=0;
      }
 
    // Consulta o ativo, valida os parametros e inicializa os indicadores ativos.
@@ -223,7 +231,83 @@ public:
    bool IsInitialized() { return m_initialized; }
 
    //--- Metodos de processamento: ticks e demais eventos do EA.
-   // Futuros metodos chamados pelo programa principal ao receber eventos.
+   // Prepara a cotação e as velas seguindo o fluxo do OnTick.
+   // Retorna true uma vez por nova vela; false indica espera ou falha.
+   // Em caso de falha, error explica o motivo. Na mesma vela, error fica vazio.
+   bool doTick(string &error)
+     {
+      error="";
+
+      //--- 1. Processar somente depois de uma inicialização bem-sucedida.
+      if(!m_initialized)
+        { error="MyUnEA ainda não foi inicializada."; return false; }
+
+      // Descartar o retrato anterior para não reutilizar dados após uma falha.
+      ZeroMemory(m_latest_price);
+      ArrayFree(m_rates);
+
+      //--- 2. Exigir pelo menos 60 velas, como no exemplo de referência.
+      // Este é o mínimo do fluxo; a prontidão dos buffers será verificada
+      // na futura leitura dos indicadores, que podem exigir mais histórico.
+      int bars=Bars(m_symbol,m_timeframe);
+      if(bars<60)
+        {
+         // Solicitar o histórico também inicia seu carregamento, se necessário.
+         // Não bloquear o EA: tentar novamente quando chegar outro tick.
+         MqlRates history[];
+         if(CopyRates(m_symbol,m_timeframe,0,60,history)!=60)
+           { error="Aguardando pelo menos 60 velas no período configurado."; return false; }
+        }
+
+      //--- 3. Obter os preços e o horário da última cotação do ativo.
+      MqlTick latest_price;
+      ResetLastError();
+      if(!SymbolInfoTick(m_symbol,latest_price))
+        {
+         error=StringFormat("Erro ao obter a última cotação: %d.",GetLastError());
+         return false;
+        }
+      if(latest_price.time<=0)
+        { error="Aguardando uma cotação válida do ativo."; return false; }
+
+      //--- 4. Organizar as velas como série temporal e copiar as três últimas.
+      // Índice 0 = vela em formação; índices 1 e 2 = velas já fechadas.
+      // Exigir as três: uma cópia parcial ainda não permite continuar.
+      MqlRates rates[];
+      ArraySetAsSeries(rates,true);
+      ResetLastError();
+      if(CopyRates(m_symbol,m_timeframe,0,3,rates)!=3)
+        {
+         error=StringFormat("Aguardando a cópia das três últimas velas. Erro: %d.",GetLastError());
+         return false;
+        }
+      if(rates[0].time<=0 || rates[1].time>=rates[0].time || rates[2].time>=rates[1].time)
+        { error="Histórico de velas ainda não está pronto."; return false; }
+
+      //--- 5. Guardar o retrato válido para os próximos métodos da estratégia.
+      if(ArrayResize(m_rates,3)!=3)
+        { error="Não foi possível reservar memória para as velas."; return false; }
+      ArraySetAsSeries(m_rates,true);
+      for(int i=0;i<3;i++) m_rates[i]=rates[i];
+      m_latest_price=latest_price;
+
+      // A futura gestão de posições a cada tick deve ficar antes deste filtro.
+      // Assim, breakeven e trailing não dependerão da abertura de uma vela.
+
+      //--- 6. Continuar para futuras entradas apenas quando mudar a vela.
+      // O horário pertence à instância, substituindo o static do exemplo.
+      datetime current_bar_time=m_rates[0].time;
+      if(m_previous_bar_time==current_bar_time) return false;
+
+      //--- 7. Registrar a vela somente depois de obter todos os dados acima.
+      // A primeira leitura válida após doInit também conta como nova vela.
+      m_previous_bar_time=current_bar_time;
+
+      // Próxima etapa: ler buffers e avaliar os sinais de entrada e saída.
+      // Ao acrescentar leituras que podem falhar, fazê-las antes de registrar
+      // a vela acima, permitindo uma nova tentativa no tick seguinte.
+      return true;
+     }
 
    //--- Metodos de configuracao e consulta do estado.
    // Define o ativo antes de inicializar os indicadores.
