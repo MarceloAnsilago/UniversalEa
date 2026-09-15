@@ -226,7 +226,12 @@ void OnTick()
    // Exemplo: indicador 0, buffer 0, barra 1 = valor da ultima vela fechada.
    // ea.GetPositionSummary() permite consultar compras e vendas deste EA.
    // Em hedge, os dois lados podem estar abertos simultaneamente.
-   // As chamadas da estratégia serão acrescentadas nesta etapa.
+   //--- 5. Avaliar as regras individuais; todos os indicadores devem confirmar.
+   // A Media Movel usa fechamento acima/abaixo na vela 1. RSI e ADX aguardam
+   // suas regras e, quando selecionados, ainda nao confirmam sinais.
+   // Esta etapa apenas registra o sinal; a execucao de ordens sera implementada depois.
+   if(ea.checkBuy()) Print("Sinal de compra: todos os indicadores ativos confirmaram.");
+   else if(ea.checkSell()) Print("Sinal de venda: todos os indicadores ativos confirmaram.");
   }
 void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
   { gui.Event(id,lparam,dparam,sparam); }

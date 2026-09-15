@@ -14,9 +14,27 @@ class MyMA : public MyIndicator
   {
 private:
    MyMAConfig m_config;
+   // Compara exclusivamente o fechamento e a media na ultima vela fechada.
+   // Igualdade, valor ausente ou numero invalido nao confirmam nenhuma direcao.
+   bool CheckClose(const MqlRates &rates[],MyIndicatorValues &values,const bool buy)
+     {
+      if(ArraySize(rates)<2) return false;
+      double average;
+      if(!values.Get(0,1,average) || average==EMPTY_VALUE || !MathIsValidNumber(average)) return false;
+      double close=rates[1].close;
+      if(close==EMPTY_VALUE || !MathIsValidNumber(close)) return false;
+      return buy ? close>average : close<average;
+     }
 public:
    // Armazena a configuracao; o recurso so e criado em Initialize.
    MyMA(const MyMAConfig &config) { m_config=config; m_buffer_count=1; }
+   // Compra: fechamento da vela 1 acima da media nessa mesma vela.
+   // Nao exige cruzamento nem inclinacao; a vela em formacao nao participa.
+   virtual bool CheckBuy(const MqlRates &rates[],MyIndicatorValues &values)
+     { return CheckClose(rates,values,true); }
+   // Venda: fechamento da vela 1 abaixo da media nessa mesma vela.
+   virtual bool CheckSell(const MqlRates &rates[],MyIndicatorValues &values)
+     { return CheckClose(rates,values,false); }
    // Valida os parametros especificos antes de criar o indicador.
    bool Validate()
      { return !(m_config.period<1 || m_config.period>100000 || m_config.shift< -100000 || m_config.shift>100000 || (int)m_config.method<0 || (int)m_config.method>3 || (int)m_config.price<1 || (int)m_config.price>7); }

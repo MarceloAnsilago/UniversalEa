@@ -4,7 +4,7 @@
 
 // Guarda tres valores por buffer, sem limitar a quantidade de linhas do indicador.
 // A barra 0 e a atual; 1 e a ultima fechada; 2 e a fechada anterior.
-class MyIndicatorData
+class MyIndicatorData : public MyIndicatorValues
   {
 private:
    double m_values[]; // Indice interno: buffer * 3 + barra.
@@ -49,7 +49,7 @@ public:
       return true;
      }
    // Consulta um valor validado; false indica indice invalido ou leitura ausente.
-   bool Get(const int buffer,const int bar,double &value)
+   virtual bool Get(const int buffer,const int bar,double &value)
      {
       value=EMPTY_VALUE;
       if(buffer<0 || buffer>=m_buffers || bar<0 || bar>=3) return false;

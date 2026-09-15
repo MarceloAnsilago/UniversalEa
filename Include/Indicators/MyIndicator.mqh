@@ -1,5 +1,6 @@
 #ifndef UNI_MY_INDICATOR_MQH
 #define UNI_MY_INDICATOR_MQH
+#include "MyIndicatorValues.mqh"
 
 // Contrato comum. Cada instancia possui exclusivamente seu proprio handle.
 class MyIndicator
@@ -16,6 +17,11 @@ public:
    virtual bool Initialize(const string symbol,const ENUM_TIMEFRAMES timeframe)=0;
    // Informa quantas linhas precisam ser lidas: MA/RSI = 1; ADX = 3.
    int BufferCount() { return m_buffer_count; }
+   // Regras individuais: rates[0] e a vela atual, rates[1] a ultima fechada.
+   // Novos indicadores sobrescrevem estes metodos. Sem regra definida,
+   // o tipo nao confirma nenhuma direcao (RSI e ADX por enquanto).
+   virtual bool CheckBuy(const MqlRates &rates[],MyIndicatorValues &values) { return false; }
+   virtual bool CheckSell(const MqlRates &rates[],MyIndicatorValues &values) { return false; }
    // Copia valores de um buffer: barra 0 = atual, barra 1 = ultima fechada.
    // Saida em ordem cronologica: indice 0 e o valor mais antigo solicitado.
    // Retorna false se os dados ainda nao estiverem prontos; limpa a saida.

@@ -136,6 +136,24 @@ private:
      }
 
    //--- Metodos da estrategia: avaliacao dos sinais de entrada e saida.
+   // Todos os indicadores ativos precisam confirmar a direcao solicitada.
+   // Tipos sem regra definida retornam false; nao sao ignorados na combinacao.
+   bool CheckSignal(const bool buy)
+     {
+      if(!m_initialized || !m_buffers_ready || ArraySize(m_rates)!=3) return false;
+      if(buy && m_direction==GUI_SETUP_SELL_ONLY) return false;
+      if(!buy && m_direction==GUI_SETUP_BUY_ONLY) return false;
+      int active=0;
+      for(int i=0;i<4;i++)
+        {
+         if(m_indicators[i]==NULL) continue;
+         active++;
+         bool confirmed=buy ? m_indicators[i].CheckBuy(m_rates,m_indicator_data[i]) :
+                              m_indicators[i].CheckSell(m_rates,m_indicator_data[i]);
+         if(!confirmed) return false;
+        }
+      return active>0; // Nenhum indicador selecionado = nenhum sinal.
+     }
 
    //--- Metodos de gestao: risco, ordens e posicoes.
 
@@ -442,6 +460,11 @@ public:
      }
 
    //--- Metodos de configuracao e consulta do estado.
+   // Confirma compra usando os buffers ja lidos; nao abre ordens.
+   bool checkBuy() { return CheckSignal(true); }
+   // Confirma venda usando os buffers ja lidos; nao abre ordens.
+   bool checkSell() { return CheckSignal(false); }
+
    // Define o ativo antes de inicializar os indicadores.
    void setSymbol(const string value)
      { doDeinit(); m_symbol=value; }

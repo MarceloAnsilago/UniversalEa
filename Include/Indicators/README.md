@@ -25,6 +25,8 @@ Para acrescentar um indicador:
 1. Criar sua configuracao e classe derivada, com validacao e Initialize.
 2. Acrescentar um valor ao final do enum compartilhado, mantendo os IDs antigos.
 3. Acrescentar a conversao na fabrica.
+   Implementar CheckBuy e CheckSell na classe concreta; a base retorna false
+   para ambas ate que a regra do tipo seja definida.
 4. Acrescentar campos e mapeamentos de entrada, interface e persistencia.
 5. Testar validacao, leitura dos buffers e liberacao.
 
@@ -85,3 +87,13 @@ Uma nova tentativa ocorre no proximo tick, sem registrar prematuramente a barra.
 Os erros seguem o fluxo existente de error/Print, sem alertas repetidos.
 Tests/IndicatorBufferTests.mq5 cobre ordenacao, multiplos buffers, falhas e
 recuperacao com fonte simulada. Compilar nao equivale a executar os testes.
+
+Regras individuais: MyMA confirma compra quando o fechamento da vela 1 esta
+acima da media da vela 1, e venda quando esta abaixo. Igualdade e neutra.
+Nao exige cruzamento nem inclinacao; a vela atual nao entra na comparacao.
+MyUnEA.checkBuy/checkSell exigem confirmacao de todos os indicadores ativos
+e respeitam a direcao permitida no setup. Sem indicadores, nao ha sinal.
+RSI, ADX e tipos futuros permanecem sem confirmacao ate terem regras proprias.
+OnTick avalia uma vez por nova barra e apenas registra sinais no log.
+Horarios, posicionamento e envio de ordens ainda nao fazem parte dessa decisao.
+Tests/IndicatorSignalTests.mq5 verifica a regra da media com valores simulados.
