@@ -64,6 +64,21 @@ private:
    MyIndicator *m_indicators[4];
 
    //--- Metodos auxiliares: validacoes e preparacao dos dados.
+   // Detecta e registra uma nova barra usando seu horario de abertura.
+   // Deve ser chamado somente depois de obter todos os dados necessarios.
+   bool IsNewBar(const datetime current_bar_time)
+     {
+      //--- 1. Ignorar horarios invalidos, a mesma barra e historico atrasado.
+      if(current_bar_time<=0 || current_bar_time<=m_previous_bar_time)
+         return false;
+
+      //--- 2. Guardar a abertura para nao processar esta barra novamente.
+      // Na primeira leitura, m_previous_bar_time e zero: a barra e aceita.
+      // doDeinit zera esse controle ao reiniciar ou trocar a configuracao.
+      m_previous_bar_time=current_bar_time;
+      return true;
+     }
+
    // Confere limites e relacoes dos inputs antes de criar qualquer handle.
    bool ValidateConfiguration(string &error)
      {
@@ -294,19 +309,12 @@ public:
       // A futura gestão de posições a cada tick deve ficar antes deste filtro.
       // Assim, breakeven e trailing não dependerão da abertura de uma vela.
 
-      //--- 6. Continuar para futuras entradas apenas quando mudar a vela.
-      // O horário pertence à instância, substituindo o static do exemplo.
-      datetime current_bar_time=m_rates[0].time;
-      if(m_previous_bar_time==current_bar_time) return false;
-
-      //--- 7. Registrar a vela somente depois de obter todos os dados acima.
-      // A primeira leitura válida após doInit também conta como nova vela.
-      m_previous_bar_time=current_bar_time;
-
-      // Próxima etapa: ler buffers e avaliar os sinais de entrada e saída.
-      // Ao acrescentar leituras que podem falhar, fazê-las antes de registrar
-      // a vela acima, permitindo uma nova tentativa no tick seguinte.
-      return true;
+      //--- 6. Liberar a etapa de novas entradas apenas uma vez por barra.
+      // A abertura vem da vela [0] do periodo escolhido nos inputs.
+      // IsNewBar compara e registra o horario nesta instancia da classe.
+      // Futuras leituras de buffers que possam falhar devem preceder esta
+      // chamada, permitindo tentar novamente sem consumir a nova barra.
+      return IsNewBar(m_rates[0].time);
      }
 
    //--- Metodos de configuracao e consulta do estado.
