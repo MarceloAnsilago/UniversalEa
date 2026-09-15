@@ -5,6 +5,9 @@
 #include "Include/MyUnEA.mqh"
 #include "Include/Configuration/UniInputOptions.mqh"
 
+MqlTick lastest_price; // Armazena o último tick recebido para evitar processamento duplicado  
+MqlRates mrate[]; // Armazena os dados de preço do ativo
+
 // Modos de gestao com os mesmos valores usados pela interface.
 enum ENUM_UNI_MANAGEMENT_MODE
   {
