@@ -145,8 +145,10 @@ private:
          m_renderer.Text(x,r.y+84,"Período: "+IntegerToString(ma ? c.maPeriod : (c.type==GUI_INDICATOR_ADX ? c.adxPeriod : c.rsiPeriod)),GUI_TEXT,12,false,cw-16);
          if(c.type==GUI_INDICATOR_ADX) continue;
          m_renderer.Text(x,r.y+102,"Preço: "+GuiPriceName((int)(ma ? c.maPrice : c.rsiPrice)-1),GUI_MUTED,12,false,cw-16);
-         m_renderer.Text(x,r.y+120,ma ? "Método: "+GuiMethodName((int)c.maMethod) : "Inferior: "+DoubleToString(c.rsiLower,2),GUI_MUTED,12,false,cw-16);
-         m_renderer.Text(x,r.y+138,ma ? "Shift: "+IntegerToString(c.maShift) : "Superior: "+DoubleToString(c.rsiUpper,2),GUI_MUTED,12,false,cw-16);
+         m_renderer.Text(x,r.y+120,ma ? "Método: "+GuiMethodName((int)c.maMethod) : "Compra ↑ "+DoubleToString(c.rsiLower,2),GUI_MUTED,12,false,cw-16);
+         m_renderer.Text(x,r.y+138,ma ? "Shift: "+IntegerToString(c.maShift) : "Venda ↓ "+DoubleToString(c.rsiUpper,2),GUI_MUTED,12,false,cw-16);
+         if(c.type==GUI_INDICATOR_RSI)
+            m_renderer.Text(x,r.y+156,"Cruzamento no fechamento",GUI_MUTED,11,false,cw-16);
         }
      }
    void DrawWindowFrame()
@@ -366,8 +368,8 @@ private:
       else
         {
          BindField(card,2,GUI_PRICE,"Preço aplicado","Close|Open|High|Low|Median|Typical|Weighted");
-         BindField(card,3,GUI_LOWER,"Nível inferior");
-         BindField(card,4,GUI_UPPER,"Nível superior");
+         BindField(card,3,GUI_LOWER,"Sobrevenda");
+         BindField(card,4,GUI_UPPER,"Sobrecompra");
         }
       m_card_dirty[0]=true; m_card_dirty[1]=true; m_dirty=true;
      }

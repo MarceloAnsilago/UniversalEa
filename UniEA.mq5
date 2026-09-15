@@ -114,8 +114,8 @@ input group "RSI — Parâmetros compartilhados"
 // Todas as selecoes de RSI nos inputs usam estes mesmos parametros.
 input int InpRsiPeriod=14; // Período: 1 a 100000
 input ENUM_UNI_APPLIED_PRICE InpRsiPrice=UNI_PRICE_CLOSE; // Preço aplicado
-input double InpRsiLower=30.0; // Nível inferior: 0 a 100, menor que o superior
-input double InpRsiUpper=70.0; // Nível superior: 0 a 100, maior que o inferior
+input double InpRsiLower=30.0; // Sobrevenda: compra ao cruzar para cima (padrão 30)
+input double InpRsiUpper=70.0; // Sobrecompra: venda ao cruzar para baixo (padrão 70)
 
 input group "ADX — Parâmetros compartilhados"
 // Todas as selecoes de ADX nos inputs usam este mesmo periodo.
@@ -227,8 +227,8 @@ void OnTick()
    // ea.GetPositionSummary() permite consultar compras e vendas deste EA.
    // Em hedge, os dois lados podem estar abertos simultaneamente.
    //--- 5. Avaliar as regras individuais; todos os indicadores devem confirmar.
-   // A Media Movel usa fechamento acima/abaixo na vela 1. RSI e ADX aguardam
-   // suas regras e, quando selecionados, ainda nao confirmam sinais.
+   // A Media Movel compara fechamento e media; RSI avalia cruzamentos nas velas 2 e 1.
+   // ADX ainda aguarda sua regra e, quando selecionado, nao confirma sinais.
    // Esta etapa apenas registra o sinal; a execucao de ordens sera implementada depois.
    if(ea.checkBuy()) Print("Sinal de compra: todos os indicadores ativos confirmaram.");
    else if(ea.checkSell()) Print("Sinal de venda: todos os indicadores ativos confirmaram.");

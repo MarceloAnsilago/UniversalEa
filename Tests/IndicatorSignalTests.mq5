@@ -51,7 +51,7 @@ void OnStart()
    MyRSI rsi(rsi_config);
    MyADXConfig adx_config; adx_config.period=14;
    MyADX adx(adx_config);
-   Check(!rsi.CheckBuy(rates,values) && !rsi.CheckSell(rates,values),"RSI aguarda regra especifica");
+   Check(!rsi.CheckBuy(rates,values) && !rsi.CheckSell(rates,values),"RSI exige valor da barra 2");
    Check(!adx.CheckBuy(rates,values) && !adx.CheckSell(rates,values),"ADX aguarda regra especifica");
    PrintFormat("IndicatorSignalTests: %d falhas",failures);
   }
