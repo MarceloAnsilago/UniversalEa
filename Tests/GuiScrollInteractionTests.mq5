@@ -21,6 +21,16 @@ void OnStart()
    Check(gui.m_layout.cards[1].y==gui.m_layout.cards[0].y && gui.m_layout.cards[1].x>gui.m_layout.cards[0].x+gui.m_layout.cards[0].w &&
          gui.m_layout.cards[1].w==gui.m_layout.cards[0].w,"Indicator cards remain side by side");
    ResourceSave(gui.m_renderer.m_canvas.ResourceName(),"scroll-parameters.bmp");
+   Check(gui.FieldVisible(5) && gui.m_fields[5].field==GUI_MA_SLOPE_BARS,"Slope field visible for MA");
+   Check(gui.m_fields[5].edit.bounds.y+gui.m_fields[5].edit.bounds.h<=gui.m_layout.cards[1].y+gui.m_layout.cards[1].h,
+         "Slope field stays inside expanded card");
+   gui.SetFocus(8); gui.TabFocus(false);
+   Check(gui.m_focus==9 && gui.m_edit==5,"Tab reaches slope after shift");
+   gui.FinishEdit(false);
+   gui.TabFocus(false);
+   Check(gui.m_rules_focus,"Tab leaves slope for rules");
+   gui.m_rules.LeaveFocus(); gui.m_rules_focus=false; gui.SetFocus(-1);
+   gui.ScrollTo(0);
    long wheel_position=0; double wheel_delta=-120; string wheel_text="";
    gui.Event(CHARTEVENT_MOUSE_WHEEL,wheel_position,wheel_delta,wheel_text);
    Check(gui.m_scroll.offset==64,"Wheel scrolls content");

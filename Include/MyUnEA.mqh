@@ -343,7 +343,7 @@ public:
      }
 
    //--- Metodos de processamento: ticks e demais eventos do EA.
-   // Le os tres valores mais recentes de todos os buffers dos indicadores ativos.
+   // Le a quantidade necessaria de valores de cada indicador ativo.
    // MA e RSI: buffer 0. ADX: 0 = ADX, 1 = +DI, 2 = -DI.
    // Usa os handles individuais; medias repetidas preservam seus parametros.
    bool getBuffers(string &error)
@@ -369,8 +369,8 @@ public:
       return true;
      }
 
-   // Consulta a leitura completa: indicador 0..3, buffer conforme o tipo, barra 0..2.
-   // Barra 0 ainda varia; usar 1 e 2 para comparar velas fechadas.
+   // Consulta a leitura completa: indicador 0..3, buffer e barra conforme o tipo.
+   // Barra 0 ainda varia; MA permite consultar ate N velas fechadas de inclinacao.
    bool GetIndicatorValue(const int indicator,const int buffer,const int bar,double &value)
      {
       value=EMPTY_VALUE;

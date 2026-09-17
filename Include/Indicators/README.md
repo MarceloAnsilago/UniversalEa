@@ -77,8 +77,9 @@ O resumo e um retrato da leitura; deve ser atualizado antes de futuras operacoes
 hedge, filtro por ativo/Magic e ausencia de posicoes, sem realizar negociacoes.
 Referencia: https://www.mql5.com/en/docs/trading/positiongetticket
 
-getBuffers le tres valores de cada buffer dos quatro indicadores ativos, usando
-MyIndicatorData. GetIndicatorValue consulta indicador 0..3, buffer e barra 0..2.
+getBuffers le a quantidade exigida por cada indicador ativo, usando
+MyIndicatorData. GetIndicatorValue consulta indicador 0..3, buffer e barra.
+MA solicita N+1 valores, incluindo a barra atual; RSI e ADX solicitam tres.
 A barra 0 corresponde a atual; 1 e 2 sao fechadas. MA e RSI usam buffer 0;
 ADX usa 0 (ADX), 1 (+DI) e 2 (-DI). A leitura de MA respeita o deslocamento do
 handle, sem compensacao adicional de shift ao chamar CopyBuffer.
@@ -90,7 +91,10 @@ recuperacao com fonte simulada. Compilar nao equivale a executar os testes.
 
 Regras individuais: MyMA confirma compra quando o fechamento da vela 1 esta
 acima da media da vela 1, e venda quando esta abaixo. Igualdade e neutra.
-Nao exige cruzamento nem inclinacao; a vela atual nao entra na comparacao.
+Exige inclinacao consecutiva nas N velas fechadas e nao exige cruzamento;
+a vela atual nao entra na comparacao. N e configuravel por media, padrao 3,
+com limites de 2 a 100000. Compra exige MA[1]>MA[2]>...>MA[N]; venda exige
+MA[1]<MA[2]<...<MA[N]. Empate em qualquer par nao confirma o sinal.
 MyUnEA.checkBuy/checkSell exigem confirmacao de todos os indicadores ativos
 e respeitam a direcao permitida no setup. Sem indicadores, nao ha sinal.
 Tipos futuros permanecem sem confirmacao ate terem regras proprias.
@@ -113,6 +117,11 @@ DI iguais ou ADX menor/igual ao minimo nao sinalizam. InpAdxMinimum e o campo
 ADX minimo da Canvas sao configuraveis de 0 a 100, padrao 25. Um minimo 20
 substitui 25, sem manter um segundo limite fixo. Periodos, parametros de MA,
 niveis RSI e limiar ADX sao inputs otimizaveis; os padroes sao referencias.
-Sets da GUI agora usam versao 2. Arquivos v1 preservam seus campos e recebem
-ADX minimo 25 na migracao. A ligacao da edicao Canvas a classe segue pendente.
+Sets da GUI usam versao 3. Arquivos v1 recebem ADX minimo 25; arquivos v2
+preservam o minimo existente. Ambas as versoes recebem inclinacao de 3 velas. A ligacao da edicao Canvas a classe segue pendente.
 Tests/AdxSignalTests.mq5 cobre direcao, limiar personalizado e valores invalidos.
+
+A Canvas oferece Velas de inclinacao em cada Media Movel e amplia o card para
+acomodar o campo. Inputs InpIndicator1MaSlopeBars a InpIndicator4MaSlopeBars
+permitem otimizar cada media independentemente. A edicao da Canvas ainda nao
+altera a configuracao ativa da classe; essa integracao continua pendente.

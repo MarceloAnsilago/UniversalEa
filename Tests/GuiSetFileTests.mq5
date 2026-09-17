@@ -14,7 +14,7 @@ void OnStart()
    original.setup.timeframe=PERIOD_H4; original.setup.lot=0.25;
    original.setup.entry_start=540; original.setup.entry_end=1020;
    original.setup.close_enabled=true; original.setup.close_time=1050;
-   original.indicators[0].type=GUI_INDICATOR_ADX; original.indicators[0].adxPeriod=27; original.indicators[0].adxMinimum=22.5;
+   original.indicators[0].type=GUI_INDICATOR_ADX; original.indicators[0].adxPeriod=27; original.indicators[0].adxMinimum=22.5; original.indicators[1].maSlopeBars=7;
    original.indicators[3].type=GUI_INDICATOR_RSI; original.indicators[3].rsiLower=22.5;
    original.rules.stop_loss=123; original.rules.take_profit=456;
    original.rules.Choose(4,1); original.rules.stop_loss=1.5; original.rules.take_profit=2.5;
@@ -24,7 +24,7 @@ void OnStart()
    Check(GuiLoadSet(path,loaded,error,root),"Carregar joao: "+error);
    Check(loaded.setup.name=="joao" && loaded.setup.magic==1234567 && loaded.setup.set_id==original.setup.set_id,"Restaurar identidade e Magic exatos");
    Check(loaded.setup.lot==0.25 && loaded.setup.timeframe==PERIOD_H4 && loaded.setup.entry_start==540 && loaded.setup.close_time==1050,"Restaurar setup");
-   Check(loaded.indicators[0].adxPeriod==27 && loaded.indicators[0].adxMinimum==22.5 && loaded.indicators[3].rsiLower==22.5,"Restaurar quatro indicadores e limiar ADX");
+   Check(loaded.indicators[0].adxPeriod==27 && loaded.indicators[1].maSlopeBars==7 && loaded.indicators[0].adxMinimum==22.5 && loaded.indicators[3].rsiLower==22.5,"Restaurar quatro indicadores e limiar ADX");
    Check(loaded.rules.stop_loss==1.5 && loaded.management.values[0]==2 && loaded.management.Unit(0)=="%","Restaurar regras e gestão em percentual");
    loaded.rules.Choose(4,0); loaded.management.Choose(0,1);
    Check(loaded.rules.stop_loss==123 && loaded.rules.take_profit==456 && loaded.management.values[0]==100 && loaded.management.values[1]==20,"Preservar bancos de valores em pontos");
@@ -93,7 +93,7 @@ void OnStart()
      }
    CGuiState migrated_state;
    Check(GuiUpgradeSetV1(legacy,migrated) && GuiDecodeSet(migrated,migrated_state,error) &&
-         migrated_state.indicators[0].adxMinimum==25 && migrated_state.indicators[0].adxPeriod==27 &&
+         migrated_state.indicators[0].maSlopeBars==3 && migrated_state.indicators[0].adxMinimum==25 && migrated_state.indicators[0].adxPeriod==27 &&
          migrated_state.setup.magic==original.setup.magic,"Migrar v1 preservando configuracao");
    // Exercer tambem leitura binaria e checksum do formato v1.
    string legacy_path=root+"\\legacy.set";
@@ -109,8 +109,57 @@ void OnStart()
       FileClose(legacy_file);
      }
    Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) &&
-         migrated.version==2 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
+         migrated.version==3 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
    FileDelete(legacy_path,FILE_COMMON);
+   // O formato v2 preserva o limiar ADX e recebe tres velas de inclinacao.
+   GuiSetRecordV2 legacy_v2;
+   ZeroMemory(legacy_v2); legacy_v2.signature=current_record.signature; legacy_v2.version=2;
+   for(int i=0;i<49;i++) legacy_v2.name[i]=current_record.name[i];
+   for(int i=0;i<33;i++) legacy_v2.identity[i]=current_record.identity[i];
+   legacy_v2.magic=current_record.magic;
+   legacy_v2.market=current_record.market;
+   legacy_v2.timeframe=current_record.timeframe;
+   legacy_v2.direction=current_record.direction;
+   legacy_v2.trade_mode=current_record.trade_mode;
+   legacy_v2.lot=current_record.lot;
+   legacy_v2.entry_start=current_record.entry_start;
+   legacy_v2.entry_end=current_record.entry_end;
+   legacy_v2.close_enabled=current_record.close_enabled;
+   legacy_v2.close_time=current_record.close_time;
+   legacy_v2.rules=current_record.rules;
+   legacy_v2.management=current_record.management;
+   for(int i=0;i<4;i++)
+     {
+      legacy_v2.indicators[i].type=current_record.indicators[i].type;
+      legacy_v2.indicators[i].maPeriod=current_record.indicators[i].maPeriod;
+      legacy_v2.indicators[i].maMethod=current_record.indicators[i].maMethod;
+      legacy_v2.indicators[i].maPrice=current_record.indicators[i].maPrice;
+      legacy_v2.indicators[i].maShift=current_record.indicators[i].maShift;
+      legacy_v2.indicators[i].rsiPeriod=current_record.indicators[i].rsiPeriod;
+      legacy_v2.indicators[i].adxPeriod=current_record.indicators[i].adxPeriod;
+      legacy_v2.indicators[i].rsiPrice=current_record.indicators[i].rsiPrice;
+      legacy_v2.indicators[i].rsiLower=current_record.indicators[i].rsiLower;
+      legacy_v2.indicators[i].rsiUpper=current_record.indicators[i].rsiUpper;
+      legacy_v2.indicators[i].adxMinimum=current_record.indicators[i].adxMinimum;
+     }
+   legacy_file=FileOpen(legacy_path,FILE_READ|FILE_WRITE|FILE_BIN|FILE_COMMON);
+   legacy_ok=false;
+   if(legacy_file!=INVALID_HANDLE)
+     {
+      uint checksum=0;
+      legacy_ok=FileWriteStruct(legacy_file,legacy_v2)==sizeof(GuiSetRecordV2) &&
+                GuiSetChecksum(legacy_file,checksum,sizeof(GuiSetRecordV2)) &&
+                FileSeek(legacy_file,sizeof(GuiSetRecordV2),SEEK_SET) &&
+                FileWriteInteger(legacy_file,(int)checksum)==4;
+      FileClose(legacy_file);
+     }
+   Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) &&
+         GuiDecodeSet(migrated,migrated_state,error) &&
+         migrated_state.indicators[0].adxMinimum==22.5 &&
+         migrated_state.indicators[1].maSlopeBars==3,"Migrar arquivo v2 preservando ADX");
+   FileDelete(legacy_path,FILE_COMMON);
+   GuiEncodeSet(original,data,error); data.indicators[1].maSlopeBars=1;
+   Check(!GuiDecodeSet(data,loaded,error),"Rejeitar inclinacao invalida no set");
    FileDelete(path,FILE_COMMON); FileDelete(corrupt,FILE_COMMON);
    FileDelete(root+"\\owners\\1234567.txt",FILE_COMMON);
    FileDelete(root+"\\magic-v1.bin",FILE_COMMON); FileDelete(root+"\\sets.lock",FILE_COMMON);

@@ -20,7 +20,7 @@ void OnStart()
    Check(indicator==NULL && error!="","Tipo desconhecido");
 
    config.type=GUI_INDICATOR_MA;
-   config.maPeriod=20; config.maMethod=MODE_EMA; config.maPrice=PRICE_CLOSE;
+   config.maSlopeBars=3; config.maPeriod=20; config.maMethod=MODE_EMA; config.maPrice=PRICE_CLOSE;
    indicator=MyIndicatorFactory::Create(config,error);
    Check(indicator!=NULL && error=="","MA ignora parametros inativos do RSI e ADX");
    if(indicator!=NULL)

@@ -15,7 +15,7 @@ class MyMA : public MyIndicator
   {
 private:
    MyMAConfig m_config;
-   // Compara exclusivamente o fechamento e a media na ultima vela fechada.
+   // Compara o fechamento com a media e exige inclinacao nas N velas fechadas.
    // Igualdade, valor ausente ou numero invalido nao confirmam nenhuma direcao.
    bool CheckClose(const MqlRates &rates[],MyIndicatorValues &values,const bool buy)
      {

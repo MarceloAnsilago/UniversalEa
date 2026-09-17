@@ -7,6 +7,12 @@ void Check(const bool condition,const string label)
 void OnStart()
   {
    CGuiState state; state.Reset(); string error;
+   Check(state.indicators[0].maSlopeBars==3,"Inclinacao padrao de tres velas");
+   Check(state.Commit(0,GUI_MA_SLOPE_BARS,"5",error) && state.indicators[0].maSlopeBars==5,"Editar velas de inclinacao");
+   Check(!state.Commit(0,GUI_MA_SLOPE_BARS,"1",error) && state.indicators[0].maSlopeBars==5,"Rejeitar quantidade insuficiente");
+   Check(!state.Commit(0,GUI_MA_SLOPE_BARS,"3.5",error),"Inclinacao exige inteiro");
+   Check(state.indicators[1].maSlopeBars==3,"Inclinacao independente por media");
+   state.Reset();
    Check(state.indicators[0].adxMinimum==25,"ADX minimo padrao");
    Check(state.Commit(0,GUI_ADX_MINIMUM,"20,5",error) && state.indicators[0].adxMinimum==20.5,"Editar ADX minimo decimal");
    Check(!state.Commit(0,GUI_ADX_MINIMUM,"101",error) && state.indicators[0].adxMinimum==20.5,"Rejeitar ADX minimo fora da escala");

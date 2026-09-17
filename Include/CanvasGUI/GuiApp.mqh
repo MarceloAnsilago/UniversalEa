@@ -659,7 +659,7 @@ private:
             bool back=(TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT)&0x8000)!=0;
             m_rules_focus=false; m_rules.LeaveFocus();
             if(back)
-              { int id=8; while(id>4 && !FocusAvailable(id)) id--; SetFocus(id); }
+              { int id=9; while(id>4 && !FocusAvailable(id)) id--; SetFocus(id); }
             else SetFocus(10);
            }
          if(m_rules.Dirty()) m_dirty=true;

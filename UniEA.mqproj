@@ -203,6 +203,11 @@
       "path":"Include\\Indicators\\MyIndicatorData.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"Include\\Indicators\\MyIndicatorValues.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ]
 }

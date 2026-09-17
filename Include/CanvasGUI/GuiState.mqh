@@ -167,7 +167,7 @@ public:
          if(c.type==GUI_INDICATOR_ADX) { Print("ADX mínimo: ",DoubleToString(c.adxMinimum,2)," | +DI/-DI na vela fechada"); continue; }
          if(c.type==GUI_INDICATOR_MA) Print("Método: ",GuiMethodName((int)c.maMethod));
          Print("Preço: ",GuiPriceName((int)(c.type==GUI_INDICATOR_MA ? c.maPrice : c.rsiPrice)-1));
-         if(c.type==GUI_INDICATOR_MA) Print("Shift: ",c.maShift);
+         if(c.type==GUI_INDICATOR_MA) { Print("Shift: ",c.maShift); Print("Velas de inclinação: ",c.maSlopeBars); }
          else { Print("Inferior: ",DoubleToString(c.rsiLower,2)); Print("Superior: ",DoubleToString(c.rsiUpper,2)); }
         }
       Print("====================================");
