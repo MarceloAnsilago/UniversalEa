@@ -30,7 +30,7 @@ private:
 
    //--- Regras de entrada e alvos.
    ENUM_GUI_ORDER_MODE m_order_mode;        // Ordem a mercado ou pendente.
-   ENUM_GUI_CANDLE_FILTER m_candle_filter;  // Desativado, candle de alta ou de baixa.
+   ENUM_GUI_CANDLE_FILTER m_candle_filter;  // Desativado, tamanho de candles ou pavios.
    ENUM_GUI_TARGET_UNIT m_target_unit;      // Pontos ou percentual para os alvos.
    double m_stop_loss;                      // Zero desativa o stop loss.
    double m_take_profit;                    // Zero desativa o take profit.

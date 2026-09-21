@@ -4,6 +4,16 @@ No card Filtro de candle, o seletor Configurar candle alterna entre 1, 2 e 3.
 Cada candle guarda seus próprios valores; 1 corresponde ao último fechado.
 O seletor apenas escolhe qual configuração está sendo editada.
 
+O seletor **Condição** controla quais filtros estão habilitados:
+
+- **Desativado:** nenhum filtro de tamanho habilitado; oculta os parâmetros.
+- **Candles:** exibe corpo/total e mínimo/máximo do candle.
+- **Pavios:** exibe mínimo/máximo dos pavios superior e inferior.
+
+Candles e Pavios mantêm a seleção de candle e de unidade. Os valores ficam
+preservados quando outra condição é escolhida. Somente a condição selecionada
+deverá ser aplicada pelo motor de execução.
+
 Cada configuração contém:
 
 - Medida do candle: corpo (diferença absoluta entre abertura e fechamento)
@@ -22,9 +32,11 @@ O percentual permitido é de 0 a 100. O padrão continua sendo pontos.
 
 Todos os limites começam em zero. Zero desativa somente aquele limite.
 Quando mínimo e máximo estão ativos, mínimo não pode superar máximo.
-O modo inicial é Corpo. A condição anterior de alta/baixa permanece separada.
+O modo inicial é Corpo, com Condição desativada. Alta/baixa foi removida.
 
-A configuração acompanha o histórico e os conjuntos salvos (formato v7).
+A configuração acompanha o histórico e os conjuntos salvos (formato v8).
+Arquivos anteriores iniciam a condição desativada: alta/baixa não é convertida
+em Candles/Pavios. Os limites previamente salvos são preservados.
 Arquivos v6 preservam seus limites em pontos e recebem o banco percentual zerado.
 Arquivos mais antigos recebem os novos limites zerados.
 Esta etapa prepara a Canvas e a persistência. A aplicação desses limites aos

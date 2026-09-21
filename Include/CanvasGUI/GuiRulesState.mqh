@@ -145,7 +145,7 @@ public:
       if(id==8) return DoubleToString(pending_distance,2);
       if(id==9) return IntegerToString(pending_bar);
       if(id==0) return order_mode==GUI_ORDER_MARKET ? "A mercado" : "Pendente";
-      if(id==1) return candle_filter==GUI_CANDLE_DISABLED ? "Desativado" : (candle_filter==GUI_CANDLE_BULLISH ? "Candle de alta" : "Candle de baixa");
+      if(id==1) return candle_filter==GUI_CANDLE_DISABLED ? "Desativado" : (candle_filter==GUI_CANDLE_SIZE ? "Candles" : "Pavios");
       return DoubleToString(id==2 ? stop_loss : take_profit,2);
      }
    bool Commit(const int id,string value,string &error)

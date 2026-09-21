@@ -27,8 +27,8 @@ enum ENUM_GUI_ORDER_MODE
 enum ENUM_GUI_CANDLE_FILTER
   {
    GUI_CANDLE_DISABLED, // Desativado
-   GUI_CANDLE_BULLISH, // Vela de alta
-   GUI_CANDLE_BEARISH // Vela de baixa
+   GUI_CANDLE_SIZE, // Candles
+   GUI_CANDLE_WICKS // Pavios
   };
 enum ENUM_GUI_TARGET_UNIT
   {

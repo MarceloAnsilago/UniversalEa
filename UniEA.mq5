@@ -38,7 +38,7 @@ input int InpCloseTime=1435;       // Encerramento: minutos desde 00:00; usado q
 
 input group "Regras de entrada e saida"
 input ENUM_GUI_ORDER_MODE InpOrderMode=GUI_ORDER_MARKET;           // Tipo de ordem: a mercado ou pendente
-input ENUM_GUI_CANDLE_FILTER InpCandleFilter=GUI_CANDLE_DISABLED;   // Filtro: desativado, candle de alta ou de baixa
+input ENUM_GUI_CANDLE_FILTER InpCandleFilter=GUI_CANDLE_DISABLED;   // Filtro: desativado, tamanho de candles ou pavios
 input ENUM_GUI_TARGET_UNIT InpTargetUnit=GUI_TARGET_POINTS;        // Unidade do stop loss e take profit
 input double InpStopLoss=0.0;                                      // Stop loss na unidade selecionada; 0 desativa
 input double InpTakeProfit=0.0;                                    // Take profit na unidade selecionada; 0 desativa

@@ -32,9 +32,9 @@ private:
    bool m_rules_focus;
    void PositionIndicators()
      {
-      m_layout.StackIndicators(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE,0,m_state.indicators[m_active_indicator].type==GUI_INDICATOR_MA,m_rules.state.order_mode==GUI_ORDER_PENDING);
+      m_layout.StackIndicators(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE,0,m_state.indicators[m_active_indicator].type==GUI_INDICATOR_MA,m_rules.state.order_mode==GUI_ORDER_PENDING,(int)m_rules.state.candle_filter);
       m_scroll.Configure(m_layout.width-20,m_layout.height,m_layout.status.y+m_layout.status.h);
-      m_layout.StackIndicators(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE,m_scroll.offset,m_state.indicators[m_active_indicator].type==GUI_INDICATOR_MA,m_rules.state.order_mode==GUI_ORDER_PENDING);
+      m_layout.StackIndicators(m_state.indicators[m_active_indicator].type!=GUI_INDICATOR_NONE,m_scroll.offset,m_state.indicators[m_active_indicator].type==GUI_INDICATOR_MA,m_rules.state.order_mode==GUI_ORDER_PENDING,(int)m_rules.state.candle_filter);
       for(int i=0;i<24;i++)
         {
          GuiRect r;
@@ -758,7 +758,7 @@ public:
         }
       if(m_step==1)
         {
-         int expected=m_layout.RulesHeight(m_rules.state.order_mode==GUI_ORDER_PENDING);
+         int expected=m_layout.RulesHeight(m_rules.state.order_mode==GUI_ORDER_PENDING,(int)m_rules.state.candle_filter);
          if(m_layout.indicator_rules.h!=expected || m_rules.Dirty()) PositionIndicators();
          m_full=true;
         }

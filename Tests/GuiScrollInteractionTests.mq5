@@ -42,7 +42,7 @@ void OnStart()
    ResourceSave(gui.m_renderer.m_canvas.ResourceName(),"scroll-rules.bmp");
    GuiRect candle=gui.m_rules.m_select[2].bounds;
    gui.Click(candle.x+10,candle.y+10); gui.Key(40); gui.Key(13);
-   Check(gui.m_rules.state.candle_filter==GUI_CANDLE_BULLISH,"Candle filter in second section remains interactive");
+   Check(gui.m_rules.state.candle_filter==GUI_CANDLE_SIZE,"Candle filter in second section remains interactive");
    gui.ScrollTo(0);
    GuiRect thumb=gui.m_scroll.thumb;
    gui.Mouse(thumb.x+5,thumb.y+5,"1");
@@ -89,10 +89,14 @@ void OnStart()
    gui.m_rules.Focus(11); gui.RevealFocus(); gui.m_rules.Key(13); gui.m_rules.SelectOption(1);
    Check(gui.m_rules.state.editing_candle==1 && gui.m_rules.state.candle_sizes[1].measure==1 &&
          gui.m_rules.state.CandleValue(12)==0 && gui.m_rules.state.candle_sizes[0].minimum==20,"Candle 2 tem limites e medida independentes");
+   Check(gui.m_rules.FieldVisible(11) && gui.m_rules.FieldVisible(12) && !gui.m_rules.FieldVisible(14),"Candles mostra corpo/total e oculta pavios");
+   gui.m_rules.Focus(4); gui.RevealFocus(); gui.m_rules.Key(13); gui.m_rules.SelectOption(2); gui.m_dirty=true; gui.Render();
+   Check(!gui.m_rules.FieldVisible(11) && !gui.m_rules.FieldVisible(12) && gui.m_rules.FieldVisible(14),"Pavios mostra somente seus limites");
    gui.m_rules.Focus(16); gui.RevealFocus(); gui.m_rules.Key(9);
    Check(gui.m_rules.m_focus==17 && gui.m_rules.m_edit==9,"Tab alcança o último limite de pavio");
    gui.m_rules.Finish(false);
    int filter_widths[]={600,960,1120,1792};
+   gui.m_rules.Focus(4); gui.RevealFocus(); gui.m_rules.Key(13); gui.m_rules.SelectOption(1); gui.m_dirty=true; gui.Render();
    gui.m_rules.Focus(11); gui.m_rules.Key(9);
    Check(gui.m_rules.m_focus==18,"Tab chega à unidade antes dos limites");
    gui.RevealFocus(); gui.m_rules.Key(13); gui.m_rules.SelectOption(1);
@@ -100,15 +104,22 @@ void OnStart()
    gui.m_rules.Key(9);
    Check(gui.m_rules.m_focus==12 && gui.m_rules.m_edit==4,"Unidade avança para o primeiro limite");
    gui.m_rules.Finish(false);
+   gui.m_rules.state.Choose(1,2);
    for(int i=0;i<ArraySize(filter_widths);i++)
      {
-      CGuiLayout filter_layout; filter_layout.Calculate(filter_widths[i],733); filter_layout.StackIndicators(true);
+      CGuiLayout filter_layout; filter_layout.Calculate(filter_widths[i],733); filter_layout.StackIndicators(true,0,false,false,2);
       gui.m_rules.PlaceEmbedded(filter_layout);
       GuiRect last=gui.m_rules.m_text[9].bounds,filter_card=gui.m_rules.m_cards[2];
       Check(last.x>=filter_card.x && last.x+last.w<=filter_card.x+filter_card.w && last.y+last.h<=filter_card.y+filter_card.h,
             "Limites cabem no card em todas as larguras");
       Check(filter_layout.apply.y>=filter_card.y+filter_card.h,"Rodapé permanece após o filtro");
      }
+   gui.m_rules.state.Choose(1,0);
+   Check(!gui.m_rules.FieldVisible(10) && !gui.m_rules.FieldVisible(18) && !gui.m_rules.FieldVisible(12) &&
+         !gui.m_rules.FieldVisible(14),"Desativado oculta todos os filtros");
+   gui.m_rules.EnterFocus(true);
+   Check(gui.m_rules.m_focus==4,"Foco final ignora filtros desativados");
+   Check(gui.m_rules.state.candle_sizes[0].minimum==20,"Desativar preserva os valores configurados");
    gui.Destroy();
    PrintFormat("[GuiScrollInteractionTests] %d checks, %d failures",checks,failures);
   }

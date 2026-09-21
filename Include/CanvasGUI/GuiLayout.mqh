@@ -124,12 +124,13 @@ public:
       r.Set(x,c.y+78+row*76,field_width,42);
      }
    // Altura das regras com os campos pendentes dentro do card Ordem.
-   int RulesHeight(const bool pending)
+   int FilterHeight(const int condition) { return condition==0 ? 180 : 504; }
+   int RulesHeight(const bool pending,const int condition=0)
      {
-      if(content_width>=760) return 728;
-      return pending ? 1384 : 1252;
+      if(content_width>=760) return (int)MathMax(312,FilterHeight(condition))+72;
+      return 416+(pending ? 312 : 180)+FilterHeight(condition);
      }
-   void StackIndicators(const bool parameters,const int offset=0,const bool slope=false,const bool pending=false)
+   void StackIndicators(const bool parameters,const int offset=0,const bool slope=false,const bool pending=false,const int condition=0)
      {
       dense=true;
       int top=160-offset;
@@ -146,7 +147,7 @@ public:
         }
       if(parameters && slope) cards[1].h+=76; // Terceira linha para inclinacao da media.
       summary.Set(left,cards[1].y+cards[1].h+16,content_width,180);
-      indicator_rules.Set(left,summary.y+summary.h+24,content_width,RulesHeight(pending));
+      indicator_rules.Set(left,summary.y+summary.h+24,content_width,RulesHeight(pending,condition));
       apply.Set(left+content_width-204,indicator_rules.y+indicator_rules.h+16,204,44);
       status.Set(left,apply.y+56,content_width,40);
       too_small=width<600 || height<320;

@@ -16,7 +16,7 @@ void OnStart()
    original.setup.close_enabled=true; original.setup.close_time=1050;
    original.indicators[0].type=GUI_INDICATOR_ADX; original.indicators[0].adxPeriod=27; original.indicators[0].adxMinimum=22.5; original.indicators[1].maSlopeBars=7;
    original.indicators[3].type=GUI_INDICATOR_RSI; original.indicators[3].rsiLower=22.5;
-   original.rules.Choose(0,1); original.rules.Choose(6,0);
+   original.rules.Choose(0,1); original.rules.Choose(6,0); original.rules.Choose(1,2);
    original.rules.Commit(8,"150",error); original.rules.Choose(7,1);
    original.rules.Commit(8,"0.25",error); original.rules.Commit(9,"3",error);
    original.rules.candle_sizes[0].minimum=12.5;
@@ -41,6 +41,7 @@ void OnStart()
          loaded.rules.candle_sizes[2].lower_maximum==8,"Restaurar filtros independentes dos três candles");
    Check(loaded.rules.candle_units[1]==1 && loaded.rules.candle_percent[1].upper_maximum==25 &&
          loaded.rules.candle_sizes[1].upper_maximum==30,"Restaurar unidade e bancos independentes do filtro");
+   Check(loaded.rules.candle_filter==GUI_CANDLE_WICKS,"Restaurar condição Pavios");
    loaded.rules.Choose(7,0);
    Check(loaded.rules.pending_distance==150,"Restaurar distância independente em pontos");
    loaded.rules.Choose(4,0); loaded.management.Choose(0,1);
@@ -126,7 +127,7 @@ void OnStart()
       FileClose(legacy_file);
      }
    Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) &&
-         migrated.version==7 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
+         migrated.version==8 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
    FileDelete(legacy_path,FILE_COMMON);
    // O formato v2 preserva o limiar ADX e recebe tres velas de inclinacao.
    GuiSetRecordV2 legacy_v2;

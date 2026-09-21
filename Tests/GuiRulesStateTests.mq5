@@ -11,7 +11,7 @@ void OnStart()
    Check(state.rules.stop_loss==0 && state.rules.take_profit==0 && state.rules.Validate(error),"Disabled exits are valid");
    Check(state.rules.Choose(0,1) && state.rules.Choose(1,2),"Pending order and bearish candle");
    Check(!state.rules.Choose(0,2) && !state.rules.Choose(1,3) && !state.rules.Choose(1,-1),"Invalid options rejected");
-   Check(state.rules.order_mode==GUI_ORDER_PENDING && state.rules.candle_filter==GUI_CANDLE_BEARISH,"Invalid options preserve state");
+   Check(state.rules.order_mode==GUI_ORDER_PENDING && state.rules.candle_filter==GUI_CANDLE_WICKS,"Invalid options preserve state");
    Check(state.rules.Commit(2,"150,25",error) && state.rules.Commit(3,"300.50",error),"Comma and decimal point accepted");
    string invalid[]={"","-1","1e3","NaN","1.2.3","1.001","100000001","abc","."};
    for(int i=0;i<ArraySize(invalid);i++)
@@ -23,7 +23,7 @@ void OnStart()
    state.setup.name="Rules snapshot"; state.indicators[0].maPeriod=42;
    Check(state.Apply(),"Save combined configuration");
    state.rules.Choose(0,0); state.rules.Choose(1,0); state.rules.Commit(2,"0",error); state.rules.Commit(3,"0",error);
-   Check(state.applications[0].rules.order_mode==GUI_ORDER_PENDING && state.applications[0].rules.candle_filter==GUI_CANDLE_BEARISH,"Snapshot preserves entry rules");
+   Check(state.applications[0].rules.order_mode==GUI_ORDER_PENDING && state.applications[0].rules.candle_filter==GUI_CANDLE_WICKS,"Snapshot preserves entry rules");
    Check(state.applications[0].rules.stop_loss==150.25 && state.applications[0].rules.take_profit==300.5,"Snapshot preserves exits");
    Check(state.applications[0].setup.name=="Rules snapshot" && state.applications[0].indicators[0].maPeriod==42,"Snapshot includes setup and indicators");
    Check(state.rules.Commit(2,"100000000",error),"Upper boundary accepted");

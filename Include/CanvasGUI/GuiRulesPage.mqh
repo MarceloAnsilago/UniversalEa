@@ -25,7 +25,13 @@ private:
      {
       if(!m_embedded) return id>=0 && id<=6;
       if(id>=0 && id<=4) return true;
-      if(id>=10 && id<=18) return true;
+      if(id>=10 && id<=18)
+        {
+         if(state.candle_filter==GUI_CANDLE_DISABLED) return false;
+         if(id==10 || id==18) return true;
+         if(id==11 || id==12 || id==13) return state.candle_filter==GUI_CANDLE_SIZE;
+         return state.candle_filter==GUI_CANDLE_WICKS;
+        }
       if(id==6 || id==9) return Pending();
       return false;
      }
@@ -105,8 +111,8 @@ public:
       m_labels[2].caption="Stop loss (pontos)"; m_labels[3].caption="Take profit (pontos)";
       m_select[0].SetOptions("A mercado|Pendente");
       m_select[1].SetOptions("Pontos|Porcentagem");
-      m_labels[4].caption="Condição do candle";
-      m_select[2].SetOptions("Desativado|Candle de alta|Candle de baixa");
+      m_labels[4].caption="Condição";
+      m_select[2].SetOptions("Desativado|Candles|Pavios");
       m_select[2].SetSelected(state.Choice(1));
       for(int i=0;i<2;i++) { m_select[i].SetSelected(state.Choice(i==1 ? 4 : 0)); m_text[i].SetValue(state.Value(i+2)); }
       // Índice 3 reservado: antigo seletor Stop/Limit removido da interface.
@@ -189,11 +195,11 @@ public:
          if(c.w<760) m_cards[1].y=m_cards[0].y+m_cards[0].h+16;
         }
       // O filtro recebe linhas próprias para não comprimir os seis limites.
-      m_cards[2].h=656;
+      m_cards[2].h=layout.FilterHeight((int)state.candle_filter);
       if(c.w<760)
         {
          m_cards[0].w=c.w;
-         m_cards[2].Set(c.x,m_cards[0].y+m_cards[0].h+16,c.w,656);
+         m_cards[2].Set(c.x,m_cards[0].y+m_cards[0].h+16,c.w,layout.FilterHeight((int)state.candle_filter));
          m_cards[1].y=m_cards[2].y+m_cards[2].h+16;
         }
       for(int id=0;id<4;id++)
@@ -210,15 +216,16 @@ public:
       for(int id=10;id<=17;id++)
         {
          bool pair=id>=12;
-         int row=pair ? 4+(id-12)/2 : id-9;
+         int row=pair ? (state.candle_filter==GUI_CANDLE_SIZE ? 4 : 3+(id-14)/2) : id-9;
          int width=pair ? (filter.w-64)/2 : filter.w-48;
          int x=filter.x+24+(pair ? (id%2)*(width+16) : 0),y=filter.y+78+row*76;
          m_labels[id].SetBounds(x,y-22,width,18);
          if(pair) m_text[id-8].SetBounds(x,y,width,42);
          else m_select[id-4].SetBounds(x,y,width,42);
         }
-      m_labels[18].SetBounds(filter.x+24,filter.y+284,filter.w-48,18);
-      m_select[8].SetBounds(filter.x+24,filter.y+306,filter.w-48,42);
+      int unit_y=filter.y+(state.candle_filter==GUI_CANDLE_SIZE ? 306 : 230);
+      m_labels[18].SetBounds(filter.x+24,unit_y-22,filter.w-48,18);
+      m_select[8].SetBounds(filter.x+24,unit_y,filter.w-48,42);
       // Ordem visual: tipo de ordem, referência e vela.
       int ids[]={6,9};
       for(int i=0;i<2;i++)
@@ -246,10 +253,13 @@ public:
       m_labels[4].Draw(r); m_select[2].Draw(r);
       for(int id=6;id<=9;id++)
         if(FieldVisible(id)) { m_labels[id].Draw(r); if(id<=7) m_select[id-2].Draw(r); else m_text[id-6].Draw(r); }
-      for(int id=10;id<=17;id++) { m_labels[id].Draw(r); if(id<12) m_select[id-4].Draw(r); else m_text[id-8].Draw(r); }
-      m_labels[18].Draw(r); m_select[8].Draw(r);
-      r.Text(m_cards[2].x+24,m_cards[2].y+m_cards[2].h-48,state.CandleUnit()=="%" ? "100% = máxima − mínima" : "Tamanhos em pontos do símbolo",GUI_MUTED,11,false,m_cards[2].w-48);
-      r.Text(m_cards[2].x+24,m_cards[2].y+m_cards[2].h-28,"Em "+state.CandleUnit()+" · 0 = sem restrição",GUI_MUTED,11,false,m_cards[2].w-48);
+      for(int id=10;id<=17;id++) if(FieldVisible(id)) { m_labels[id].Draw(r); if(id<12) m_select[id-4].Draw(r); else m_text[id-8].Draw(r); }
+      if(FieldVisible(18))
+        {
+         m_labels[18].Draw(r); m_select[8].Draw(r);
+         r.Text(m_cards[2].x+24,m_cards[2].y+m_cards[2].h-48,state.CandleUnit()=="%" ? "100% = máxima − mínima" : "Tamanhos em pontos do símbolo",GUI_MUTED,11,false,m_cards[2].w-48);
+         r.Text(m_cards[2].x+24,m_cards[2].y+m_cards[2].h-28,"Em "+state.CandleUnit()+" · 0 = sem restrição",GUI_MUTED,11,false,m_cards[2].w-48);
+        }
       r.Text(c.x+24,c.y+c.h-28,m_error ? m_message : "Stop loss e take profit: 0 desativa a saída.",m_error ? GUI_ERROR : GUI_MUTED,12,false,c.w-48);
       m_dirty=false;
      }
@@ -303,8 +313,8 @@ public:
         }
       if(m_embedded)
         {
-         for(int i=6;i<9;i++) if(m_select[i].ContainsPoint(x,y)) hit=SelectFieldId(i);
-         for(int i=4;i<10;i++) if(m_text[i].ContainsPoint(x,y)) hit=i+8;
+         for(int i=6;i<9;i++) if(FieldVisible(SelectFieldId(i)) && m_select[i].ContainsPoint(x,y)) hit=SelectFieldId(i);
+         for(int i=4;i<10;i++) if(FieldVisible(i+8) && m_text[i].ContainsPoint(x,y)) hit=i+8;
         }
       if(m_edit>=0 && hit==TextFieldId(m_edit)) return 0;
       if(!Finish(true)) return 0;
@@ -330,8 +340,8 @@ public:
         }
       if(m_embedded)
         {
-         for(int i=6;i<9;i++) if(m_select[i].SetHover(!overlay && m_select[i].ContainsPoint(x,y))) m_dirty=true;
-         for(int i=4;i<10;i++) if(m_text[i].SetHover(!overlay && m_text[i].ContainsPoint(x,y))) m_dirty=true;
+         for(int i=6;i<9;i++) if(m_select[i].SetHover(FieldVisible(SelectFieldId(i)) && !overlay && m_select[i].ContainsPoint(x,y))) m_dirty=true;
+         for(int i=4;i<10;i++) if(m_text[i].SetHover(FieldVisible(i+8) && !overlay && m_text[i].ContainsPoint(x,y))) m_dirty=true;
         }
       if(m_back.SetHover(!overlay && m_back.ContainsPoint(x,y))) m_dirty=true;
       if(m_save.SetHover(!overlay && m_save.ContainsPoint(x,y))) m_dirty=true;
@@ -381,7 +391,11 @@ public:
         { Begin(m_focus); m_text[m_edit].Key(key); m_dirty=true; }
       return 0;
      }
-   void EnterFocus(const bool last) { Focus(last ? (m_embedded ? 17 : 6) : 0); }
+   void EnterFocus(const bool last)
+     {
+      if(!last) { Focus(0); return; }
+      Focus(-1); Focus(NextFocus(true));
+     }
    void Render(CGuiRenderer &r,const bool full)
      {
       if(!full && !m_dirty) return;
