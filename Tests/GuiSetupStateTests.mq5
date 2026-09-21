@@ -315,9 +315,9 @@ void OnStart()
    ENUM_TIMEFRAMES expected[]={PERIOD_M1,PERIOD_M2,PERIOD_M3,PERIOD_M4,PERIOD_M5,PERIOD_M6,
                               PERIOD_M10,PERIOD_M12,PERIOD_M15,PERIOD_M20,PERIOD_M30,
                               PERIOD_H1,PERIOD_H2,PERIOD_H3,PERIOD_H4,PERIOD_H6,PERIOD_H8,
-                              PERIOD_H12,PERIOD_D1,PERIOD_W1,PERIOD_MN1};
+                              PERIOD_H12,PERIOD_D1,PERIOD_W1,PERIOD_MN1,PERIOD_CURRENT};
    string labels[];
-   Check(StringSplit(GuiSetupTimeframeOptions(),'|',labels)==ArraySize(expected),"Opções incluem todos os 21 timeframes");
+   Check(StringSplit(GuiSetupTimeframeOptions(),'|',labels)==ArraySize(expected),"Opções incluem os 21 timeframes e Tempo corrente");
    for(int option=0;option<ArraySize(expected);option++)
      {
       Check(state.Choose(3,option) && state.timeframe==expected[option] && state.Choice(3)==option,
@@ -325,14 +325,14 @@ void OnStart()
       if(option<ArraySize(labels)) Check(state.Value(3)==labels[option],"Rótulo timeframe "+IntegerToString(option));
       Check(state.Validate(error),"Timeframe selecionado válido "+IntegerToString(option));
      }
-   Check(!state.Choose(3,-1) && !state.Choose(3,21) && state.timeframe==PERIOD_MN1,"Timeframe fora da lista preserva seleção");
+   Check(!state.Choose(3,-1) && !state.Choose(3,22) && state.timeframe==PERIOD_CURRENT,"Timeframe fora da lista preserva seleção");
    Check(!state.Choose(2,-1) && !state.Choose(2,2) && state.market==GUI_SETUP_B3,"Mercado inválido preserva seleção");
    Check(!state.Choose(4,-1) && !state.Choose(4,3) && state.direction==GUI_SETUP_BUY_SELL,"Direção inválida preserva seleção");
    Check(!state.Choose(0,0) && !state.Choose(10,0),"Rejeitar índices sem seleção");
    Check(state.Choice(0)==-1 && state.Choice(10)==-1 && state.Value(11)=="","Índices inválidos não exibem valores");
 
    state.timeframe=PERIOD_CURRENT;
-   Check(!state.Validate(error) && error!="" && state.Choice(3)==-1 && state.Value(3)=="","Rejeitar CURRENT não resolvido");
+   Check(state.Validate(error) && state.Choice(3)==21 && state.Value(3)=="Tempo corrente","Aceitar período atual do gráfico");
    state.timeframe=(ENUM_TIMEFRAMES)7;
    Check(!state.Validate(error),"Rejeitar timeframe inexistente");
    state.Reset(PERIOD_M1); state.magic=0;

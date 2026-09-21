@@ -8,22 +8,21 @@
 
 
 string GuiSetupTimeframeOptions()
-  { return "M1|M2|M3|M4|M5|M6|M10|M12|M15|M20|M30|H1|H2|H3|H4|H6|H8|H12|D1|W1|MN1"; }
+  { return "M1|M2|M3|M4|M5|M6|M10|M12|M15|M20|M30|H1|H2|H3|H4|H6|H8|H12|D1|W1|MN1|Tempo corrente"; }
 
 ENUM_TIMEFRAMES GuiSetupTimeframeByIndex(const int index)
   {
    ENUM_TIMEFRAMES periods[]={PERIOD_M1,PERIOD_M2,PERIOD_M3,PERIOD_M4,PERIOD_M5,PERIOD_M6,
                              PERIOD_M10,PERIOD_M12,PERIOD_M15,PERIOD_M20,PERIOD_M30,
                              PERIOD_H1,PERIOD_H2,PERIOD_H3,PERIOD_H4,PERIOD_H6,PERIOD_H8,
-                             PERIOD_H12,PERIOD_D1,PERIOD_W1,PERIOD_MN1};
+                             PERIOD_H12,PERIOD_D1,PERIOD_W1,PERIOD_MN1,PERIOD_CURRENT};
    if(index<0 || index>=ArraySize(periods)) return PERIOD_CURRENT;
    return periods[index];
   }
 
 int GuiSetupTimeframeIndex(const ENUM_TIMEFRAMES period)
   {
-   if(period==PERIOD_CURRENT) return -1;
-   for(int i=0;i<21;i++) if(GuiSetupTimeframeByIndex(i)==period) return i;
+   for(int i=0;i<22;i++) if(GuiSetupTimeframeByIndex(i)==period) return i;
    return -1;
   }
 
@@ -252,8 +251,9 @@ public:
         { market=option; return true; }
       if(index==3)
         {
+         // Valida o índice antes da conversão: zero agora representa o gráfico atual.
+         if(option<0 || option>=22) return false;
          ENUM_TIMEFRAMES period=GuiSetupTimeframeByIndex(option);
-         if(period==PERIOD_CURRENT) return false;
          timeframe=period;
          return true;
         }
@@ -296,6 +296,7 @@ public:
       if(index==2 && Choice(index)>=0) return market==GUI_SETUP_B3 ? "B3" : "Forex";
       if(index==3 && Choice(index)>=0)
         {
+         if(timeframe==PERIOD_CURRENT) return "Tempo corrente";
          string label=EnumToString(timeframe);
          StringReplace(label,"PERIOD_","");
          return label;

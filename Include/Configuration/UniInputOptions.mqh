@@ -30,7 +30,7 @@ enum ENUM_UNI_YES_NO
 
 enum ENUM_UNI_TIMEFRAME
   {
-   UNI_PERIOD_CURRENT=0, // Período do gráfico
+   UNI_PERIOD_CURRENT=0, // Tempo corrente
    UNI_PERIOD_M1=1, // 1 minuto
    UNI_PERIOD_M2=2, // 2 minutos
    UNI_PERIOD_M3=3, // 3 minutos
