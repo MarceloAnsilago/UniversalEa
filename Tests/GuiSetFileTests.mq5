@@ -16,6 +16,9 @@ void OnStart()
    original.setup.close_enabled=true; original.setup.close_time=1050;
    original.indicators[0].type=GUI_INDICATOR_ADX; original.indicators[0].adxPeriod=27; original.indicators[0].adxMinimum=22.5; original.indicators[1].maSlopeBars=7;
    original.indicators[3].type=GUI_INDICATOR_RSI; original.indicators[3].rsiLower=22.5;
+   original.rules.Choose(0,1); original.rules.Choose(6,4);
+   original.rules.Commit(8,"150",error); original.rules.Choose(7,1);
+   original.rules.Commit(8,"0.25",error); original.rules.Commit(9,"3",error);
    original.rules.stop_loss=123; original.rules.take_profit=456;
    original.rules.Choose(4,1); original.rules.stop_loss=1.5; original.rules.take_profit=2.5;
    original.management.Choose(0,1); original.management.values[0]=100; original.management.values[1]=20;
@@ -26,6 +29,10 @@ void OnStart()
    Check(loaded.setup.lot==0.25 && loaded.setup.timeframe==PERIOD_H4 && loaded.setup.entry_start==540 && loaded.setup.close_time==1050,"Restaurar setup");
    Check(loaded.indicators[0].adxPeriod==27 && loaded.indicators[1].maSlopeBars==7 && loaded.indicators[0].adxMinimum==22.5 && loaded.indicators[3].rsiLower==22.5,"Restaurar quatro indicadores e limiar ADX");
    Check(loaded.rules.stop_loss==1.5 && loaded.management.values[0]==2 && loaded.management.Unit(0)=="%","Restaurar regras e gestão em percentual");
+   Check(loaded.rules.pending_reference==4 && loaded.rules.pending_bar==3 &&
+         loaded.rules.pending_unit==GUI_TARGET_PERCENT && loaded.rules.pending_distance==0.25,"Restaurar configuração pendente");
+   loaded.rules.Choose(7,0);
+   Check(loaded.rules.pending_distance==150,"Restaurar distância independente em pontos");
    loaded.rules.Choose(4,0); loaded.management.Choose(0,1);
    Check(loaded.rules.stop_loss==123 && loaded.rules.take_profit==456 && loaded.management.values[0]==100 && loaded.management.values[1]==20,"Preservar bancos de valores em pontos");
    Check(loaded.setup.CommitText(0,"joao",error) && loaded.setup.magic==1234567,"Confirmar mesmo nome não gera Magic");
@@ -109,7 +116,7 @@ void OnStart()
       FileClose(legacy_file);
      }
    Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) &&
-         migrated.version==3 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
+         migrated.version==5 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
    FileDelete(legacy_path,FILE_COMMON);
    // O formato v2 preserva o limiar ADX e recebe tres velas de inclinacao.
    GuiSetRecordV2 legacy_v2;
@@ -158,6 +165,34 @@ void OnStart()
          migrated_state.indicators[0].adxMinimum==22.5 &&
          migrated_state.indicators[1].maSlopeBars==3,"Migrar arquivo v2 preservando ADX");
    FileDelete(legacy_path,FILE_COMMON);
+   // A versão 3 deve manter a inclinação e receber padrões para os novos campos.
+   GuiSetRecordV3 legacy_v3;
+   ZeroMemory(legacy_v3); legacy_v3.signature=current_record.signature; legacy_v3.version=3;
+   for(int i=0;i<49;i++) legacy_v3.name[i]=current_record.name[i];
+   for(int i=0;i<33;i++) legacy_v3.identity[i]=current_record.identity[i];
+   legacy_v3.magic=current_record.magic; legacy_v3.market=current_record.market;
+   legacy_v3.timeframe=current_record.timeframe; legacy_v3.direction=current_record.direction;
+   legacy_v3.trade_mode=current_record.trade_mode; legacy_v3.lot=current_record.lot;
+   legacy_v3.entry_start=current_record.entry_start; legacy_v3.entry_end=current_record.entry_end;
+   legacy_v3.close_enabled=current_record.close_enabled; legacy_v3.close_time=current_record.close_time;
+   legacy_v3.rules=current_record.rules; legacy_v3.management=current_record.management;
+   for(int i=0;i<4;i++) legacy_v3.indicators[i]=current_record.indicators[i];
+   legacy_file=FileOpen(legacy_path,FILE_READ|FILE_WRITE|FILE_BIN|FILE_COMMON);
+   legacy_ok=false;
+   if(legacy_file!=INVALID_HANDLE)
+     {
+      uint checksum=0;
+      legacy_ok=FileWriteStruct(legacy_file,legacy_v3)==sizeof(GuiSetRecordV3) &&
+                GuiSetChecksum(legacy_file,checksum,sizeof(GuiSetRecordV3)) &&
+                FileSeek(legacy_file,sizeof(GuiSetRecordV3),SEEK_SET) && FileWriteInteger(legacy_file,(int)checksum)==4;
+      FileClose(legacy_file);
+     }
+   Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) && GuiDecodeSet(migrated,migrated_state,error) &&
+         migrated_state.indicators[1].maSlopeBars==7 && migrated_state.rules.pending_bar==1 &&
+         migrated_state.rules.pending_distance==0,"Migrar arquivo v3 com checksum e valores padrão");
+   FileDelete(legacy_path,FILE_COMMON);
+   GuiEncodeSet(original,data,error); data.pending.bar=0;
+   Check(!GuiDecodeSet(data,loaded,error),"Rejeitar referência pendente inválida no arquivo");
    GuiEncodeSet(original,data,error); data.indicators[1].maSlopeBars=1;
    Check(!GuiDecodeSet(data,loaded,error),"Rejeitar inclinacao invalida no set");
    FileDelete(path,FILE_COMMON); FileDelete(corrupt,FILE_COMMON);

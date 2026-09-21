@@ -45,6 +45,18 @@ void OnStart()
    state.rules.target_unit=(ENUM_GUI_TARGET_UNIT)2;
    Check(!state.rules.Validate(error) && !state.Apply(),"Invalid unit cannot be saved");
    state.Reset();
+   Check(state.rules.pending_bar==1 && state.rules.pending_distance==0,"Pendente usa última vela fechada e distância zero");
+   Check(state.rules.Commit(8,"250,50",error) && state.rules.Choose(7,1),"Distância em pontos preservada ao mudar unidade");
+   Check(state.rules.Commit(8,"0.25",error) && state.rules.Choose(4,1) && state.rules.pending_distance==0.25,"Unidade dos alvos não altera distância");
+   Check(!state.rules.Commit(8,"100.01",error) && state.rules.pending_distance==0.25,"Rejeitar percentual acima do limite sem mutação");
+   Check(state.rules.Choose(7,0) && state.rules.pending_distance==250.5,"Restaurar distância em pontos");
+   Check(!state.rules.Commit(9,"0",error) && !state.rules.Commit(9,"1.5",error) && !state.rules.Commit(9,"100001",error),"Referência exige vela fechada inteira no intervalo");
+   Check(state.rules.Commit(9,"3",error) && state.rules.Choose(6,2),"Configurar abertura da terceira vela");
+   Check(!state.rules.Choose(5,2) && !state.rules.Choose(6,5) && !state.rules.Choose(7,-1),"Rejeitar opções pendentes inválidas");
+   GuiPendingStorage pending; state.rules.ExportPending(pending);
+   pending.bar=0;
+   Check(!state.rules.ImportPending(pending,error) && state.rules.pending_bar==3,"Importação inválida preserva estado");
+   Check(state.Apply() && state.applications[0].rules.pending_bar==3,"Histórico inclui referência pendente");
    int widths[]={600,960,1120,1600};
    for(int i=0;i<ArraySize(widths);i++)
      {

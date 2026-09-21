@@ -58,6 +58,31 @@ void OnStart()
    Check(gui.m_rules.m_text[1].Buffer()==pending && gui.m_rules.m_edit==1,"Scrolling preserves uncommitted edit");
    gui.m_rules.Finish(false);
    gui.ScrollTo(-100); Check(gui.m_scroll.offset==0,"Scroll clamps at top");
+   // A expansão deve ser causada pela seleção real, mantendo o rodapé acessível.
+   int market_height=gui.m_layout.indicator_rules.h;
+   gui.m_rules_focus=true; gui.m_rules.Focus(0); gui.RevealFocus();
+   gui.m_rules.Begin(0); gui.m_rules.SelectOption(1); gui.m_dirty=true; gui.Render();
+   Check(gui.m_rules.Pending() && gui.m_rules.FieldVisible(6) && gui.m_rules.FieldVisible(9) && !gui.m_rules.FieldVisible(8),"OHLC: referencia e vela, sem distancia");
+   gui.m_rules.Focus(6); gui.RevealFocus(); gui.m_rules.Key(13);
+   Check(gui.m_rules.m_open==4,"Seletor acessivel por teclado");
+   gui.m_rules.SelectOption(4); gui.m_dirty=true; gui.Render();
+   Check(gui.m_rules.FieldVisible(7) && gui.m_rules.FieldVisible(8) && gui.m_layout.indicator_rules.h>market_height,"Distancia expande card Ordem");
+   gui.m_rules_focus=true; gui.m_rules.Focus(8); gui.RevealFocus();
+   gui.m_rules.FocusBounds(focused);
+   Check(focused.y>=160 && focused.y+focused.h<=733,"Distância pendente acessível por foco e rolagem");
+   gui.m_rules.Begin(8); gui.m_rules.Key(50); gui.m_rules.Key(53); gui.m_rules.Key(13);
+   Check(gui.m_rules.state.pending_distance==25,"Editar distância pelo controle real");
+   gui.m_rules.Focus(6); gui.RevealFocus(); gui.m_rules.Key(13);
+   Check(gui.m_rules.m_open==4,"Enter no tipo pendente abre seletor, não salva a página");
+   gui.m_rules.SelectOption(1);
+   gui.m_dirty=true; gui.Render();
+   Check(gui.m_rules.state.pending_reference==1 && !gui.m_rules.FieldVisible(8) && gui.m_rules.FieldVisible(9),"Minima oculta distancia e mantem vela");
+   gui.m_rules.Focus(6); gui.m_rules.Key(9);
+   Check(gui.m_rules.m_focus==9,"Tab ignora campos ocultos");
+   gui.m_rules.Finish(false);
+   gui.m_rules.Focus(0); gui.RevealFocus();
+   gui.m_rules.Begin(0); gui.m_rules.SelectOption(0); gui.m_dirty=true; gui.Render();
+   Check(!gui.m_rules.Pending() && gui.m_layout.indicator_rules.h==market_height && gui.m_rules.state.pending_distance==25,"Mercado recolhe painel e preserva configuração pendente");
    gui.Destroy();
    PrintFormat("[GuiScrollInteractionTests] %d checks, %d failures",checks,failures);
   }

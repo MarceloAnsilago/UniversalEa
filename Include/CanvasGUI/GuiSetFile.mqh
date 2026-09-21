@@ -14,6 +14,21 @@ struct GuiSetRecord
    IndicatorConfig indicators[4];
    GuiRulesStorage rules;
    GuiManagementStorage management;
+   GuiPendingStorage pending;
+  };
+
+// Layout v3 congelado para leitura dos arquivos anteriores às ordens pendentes.
+struct GuiSetRecordV3
+  {
+   uint signature,version;
+   ushort name[49],identity[33];
+   long magic;
+   int market,timeframe,direction,trade_mode;
+   double lot;
+   int entry_start,entry_end,close_enabled,close_time;
+   IndicatorConfig indicators[4];
+   GuiRulesStorage rules;
+   GuiManagementStorage management;
   };
 
 // Formato binario original, preservado para migrar os sets da versao 1.
@@ -72,7 +87,7 @@ struct GuiSetRecordV2
 bool GuiUpgradeSetV1(const GuiSetRecordV1 &old,GuiSetRecord &data)
   {
    if(old.signature!=0x554E4953 || old.version!=1) return false;
-   ZeroMemory(data); data.signature=old.signature; data.version=3;
+   ZeroMemory(data); data.signature=old.signature; data.version=5;
    for(int i=0;i<49;i++) data.name[i]=old.name[i];
    for(int i=0;i<33;i++) data.identity[i]=old.identity[i];
    data.magic=old.magic;
@@ -87,6 +102,7 @@ bool GuiUpgradeSetV1(const GuiSetRecordV1 &old,GuiSetRecord &data)
    data.close_time=old.close_time;
    data.rules=old.rules;
    data.management=old.management;
+   CGuiRulesState defaults; defaults.ExportPending(data.pending);
    for(int i=0;i<4;i++)
      {
       data.indicators[i].type=old.indicators[i].type;
@@ -108,7 +124,7 @@ bool GuiUpgradeSetV1(const GuiSetRecordV1 &old,GuiSetRecord &data)
 bool GuiUpgradeSetV2(const GuiSetRecordV2 &old,GuiSetRecord &data)
   {
    if(old.signature!=0x554E4953 || old.version!=2) return false;
-   ZeroMemory(data); data.signature=old.signature; data.version=3;
+   ZeroMemory(data); data.signature=old.signature; data.version=5;
    for(int i=0;i<49;i++) data.name[i]=old.name[i];
    for(int i=0;i<33;i++) data.identity[i]=old.identity[i];
    data.magic=old.magic;
@@ -123,6 +139,7 @@ bool GuiUpgradeSetV2(const GuiSetRecordV2 &old,GuiSetRecord &data)
    data.close_time=old.close_time;
    data.rules=old.rules;
    data.management=old.management;
+   CGuiRulesState defaults; defaults.ExportPending(data.pending);
    for(int i=0;i<4;i++)
      {
       data.indicators[i].type=old.indicators[i].type;
@@ -141,10 +158,27 @@ bool GuiUpgradeSetV2(const GuiSetRecordV2 &old,GuiSetRecord &data)
    return true;
   }
 
+// A versão intermediária 2 com tamanho de v3 também é aceita.
+bool GuiUpgradeSetV3(const GuiSetRecordV3 &old,GuiSetRecord &data)
+  {
+   if(old.signature!=0x554E4953 || (old.version!=3 && old.version!=2)) return false;
+   ZeroMemory(data); data.signature=old.signature; data.version=5;
+   for(int i=0;i<49;i++) data.name[i]=old.name[i];
+   for(int i=0;i<33;i++) data.identity[i]=old.identity[i];
+   data.magic=old.magic; data.market=old.market; data.timeframe=old.timeframe;
+   data.direction=old.direction; data.trade_mode=old.trade_mode; data.lot=old.lot;
+   data.entry_start=old.entry_start; data.entry_end=old.entry_end;
+   data.close_enabled=old.close_enabled; data.close_time=old.close_time;
+   for(int i=0;i<4;i++) data.indicators[i]=old.indicators[i];
+   data.rules=old.rules; data.management=old.management;
+   CGuiRulesState defaults; defaults.ExportPending(data.pending);
+   return true;
+  }
+
 bool GuiDecodeSet(const GuiSetRecord &data,CGuiState &state,string &error)
   {
    error="Arquivo de set inválido ou de versão incompatível.";
-   if(data.signature!=0x554E4953 || data.version!=3 || data.name[48]!=0 || data.identity[32]!=0) return false;
+   if(data.signature!=0x554E4953 || data.version!=5 || data.name[48]!=0 || data.identity[32]!=0) return false;
    string name=ShortArrayToString(data.name),id=ShortArrayToString(data.identity);
    if(!GuiValidSetId(id,data.magic) || (data.close_enabled!=0 && data.close_enabled!=1)) return false;
    CGuiState candidate; candidate.Reset();
@@ -157,7 +191,7 @@ bool GuiDecodeSet(const GuiSetRecord &data,CGuiState &state,string &error)
    candidate.setup.entry_start=data.entry_start; candidate.setup.entry_end=data.entry_end;
    candidate.setup.close_enabled=data.close_enabled==1; candidate.setup.close_time=data.close_time;
    if(!candidate.setup.Validate(error) || !candidate.rules.ImportStorage(data.rules,error) ||
-      !candidate.management.ImportStorage(data.management,error)) return false;
+      !candidate.rules.ImportPending(data.pending,error) || !candidate.management.ImportStorage(data.management,error)) return false;
    for(int i=0;i<4;i++)
      {
       IndicatorConfig c=data.indicators[i];
@@ -178,13 +212,14 @@ bool GuiEncodeSet(CGuiState &state,GuiSetRecord &data,string &error)
   {
    if(StringLen(state.setup.name)>48) { error="Nome do set deve ter no máximo 48 caracteres."; return false; }
    if(!GuiValidSetId(state.setup.set_id,state.setup.magic)) { error="O set ainda não possui identificação válida."; return false; }
-   ZeroMemory(data); data.signature=0x554E4953; data.version=3;
+   ZeroMemory(data); data.signature=0x554E4953; data.version=5;
    StringToShortArray(state.setup.name,data.name,0,49); StringToShortArray(state.setup.set_id,data.identity,0,33);
    data.magic=state.setup.magic; data.market=state.setup.market; data.timeframe=(int)state.setup.timeframe;
    data.direction=state.setup.direction; data.trade_mode=state.setup.trade_mode; data.lot=state.setup.lot;
    data.entry_start=state.setup.entry_start; data.entry_end=state.setup.entry_end;
    data.close_enabled=state.setup.close_enabled ? 1 : 0; data.close_time=state.setup.close_time;
    for(int i=0;i<4;i++) data.indicators[i]=state.indicators[i];
+   state.rules.ExportPending(data.pending);
    state.rules.ExportStorage(data.rules); state.management.ExportStorage(data.management);
    CGuiState check; return GuiDecodeSet(data,check,error);
   }
@@ -207,7 +242,8 @@ bool GuiReadSetRecord(const string path,GuiSetRecord &data,string &error)
    ResetLastError();
    bool legacy=FileSize(file)==sizeof(GuiSetRecordV1)+4;
    bool legacy_v2=FileSize(file)==sizeof(GuiSetRecordV2)+4;
-   int record_size=legacy ? sizeof(GuiSetRecordV1) : (legacy_v2 ? sizeof(GuiSetRecordV2) : sizeof(GuiSetRecord));
+   bool legacy_v3=FileSize(file)==sizeof(GuiSetRecordV3)+4;
+   int record_size=legacy ? sizeof(GuiSetRecordV1) : (legacy_v2 ? sizeof(GuiSetRecordV2) : (legacy_v3 ? sizeof(GuiSetRecordV3) : sizeof(GuiSetRecord)));
    bool ok=false;
    if(legacy)
      {
@@ -219,12 +255,21 @@ bool GuiReadSetRecord(const string path,GuiSetRecord &data,string &error)
       GuiSetRecordV2 previous;
       ok=FileReadStruct(file,previous)==sizeof(GuiSetRecordV2) && GuiUpgradeSetV2(previous,data);
      }
+   else if(legacy_v3)
+     {
+      GuiSetRecordV3 previous;
+      ok=FileReadStruct(file,previous)==sizeof(GuiSetRecordV3) && GuiUpgradeSetV3(previous,data);
+     }
    else
      {
       ok=FileSize(file)==sizeof(GuiSetRecord)+4 && FileReadStruct(file,data)==sizeof(GuiSetRecord);
-      // Compatibilidade com o arquivo intermediario que ja continha inclinacao,
-      // mas ainda era marcado como v2 durante o desenvolvimento anterior.
-      if(ok && data.version==2) data.version=3;
+      // V4 tinha Stop/Limit e distância somada ao OHLC. Agora OHLC é preço exato.
+      // Conserva os valores de distância guardados; remove o tipo antigo.
+      if(ok && data.version==4)
+        {
+         ok=data.pending.kind>=0 && data.pending.kind<=1 && data.pending.reference>=0 && data.pending.reference<=3;
+         if(ok) { data.version=5; data.pending.kind=0; }
+        }
      }
    uint expected=(uint)FileReadInteger(file),actual=0;
    ok=ok && GuiSetChecksum(file,actual,record_size) && actual==expected && GetLastError()==0;
