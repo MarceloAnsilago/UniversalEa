@@ -20,13 +20,12 @@ private:
    string m_message;
    // IDs 5 a 9 pertencem somente ao painel condicional de ordens pendentes.
    bool Pending() { return m_embedded && state.order_mode==GUI_ORDER_PENDING; }
-   // A referência e a vela aparecem em toda pendente; valor e unidade só em Distância.
+   // A pendente permite somente o preço da vela e seu índice.
    bool FieldVisible(const int id)
      {
       if(!m_embedded) return id>=0 && id<=6;
       if(id>=0 && id<=4) return true;
       if(id==6 || id==9) return Pending();
-      if(id==7 || id==8) return Pending() && state.pending_reference==4;
       return false;
      }
    int LastFocus() { return m_embedded ? (Pending() ? 9 : 4) : 6; }
@@ -66,7 +65,6 @@ private:
       m_labels[2].caption="Stop loss ("+state.Unit()+")";
       m_labels[3].caption="Take profit ("+state.Unit()+")";
       for(int i=0;i<2;i++) m_text[i].SetValue(state.Value(i+2));
-      m_labels[8].caption="Distância ("+state.PendingUnit()+")";
       for(int i=2;i<4;i++) m_text[i].SetValue(state.Value(TextFieldId(i)));
       m_dirty=true;
      }
@@ -93,8 +91,7 @@ public:
       m_select[2].SetSelected(state.Choice(1));
       for(int i=0;i<2;i++) { m_select[i].SetSelected(state.Choice(i==1 ? 4 : 0)); m_text[i].SetValue(state.Value(i+2)); }
       // Índice 3 reservado: antigo seletor Stop/Limit removido da interface.
-      m_labels[6].caption="Posicionar em"; m_select[4].SetOptions("Máxima|Mínima|Abertura|Fechamento|Distância");
-      m_labels[7].caption="Unidade da distância"; m_select[5].SetOptions("Pontos|Porcentagem");
+      m_labels[6].caption="Posicionar em"; m_select[4].SetOptions("Máxima|Mínima|Abertura|Fechamento");
       m_labels[9].caption="Vela (1 = última fechada)";
       for(int i=3;i<6;i++) m_select[i].SetSelected(state.Choice(SelectFieldId(i)));
       UpdateTargets();
@@ -161,7 +158,7 @@ public:
       // Expande o próprio card Ordem; em telas estreitas, desloca os alvos para baixo.
       if(Pending())
         {
-         m_cards[0].h=state.pending_reference==4 ? 464 : 312;
+         m_cards[0].h=312;
          if(c.w<760) m_cards[1].y=m_cards[0].y+m_cards[0].h+16;
         }
       for(int id=0;id<4;id++)
@@ -174,9 +171,9 @@ public:
         }
       m_labels[4].SetBounds(m_cards[2].x+24,m_cards[2].y+56,m_cards[2].w-48,18);
       m_select[2].SetBounds(m_cards[2].x+24,m_cards[2].y+78,m_cards[2].w-48,42);
-      // Ordem visual: tipo de ordem, referência, vela, unidade e distância.
-      int ids[]={6,9,7,8};
-      for(int i=0;i<4;i++)
+      // Ordem visual: tipo de ordem, referência e vela.
+      int ids[]={6,9};
+      for(int i=0;i<2;i++)
         {
          int id=ids[i],x=m_cards[0].x+24,y=m_cards[0].y+154+i*76,width=m_cards[0].w-48;
          m_labels[id].SetBounds(x,y-22,width,18);

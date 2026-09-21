@@ -16,7 +16,7 @@ void OnStart()
    original.setup.close_enabled=true; original.setup.close_time=1050;
    original.indicators[0].type=GUI_INDICATOR_ADX; original.indicators[0].adxPeriod=27; original.indicators[0].adxMinimum=22.5; original.indicators[1].maSlopeBars=7;
    original.indicators[3].type=GUI_INDICATOR_RSI; original.indicators[3].rsiLower=22.5;
-   original.rules.Choose(0,1); original.rules.Choose(6,4);
+   original.rules.Choose(0,1); original.rules.Choose(6,0);
    original.rules.Commit(8,"150",error); original.rules.Choose(7,1);
    original.rules.Commit(8,"0.25",error); original.rules.Commit(9,"3",error);
    original.rules.stop_loss=123; original.rules.take_profit=456;
@@ -29,7 +29,7 @@ void OnStart()
    Check(loaded.setup.lot==0.25 && loaded.setup.timeframe==PERIOD_H4 && loaded.setup.entry_start==540 && loaded.setup.close_time==1050,"Restaurar setup");
    Check(loaded.indicators[0].adxPeriod==27 && loaded.indicators[1].maSlopeBars==7 && loaded.indicators[0].adxMinimum==22.5 && loaded.indicators[3].rsiLower==22.5,"Restaurar quatro indicadores e limiar ADX");
    Check(loaded.rules.stop_loss==1.5 && loaded.management.values[0]==2 && loaded.management.Unit(0)=="%","Restaurar regras e gestão em percentual");
-   Check(loaded.rules.pending_reference==4 && loaded.rules.pending_bar==3 &&
+   Check(loaded.rules.pending_reference==0 && loaded.rules.pending_bar==3 &&
          loaded.rules.pending_unit==GUI_TARGET_PERCENT && loaded.rules.pending_distance==0.25,"Restaurar configuração pendente");
    loaded.rules.Choose(7,0);
    Check(loaded.rules.pending_distance==150,"Restaurar distância independente em pontos");

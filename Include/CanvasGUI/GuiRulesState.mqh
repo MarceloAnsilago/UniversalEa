@@ -39,8 +39,8 @@ public:
       this=candidate; return true;
      }
    // Configuração da futura entrada pendente; não envia ordens.
-   // Referência: 0 máxima, 1 mínima, 2 abertura, 3 fechamento, 4 distância.
-   // OHLC usa o preço exato; o valor de distância só é usado na opção 4.
+   // Referência: 0 máxima, 1 mínima, 2 abertura, 3 fechamento.
+   // OHLC usa o preço exato. Os campos de distância abaixo são apenas legado binário.
    int pending_reference,pending_bar;
    ENUM_GUI_TARGET_UNIT pending_unit;
    double pending_distance;
@@ -95,7 +95,7 @@ public:
      }
    bool Choose(const int id,const int option)
      {
-      if(id==6 && option>=0 && option<=4) { pending_reference=option; return true; }
+      if(id==6 && option>=0 && option<=3) { pending_reference=option; return true; }
       if(id==7 && option>=0 && option<=1)
         {
          if((int)pending_unit<0 || (int)pending_unit>1) return false;
@@ -151,7 +151,8 @@ public:
    bool Validate(string &error)
      {
       error="";
-      if(pending_reference<0 || pending_reference>4 ||
+      if(pending_reference==4) { error="Este set usa Distância, opção removida. Escolha um set com referência OHLC."; return false; }
+      if(pending_reference<0 || pending_reference>3 ||
          (int)pending_unit<0 || (int)pending_unit>1 || pending_bar<1 || pending_bar>100000 ||
          !MathIsValidNumber(pending_distance) || pending_distance<0 ||
          pending_distance>(pending_unit==GUI_TARGET_PERCENT ? 100.0 : 100000000.0))
