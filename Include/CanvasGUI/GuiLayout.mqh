@@ -126,8 +126,8 @@ public:
    // Altura das regras com os campos pendentes dentro do card Ordem.
    int RulesHeight(const bool pending)
      {
-      if(content_width>=760) return 384;
-      return pending ? 712 : 580;
+      if(content_width>=760) return 728;
+      return pending ? 1384 : 1252;
      }
    void StackIndicators(const bool parameters,const int offset=0,const bool slope=false,const bool pending=false)
      {

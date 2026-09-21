@@ -15,6 +15,40 @@ struct GuiSetRecord
    GuiRulesStorage rules;
    GuiManagementStorage management;
    GuiPendingStorage pending;
+   GuiCandleFilterConfig candle_sizes[3];
+   int candle_units[3];
+   GuiCandleFilterConfig candle_percent[3];
+  };
+
+// V6 preservado: todos os filtros eram em pontos.
+struct GuiSetRecordV6
+  {
+   uint signature,version;
+   ushort name[49],identity[33];
+   long magic;
+   int market,timeframe,direction,trade_mode;
+   double lot;
+   int entry_start,entry_end,close_enabled,close_time;
+   IndicatorConfig indicators[4];
+   GuiRulesStorage rules;
+   GuiManagementStorage management;
+   GuiPendingStorage pending;
+   GuiCandleFilterConfig candle_sizes[3];
+  };
+
+// Layout v4/v5 anterior aos limites de tamanho dos candles.
+struct GuiSetRecordV5
+  {
+   uint signature,version;
+   ushort name[49],identity[33];
+   long magic;
+   int market,timeframe,direction,trade_mode;
+   double lot;
+   int entry_start,entry_end,close_enabled,close_time;
+   IndicatorConfig indicators[4];
+   GuiRulesStorage rules;
+   GuiManagementStorage management;
+   GuiPendingStorage pending;
   };
 
 // Layout v3 congelado para leitura dos arquivos anteriores às ordens pendentes.
@@ -87,7 +121,7 @@ struct GuiSetRecordV2
 bool GuiUpgradeSetV1(const GuiSetRecordV1 &old,GuiSetRecord &data)
   {
    if(old.signature!=0x554E4953 || old.version!=1) return false;
-   ZeroMemory(data); data.signature=old.signature; data.version=5;
+   ZeroMemory(data); data.signature=old.signature; data.version=7;
    for(int i=0;i<49;i++) data.name[i]=old.name[i];
    for(int i=0;i<33;i++) data.identity[i]=old.identity[i];
    data.magic=old.magic;
@@ -124,7 +158,7 @@ bool GuiUpgradeSetV1(const GuiSetRecordV1 &old,GuiSetRecord &data)
 bool GuiUpgradeSetV2(const GuiSetRecordV2 &old,GuiSetRecord &data)
   {
    if(old.signature!=0x554E4953 || old.version!=2) return false;
-   ZeroMemory(data); data.signature=old.signature; data.version=5;
+   ZeroMemory(data); data.signature=old.signature; data.version=7;
    for(int i=0;i<49;i++) data.name[i]=old.name[i];
    for(int i=0;i<33;i++) data.identity[i]=old.identity[i];
    data.magic=old.magic;
@@ -162,7 +196,7 @@ bool GuiUpgradeSetV2(const GuiSetRecordV2 &old,GuiSetRecord &data)
 bool GuiUpgradeSetV3(const GuiSetRecordV3 &old,GuiSetRecord &data)
   {
    if(old.signature!=0x554E4953 || (old.version!=3 && old.version!=2)) return false;
-   ZeroMemory(data); data.signature=old.signature; data.version=5;
+   ZeroMemory(data); data.signature=old.signature; data.version=7;
    for(int i=0;i<49;i++) data.name[i]=old.name[i];
    for(int i=0;i<33;i++) data.identity[i]=old.identity[i];
    data.magic=old.magic; data.market=old.market; data.timeframe=old.timeframe;
@@ -175,10 +209,54 @@ bool GuiUpgradeSetV3(const GuiSetRecordV3 &old,GuiSetRecord &data)
    return true;
   }
 
+bool GuiUpgradeSetV5(const GuiSetRecordV5 &old,GuiSetRecord &data)
+  {
+   if(old.signature!=0x554E4953 || (old.version!=4 && old.version!=5)) return false;
+   ZeroMemory(data); data.signature=old.signature; data.version=7;
+   for(int i=0;i<49;i++) data.name[i]=old.name[i];
+   for(int i=0;i<33;i++) data.identity[i]=old.identity[i];
+   data.magic=old.magic; data.market=old.market; data.timeframe=old.timeframe;
+   data.direction=old.direction; data.trade_mode=old.trade_mode; data.lot=old.lot;
+   data.entry_start=old.entry_start; data.entry_end=old.entry_end;
+   data.close_enabled=old.close_enabled; data.close_time=old.close_time;
+   for(int i=0;i<4;i++) data.indicators[i]=old.indicators[i];
+   data.rules=old.rules; data.management=old.management;
+   data.pending=old.pending;
+   if(old.version==4)
+     {
+      if(data.pending.kind<0 || data.pending.kind>1 || data.pending.reference<0 || data.pending.reference>3) return false;
+      data.pending.kind=0;
+     }
+   // ZeroMemory mantém os novos limites desativados para arquivos antigos.
+   return true;
+  }
+
+bool GuiUpgradeSetV6(const GuiSetRecordV6 &old,GuiSetRecord &data)
+  {
+   if(old.signature!=0x554E4953 || old.version!=6) return false;
+   ZeroMemory(data); data.signature=old.signature; data.version=7;
+   for(int i=0;i<49;i++) data.name[i]=old.name[i];
+   for(int i=0;i<33;i++) data.identity[i]=old.identity[i];
+   data.magic=old.magic; data.market=old.market; data.timeframe=old.timeframe;
+   data.direction=old.direction; data.trade_mode=old.trade_mode; data.lot=old.lot;
+   data.entry_start=old.entry_start; data.entry_end=old.entry_end;
+   data.close_enabled=old.close_enabled; data.close_time=old.close_time;
+   for(int i=0;i<4;i++) data.indicators[i]=old.indicators[i];
+   data.rules=old.rules; data.management=old.management;
+   data.pending=old.pending;
+   for(int i=0;i<3;i++)
+     {
+      data.candle_sizes[i]=old.candle_sizes[i];
+      data.candle_percent[i].measure=old.candle_sizes[i].measure;
+     }
+   // Unidade zero = pontos; os limites percentuais novos começam em zero.
+   return true;
+  }
+
 bool GuiDecodeSet(const GuiSetRecord &data,CGuiState &state,string &error)
   {
    error="Arquivo de set inválido ou de versão incompatível.";
-   if(data.signature!=0x554E4953 || data.version!=5 || data.name[48]!=0 || data.identity[32]!=0) return false;
+   if(data.signature!=0x554E4953 || data.version!=7 || data.name[48]!=0 || data.identity[32]!=0) return false;
    string name=ShortArrayToString(data.name),id=ShortArrayToString(data.identity);
    if(!GuiValidSetId(id,data.magic) || (data.close_enabled!=0 && data.close_enabled!=1)) return false;
    CGuiState candidate; candidate.Reset();
@@ -204,6 +282,13 @@ bool GuiDecodeSet(const GuiSetRecord &data,CGuiState &state,string &error)
         { error="Parâmetros de indicador inválidos no set."; return false; }
       candidate.indicators[i]=c;
      }
+   for(int i=0;i<3;i++)
+     {
+      candidate.rules.candle_sizes[i]=data.candle_sizes[i];
+      candidate.rules.candle_units[i]=data.candle_units[i];
+      candidate.rules.candle_percent[i]=data.candle_percent[i];
+     }
+   if(!candidate.rules.Validate(error)) return false;
    candidate.setup.UseSavedIdentity();
    state=candidate; error=""; return true;
   }
@@ -212,13 +297,19 @@ bool GuiEncodeSet(CGuiState &state,GuiSetRecord &data,string &error)
   {
    if(StringLen(state.setup.name)>48) { error="Nome do set deve ter no máximo 48 caracteres."; return false; }
    if(!GuiValidSetId(state.setup.set_id,state.setup.magic)) { error="O set ainda não possui identificação válida."; return false; }
-   ZeroMemory(data); data.signature=0x554E4953; data.version=5;
+   ZeroMemory(data); data.signature=0x554E4953; data.version=7;
    StringToShortArray(state.setup.name,data.name,0,49); StringToShortArray(state.setup.set_id,data.identity,0,33);
    data.magic=state.setup.magic; data.market=state.setup.market; data.timeframe=(int)state.setup.timeframe;
    data.direction=state.setup.direction; data.trade_mode=state.setup.trade_mode; data.lot=state.setup.lot;
    data.entry_start=state.setup.entry_start; data.entry_end=state.setup.entry_end;
    data.close_enabled=state.setup.close_enabled ? 1 : 0; data.close_time=state.setup.close_time;
    for(int i=0;i<4;i++) data.indicators[i]=state.indicators[i];
+   for(int i=0;i<3;i++)
+     {
+      data.candle_sizes[i]=state.rules.candle_sizes[i];
+      data.candle_units[i]=state.rules.candle_units[i];
+      data.candle_percent[i]=state.rules.candle_percent[i];
+     }
    state.rules.ExportPending(data.pending);
    state.rules.ExportStorage(data.rules); state.management.ExportStorage(data.management);
    CGuiState check; return GuiDecodeSet(data,check,error);
@@ -243,7 +334,9 @@ bool GuiReadSetRecord(const string path,GuiSetRecord &data,string &error)
    bool legacy=FileSize(file)==sizeof(GuiSetRecordV1)+4;
    bool legacy_v2=FileSize(file)==sizeof(GuiSetRecordV2)+4;
    bool legacy_v3=FileSize(file)==sizeof(GuiSetRecordV3)+4;
-   int record_size=legacy ? sizeof(GuiSetRecordV1) : (legacy_v2 ? sizeof(GuiSetRecordV2) : (legacy_v3 ? sizeof(GuiSetRecordV3) : sizeof(GuiSetRecord)));
+   bool legacy_v5=FileSize(file)==sizeof(GuiSetRecordV5)+4;
+   bool legacy_v6=FileSize(file)==sizeof(GuiSetRecordV6)+4;
+   int record_size=legacy ? sizeof(GuiSetRecordV1) : (legacy_v2 ? sizeof(GuiSetRecordV2) : (legacy_v3 ? sizeof(GuiSetRecordV3) : (legacy_v5 ? sizeof(GuiSetRecordV5) : (legacy_v6 ? sizeof(GuiSetRecordV6) : sizeof(GuiSetRecord)))));
    bool ok=false;
    if(legacy)
      {
@@ -260,16 +353,19 @@ bool GuiReadSetRecord(const string path,GuiSetRecord &data,string &error)
       GuiSetRecordV3 previous;
       ok=FileReadStruct(file,previous)==sizeof(GuiSetRecordV3) && GuiUpgradeSetV3(previous,data);
      }
+   else if(legacy_v5)
+     {
+      GuiSetRecordV5 previous;
+      ok=FileReadStruct(file,previous)==sizeof(GuiSetRecordV5) && GuiUpgradeSetV5(previous,data);
+     }
+   else if(legacy_v6)
+     {
+      GuiSetRecordV6 previous;
+      ok=FileReadStruct(file,previous)==sizeof(GuiSetRecordV6) && GuiUpgradeSetV6(previous,data);
+     }
    else
      {
       ok=FileSize(file)==sizeof(GuiSetRecord)+4 && FileReadStruct(file,data)==sizeof(GuiSetRecord);
-      // V4 tinha Stop/Limit e distância somada ao OHLC. Agora OHLC é preço exato.
-      // Conserva os valores de distância guardados; remove o tipo antigo.
-      if(ok && data.version==4)
-        {
-         ok=data.pending.kind>=0 && data.pending.kind<=1 && data.pending.reference>=0 && data.pending.reference<=3;
-         if(ok) { data.version=5; data.pending.kind=0; }
-        }
      }
    uint expected=(uint)FileReadInteger(file),actual=0;
    ok=ok && GuiSetChecksum(file,actual,record_size) && actual==expected && GetLastError()==0;

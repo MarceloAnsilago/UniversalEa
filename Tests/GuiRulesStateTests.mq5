@@ -57,6 +57,26 @@ void OnStart()
    pending.bar=0;
    Check(!state.rules.ImportPending(pending,error) && state.rules.pending_bar==3,"Importação inválida preserva estado");
    Check(state.Apply() && state.applications[0].rules.pending_bar==3,"Histórico inclui referência pendente");
+   state.Reset();
+   Check(state.rules.Validate(error) && state.rules.candle_sizes[0].minimum==0 &&
+         state.rules.candle_sizes[2].lower_maximum==0,"Filtros começam sem restrição");
+   Check(state.rules.Choose(10,0) && state.rules.Commit(12,"20",error) && state.rules.Commit(13,"40",error),"Limites do primeiro candle");
+   Check(state.rules.Choose(10,1) && state.rules.Choose(11,1) && state.rules.Commit(15,"10",error),"Candle 2 total com limite de pavio superior");
+   Check(state.rules.Choose(10,0) && state.rules.CandleValue(12)==20 && state.rules.Choice(11)==0,"Troca de candle preserva limites e modo");
+   Check(state.rules.Commit(13,"10",error) && !state.rules.Validate(error),"Faixa invertida não pode ser aplicada");
+   Check(state.rules.Commit(13,"0",error) && state.rules.Validate(error),"Máximo zero aceita mínimo isolado");
+   Check(!state.rules.Commit(14,"-1",error) && !state.rules.Commit(16,"1e3",error),"Pavios rejeitam números inválidos");
+   Check(state.rules.Commit(16,"6",error) && state.rules.Commit(17,"5",error) && !state.rules.Validate(error),"Validar faixa do pavio inferior");
+   Check(state.rules.Commit(17,"6",error) && state.rules.Validate(error),"Limites iguais são permitidos");
+   Check(!state.rules.Choose(10,3) && !state.rules.Choose(11,2),"Rejeitar candle e medida inexistentes");
+   Check(state.Apply() && state.applications[0].rules.candle_sizes[1].upper_maximum==10,"Histórico preserva todos os filtros");
+   Check(state.rules.Choose(18,1) && state.rules.CandleValue(12)==0 && state.rules.CandleUnit()=="%","Porcentagem inicia em zero sem converter pontos");
+   Check(state.rules.Commit(12,"25",error) && state.rules.Commit(13,"100",error) && state.rules.Validate(error),"Faixa percentual até 100 aceita");
+   Check(!state.rules.Commit(13,"100.01",error) && state.rules.CandleValue(13)==100,"Rejeitar percentual maior que candle total");
+   Check(state.rules.Choose(18,0) && state.rules.CandleValue(12)==20 && state.rules.CandleValue(13)==0,"Restaurar limites originais em pontos");
+   Check(state.rules.Choose(18,1) && state.rules.CandleValue(12)==25,"Restaurar limites percentuais");
+   Check(state.rules.Choose(10,1) && state.rules.CandleUnit()=="pontos","Unidade independente por candle");
+   Check(!state.rules.Choose(18,2),"Unidade inválida rejeitada");
    int widths[]={600,960,1120,1600};
    for(int i=0;i<ArraySize(widths);i++)
      {

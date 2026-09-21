@@ -80,6 +80,35 @@ void OnStart()
    gui.m_rules.Focus(0); gui.RevealFocus();
    gui.m_rules.Begin(0); gui.m_rules.SelectOption(0); gui.m_dirty=true; gui.Render();
    Check(!gui.m_rules.Pending() && gui.m_layout.indicator_rules.h==market_height && gui.m_rules.state.pending_bar==3,"Mercado recolhe painel e preserva configuração pendente");
+   gui.m_rules_focus=true; gui.m_rules.Focus(12); gui.RevealFocus();
+   gui.m_rules.FocusBounds(focused);
+   Check(focused.y>=160 && focused.y+focused.h<=733,"Rolagem revela o mínimo do candle");
+   gui.m_rules.Begin(12); gui.m_rules.Key(50); gui.m_rules.Key(48); gui.m_rules.Key(13);
+   Check(gui.m_rules.state.candle_sizes[0].minimum==20,"Editar mínimo pelo controle real");
+   gui.m_rules.Focus(10); gui.RevealFocus(); gui.m_rules.Key(13); gui.m_rules.SelectOption(1);
+   gui.m_rules.Focus(11); gui.RevealFocus(); gui.m_rules.Key(13); gui.m_rules.SelectOption(1);
+   Check(gui.m_rules.state.editing_candle==1 && gui.m_rules.state.candle_sizes[1].measure==1 &&
+         gui.m_rules.state.CandleValue(12)==0 && gui.m_rules.state.candle_sizes[0].minimum==20,"Candle 2 tem limites e medida independentes");
+   gui.m_rules.Focus(16); gui.RevealFocus(); gui.m_rules.Key(9);
+   Check(gui.m_rules.m_focus==17 && gui.m_rules.m_edit==9,"Tab alcança o último limite de pavio");
+   gui.m_rules.Finish(false);
+   int filter_widths[]={600,960,1120,1792};
+   gui.m_rules.Focus(11); gui.m_rules.Key(9);
+   Check(gui.m_rules.m_focus==18,"Tab chega à unidade antes dos limites");
+   gui.RevealFocus(); gui.m_rules.Key(13); gui.m_rules.SelectOption(1);
+   Check(gui.m_rules.state.CandleUnit()=="%" && gui.m_rules.state.CandleValue(12)==0,"Selecionar porcentagem pelo controle real");
+   gui.m_rules.Key(9);
+   Check(gui.m_rules.m_focus==12 && gui.m_rules.m_edit==4,"Unidade avança para o primeiro limite");
+   gui.m_rules.Finish(false);
+   for(int i=0;i<ArraySize(filter_widths);i++)
+     {
+      CGuiLayout filter_layout; filter_layout.Calculate(filter_widths[i],733); filter_layout.StackIndicators(true);
+      gui.m_rules.PlaceEmbedded(filter_layout);
+      GuiRect last=gui.m_rules.m_text[9].bounds,filter_card=gui.m_rules.m_cards[2];
+      Check(last.x>=filter_card.x && last.x+last.w<=filter_card.x+filter_card.w && last.y+last.h<=filter_card.y+filter_card.h,
+            "Limites cabem no card em todas as larguras");
+      Check(filter_layout.apply.y>=filter_card.y+filter_card.h,"Rodapé permanece após o filtro");
+     }
    gui.Destroy();
    PrintFormat("[GuiScrollInteractionTests] %d checks, %d failures",checks,failures);
   }

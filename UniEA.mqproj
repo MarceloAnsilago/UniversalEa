@@ -208,6 +208,11 @@
       "path":"Include\\Indicators\\MyIndicatorValues.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"Include\\CanvasGUI\\GuiCandleFilter.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ]
 }

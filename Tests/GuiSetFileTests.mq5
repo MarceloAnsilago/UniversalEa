@@ -19,6 +19,11 @@ void OnStart()
    original.rules.Choose(0,1); original.rules.Choose(6,0);
    original.rules.Commit(8,"150",error); original.rules.Choose(7,1);
    original.rules.Commit(8,"0.25",error); original.rules.Commit(9,"3",error);
+   original.rules.candle_sizes[0].minimum=12.5;
+   original.rules.candle_sizes[1].measure=1; original.rules.candle_sizes[1].upper_maximum=30;
+   original.rules.candle_sizes[2].lower_minimum=3; original.rules.candle_sizes[2].lower_maximum=8;
+   original.rules.candle_units[1]=1;
+   original.rules.candle_percent[1].measure=1; original.rules.candle_percent[1].upper_maximum=25;
    original.rules.stop_loss=123; original.rules.take_profit=456;
    original.rules.Choose(4,1); original.rules.stop_loss=1.5; original.rules.take_profit=2.5;
    original.management.Choose(0,1); original.management.values[0]=100; original.management.values[1]=20;
@@ -31,6 +36,11 @@ void OnStart()
    Check(loaded.rules.stop_loss==1.5 && loaded.management.values[0]==2 && loaded.management.Unit(0)=="%","Restaurar regras e gestão em percentual");
    Check(loaded.rules.pending_reference==0 && loaded.rules.pending_bar==3 &&
          loaded.rules.pending_unit==GUI_TARGET_PERCENT && loaded.rules.pending_distance==0.25,"Restaurar configuração pendente");
+   Check(loaded.rules.candle_sizes[0].minimum==12.5 && loaded.rules.candle_sizes[1].measure==1 &&
+         loaded.rules.candle_sizes[1].upper_maximum==30 && loaded.rules.candle_sizes[2].lower_minimum==3 &&
+         loaded.rules.candle_sizes[2].lower_maximum==8,"Restaurar filtros independentes dos três candles");
+   Check(loaded.rules.candle_units[1]==1 && loaded.rules.candle_percent[1].upper_maximum==25 &&
+         loaded.rules.candle_sizes[1].upper_maximum==30,"Restaurar unidade e bancos independentes do filtro");
    loaded.rules.Choose(7,0);
    Check(loaded.rules.pending_distance==150,"Restaurar distância independente em pontos");
    loaded.rules.Choose(4,0); loaded.management.Choose(0,1);
@@ -116,7 +126,7 @@ void OnStart()
       FileClose(legacy_file);
      }
    Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) &&
-         migrated.version==5 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
+         migrated.version==7 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
    FileDelete(legacy_path,FILE_COMMON);
    // O formato v2 preserva o limiar ADX e recebe tres velas de inclinacao.
    GuiSetRecordV2 legacy_v2;
