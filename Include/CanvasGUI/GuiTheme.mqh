@@ -4,12 +4,13 @@
 #define GUI_CARD     0xFFFFFFFF
 #define GUI_TEXT     0xFF1C293D
 #define GUI_MUTED    0xFF718096
-// Neutral surfaces; blue is reserved for focus and the primary action.
-#define GUI_BORDER          0xFFE2E6ED
-#define GUI_BORDER_HOVER    0xFFA5B4C8
+// Contornos mais escuros para leitura em monitores com pouco contraste.
+// O azul continua identificando o campo ativo ou com foco.
+#define GUI_BORDER          0xFF78879D
+#define GUI_BORDER_HOVER    0xFF475569
 #define GUI_BORDER_ACTIVE   0xFF2563EB
-#define GUI_BORDER_DISABLED 0xFFDCE3EC
-#define GUI_WINDOW_BORDER 0xFF8BAAE0
+#define GUI_BORDER_DISABLED 0xFFA5AFBF
+#define GUI_WINDOW_BORDER 0xFF536F9C
 #define GUI_ACCENT   0xFF2563EB
 #define GUI_HOVER    0xFFEFF5FF
 #define GUI_DISABLED 0xFFF0F2F5
