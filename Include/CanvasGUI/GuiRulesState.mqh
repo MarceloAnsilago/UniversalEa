@@ -93,11 +93,20 @@ public:
    ENUM_GUI_ORDER_MODE order_mode;
    ENUM_GUI_CANDLE_FILTER candle_filter;
    double stop_loss,take_profit;
+   double stop_multiplier;
+   int stop_bar,stop_measure; // 0 = total, 1 = corpo.
+   string StopSummary()
+     {
+      if(stop_loss==0 && stop_multiplier==0) return "Desativado";
+      string result=Value(2)+" "+Unit();
+      if(stop_multiplier>0) result+=" + "+Value(19)+" vezes o candle "+Value(20)+" ("+(stop_measure==0 ? "Total" : "Corpo")+")";
+      return result;
+     }
    CGuiRulesState() { Reset(); }
    // Restaura os padrões e limpa os valores guardados para cada unidade.
    void Reset()
      {
-      editing_candle=0;
+      editing_candle=0; stop_multiplier=0; stop_bar=1; stop_measure=0;
       for(int i=0;i<3;i++) { ZeroMemory(candle_sizes[i]); ZeroMemory(candle_percent[i]); candle_units[i]=0; }
       pending_reference=3; pending_bar=1;
       pending_unit=GUI_TARGET_POINTS; pending_distance=0;
@@ -109,6 +118,7 @@ public:
    // Retorna a opção selecionada; os IDs existentes permanecem compatíveis.
    int Choice(const int id)
      {
+      if(id==21) return stop_measure;
       if(id==18) return candle_units[editing_candle];
       if(id==10) return editing_candle;
       if(id==11) return candle_sizes[editing_candle].measure;
@@ -118,6 +128,7 @@ public:
      }
    bool Choose(const int id,const int option)
      {
+      if(id==21 && option>=0 && option<=1) { stop_measure=option; return true; }
       if(id==18 && option>=0 && option<=1) { candle_units[editing_candle]=option; return true; }
       if(id==10 && option>=0 && option<3) { editing_candle=option; return true; }
       if(id==11 && option>=0 && option<=1) { candle_sizes[editing_candle].measure=option; candle_percent[editing_candle].measure=option; return true; }
@@ -141,6 +152,8 @@ public:
      }
    string Value(const int id)
      {
+      if(id==19) return DoubleToString(stop_multiplier,2);
+      if(id==20) return IntegerToString(stop_bar);
       if(id>=12 && id<=17) return DoubleToString(CandleValue(id),2);
       if(id==8) return DoubleToString(pending_distance,2);
       if(id==9) return IntegerToString(pending_bar);
@@ -151,8 +164,8 @@ public:
    bool Commit(const int id,string value,string &error)
      {
       error="";
-      if(id!=2 && id!=3 && id!=8 && id!=9 && (id<12 || id>17)) { error="Campo inválido."; return false; }
-      string unit=id>=12 ? CandleUnit() : (id==8 ? PendingUnit() : (id==9 ? "velas" : Unit()));
+      if(id!=2 && id!=3 && id!=8 && id!=9 && id!=19 && id!=20 && (id<12 || id>17)) { error="Campo inválido."; return false; }
+      string unit=id==19 ? "vezes" : (id==20 ? "candles" : (id>=12 ? CandleUnit() : (id==8 ? PendingUnit() : (id==9 ? "velas" : Unit()))));
       StringReplace(value,",",".");
       int digits=0,dots=0;
       for(int i=0;i<StringLen(value);i++)
@@ -164,7 +177,7 @@ public:
         }
       if(digits==0) { error="Informe o valor em "+unit+"."; return false; }
       int decimal=StringFind(value,".");
-      if(id==9 && (decimal>=0 || StringToDouble(value)<1 || StringToDouble(value)>100000)) { error="Vela de referência: inteiro de 1 a 100000; 1 = última fechada."; return false; }
+      if((id==9 || id==20) && (decimal>=0 || StringToDouble(value)<1 || StringToDouble(value)>100000)) { error="Vela de referência: inteiro de 1 a 100000; 1 = última fechada."; return false; }
       if(decimal>=0 && StringLen(value)-decimal-1>2) { error="Use no máximo duas casas decimais."; return false; }
       double number=StringToDouble(value);
       if(!MathIsValidNumber(number) || number<0 || number>100000000)
@@ -186,7 +199,9 @@ public:
          if(candle_units[editing_candle]==1) candle_percent[editing_candle]=config; else candle_sizes[editing_candle]=config;
          return true;
         }
-      if(id==8) pending_distance=number;
+      if(id==19) stop_multiplier=number;
+      else if(id==20) stop_bar=(int)number;
+      else if(id==8) pending_distance=number;
       else if(id==9) pending_bar=(int)number;
       else if(id==2) stop_loss=number; else take_profit=number;
       return true;
@@ -194,6 +209,9 @@ public:
    bool Validate(string &error)
      {
       error="";
+      if(!MathIsValidNumber(stop_multiplier) || stop_multiplier<0 || stop_multiplier>100000000 ||
+         stop_bar<1 || stop_bar>100000 || stop_measure<0 || stop_measure>1)
+        { error="Confira o multiplicador, o candle e a medida do stop loss."; return false; }
       if(editing_candle<0 || editing_candle>2) { error="Selecione o candle 1, 2 ou 3."; return false; }
       for(int i=0;i<3;i++)
         {

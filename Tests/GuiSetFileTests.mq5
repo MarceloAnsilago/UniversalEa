@@ -24,6 +24,7 @@ void OnStart()
    original.rules.candle_sizes[2].lower_minimum=3; original.rules.candle_sizes[2].lower_maximum=8;
    original.rules.candle_units[1]=1;
    original.rules.candle_percent[1].measure=1; original.rules.candle_percent[1].upper_maximum=25;
+   original.rules.stop_multiplier=1.75; original.rules.stop_bar=3; original.rules.stop_measure=1;
    original.rules.stop_loss=123; original.rules.take_profit=456;
    original.rules.Choose(4,1); original.rules.stop_loss=1.5; original.rules.take_profit=2.5;
    original.management.Choose(0,1); original.management.values[0]=100; original.management.values[1]=20;
@@ -127,7 +128,7 @@ void OnStart()
       FileClose(legacy_file);
      }
    Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) &&
-         migrated.version==8 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
+         migrated.version==9 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
    FileDelete(legacy_path,FILE_COMMON);
    // O formato v2 preserva o limiar ADX e recebe tres velas de inclinacao.
    GuiSetRecordV2 legacy_v2;
@@ -206,6 +207,32 @@ void OnStart()
    Check(!GuiDecodeSet(data,loaded,error),"Rejeitar referência pendente inválida no arquivo");
    GuiEncodeSet(original,data,error); data.indicators[1].maSlopeBars=1;
    Check(!GuiDecodeSet(data,loaded,error),"Rejeitar inclinacao invalida no set");
+   GuiEncodeSet(original,data,error);
+   Check(GuiDecodeSet(data,loaded,error) && loaded.rules.stop_multiplier==1.75 &&
+         loaded.rules.stop_bar==3 && loaded.rules.stop_measure==1,"Stop por candle preservado no set");
+   data.stop_bar=0;
+   Check(!GuiDecodeSet(data,loaded,error) && loaded.rules.stop_bar==3,"Candle inv?lido n?o altera estado carregado");
+   GuiEncodeSet(original,data,error); data.stop_multiplier=-1;
+   Check(!GuiDecodeSet(data,loaded,error),"Multiplicador negativo rejeitado no set");
+   GuiEncodeSet(original,data,error); data.stop_measure=2;
+   Check(!GuiDecodeSet(data,loaded,error),"Medida inv?lida rejeitada no set");
+   // Grava o prefixo bin?rio antigo e seu checksum para exercitar a migra??o real.
+   GuiEncodeSet(original,data,error);
+   legacy_file=FileOpen(legacy_path,FILE_READ|FILE_WRITE|FILE_BIN|FILE_COMMON);
+   legacy_ok=false;
+   if(legacy_file!=INVALID_HANDLE)
+     {
+      uint checksum=0; data.version=8;
+      legacy_ok=FileWriteStruct(legacy_file,data,sizeof(GuiSetRecordV8))==sizeof(GuiSetRecordV8) &&
+                GuiSetChecksum(legacy_file,checksum,sizeof(GuiSetRecordV8)) &&
+                FileSeek(legacy_file,sizeof(GuiSetRecordV8),SEEK_SET) && FileWriteInteger(legacy_file,(int)checksum)==4;
+      FileClose(legacy_file);
+     }
+   Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) && GuiDecodeSet(migrated,loaded,error) &&
+         loaded.rules.stop_multiplier==0 && loaded.rules.stop_bar==1 && loaded.rules.stop_measure==0 &&
+         loaded.rules.stop_loss==original.rules.stop_loss && loaded.rules.candle_filter==original.rules.candle_filter,
+         "Set v8 preserva dist?ncia e filtros e inicia multiplicador desativado");
+   FileDelete(legacy_path,FILE_COMMON);
    FileDelete(path,FILE_COMMON); FileDelete(corrupt,FILE_COMMON);
    FileDelete(root+"\\owners\\1234567.txt",FILE_COMMON);
    FileDelete(root+"\\magic-v1.bin",FILE_COMMON); FileDelete(root+"\\sets.lock",FILE_COMMON);
