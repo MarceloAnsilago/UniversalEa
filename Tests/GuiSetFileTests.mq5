@@ -129,7 +129,7 @@ void OnStart()
       FileClose(legacy_file);
      }
    Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) &&
-         migrated.version==10 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
+         migrated.version==11 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
    FileDelete(legacy_path,FILE_COMMON);
    // O formato v2 preserva o limiar ADX e recebe tres velas de inclinacao.
    GuiSetRecordV2 legacy_v2;
@@ -209,7 +209,7 @@ void OnStart()
    GuiEncodeSet(original,data,error); data.indicators[1].maSlopeBars=1;
    Check(!GuiDecodeSet(data,loaded,error),"Rejeitar inclinacao invalida no set");
    GuiEncodeSet(original,data,error);
-   Check(GuiDecodeSet(data,loaded,error) && loaded.rules.take_multiplier==3.5 && loaded.rules.stop_multiplier==1.75 &&
+   Check(GuiDecodeSet(data,loaded,error) && loaded.rules.take_mode==0 && loaded.rules.take_multiplier==3.5 && loaded.rules.stop_multiplier==1.75 &&
          loaded.rules.stop_bar==3 && loaded.rules.stop_measure==1,"Stop por candle preservado no set");
    data.stop_bar=0;
    Check(!GuiDecodeSet(data,loaded,error) && loaded.rules.stop_bar==3,"Candle inválido não altera estado carregado");
@@ -230,7 +230,7 @@ void OnStart()
       FileClose(legacy_file);
      }
    Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) && GuiDecodeSet(migrated,loaded,error) &&
-         loaded.rules.take_multiplier==0 && loaded.rules.stop_multiplier==0 && loaded.rules.stop_bar==1 && loaded.rules.stop_measure==0 &&
+         loaded.rules.take_mode==1 && loaded.rules.take_multiplier==0 && loaded.rules.stop_multiplier==0 && loaded.rules.stop_bar==1 && loaded.rules.stop_measure==0 &&
          loaded.rules.stop_loss==original.rules.stop_loss && loaded.rules.candle_filter==original.rules.candle_filter,
          "Set v8 preserva distância e filtros e inicia multiplicador desativado");
    FileDelete(legacy_path,FILE_COMMON);
@@ -248,9 +248,14 @@ void OnStart()
       FileClose(legacy_file);
      }
    Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) && GuiDecodeSet(migrated,loaded,error) &&
-         loaded.rules.take_multiplier==0 && loaded.rules.stop_multiplier==1.75 && loaded.rules.stop_bar==3,
+         loaded.rules.take_mode==1 && loaded.rules.take_multiplier==0 && loaded.rules.stop_multiplier==1.75 && loaded.rules.stop_bar==3,
          "V9 preserves stop and fixed take");
    FileDelete(legacy_path,FILE_COMMON);
+   original.rules.Choose(23,1); original.rules.Commit(3,"321",error);
+   Check(GuiEncodeSet(original,data,error) && GuiDecodeSet(data,loaded,error) && loaded.rules.take_mode==1 &&
+         loaded.rules.take_profit==321 && loaded.rules.take_multiplier==3.5,"Fixed take mode and both values restored");
+   data.take_mode=2;
+   Check(!GuiDecodeSet(data,loaded,error) && loaded.rules.take_mode==1,"Invalid take mode rejected atomically");
    FileDelete(path,FILE_COMMON); FileDelete(corrupt,FILE_COMMON);
    FileDelete(root+"\\owners\\1234567.txt",FILE_COMMON);
    FileDelete(root+"\\magic-v1.bin",FILE_COMMON); FileDelete(root+"\\sets.lock",FILE_COMMON);

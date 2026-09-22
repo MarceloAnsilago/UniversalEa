@@ -49,13 +49,13 @@ void OnStart()
    gui.Mouse(thumb.x+5,gui.m_scroll.track.y+gui.m_scroll.track.h,"1");
    gui.Mouse(thumb.x+5,gui.m_scroll.track.y+gui.m_scroll.track.h,"0");
    Check(gui.m_scroll.offset==gui.m_scroll.maximum && !gui.m_scroll_drag,"Dragging reaches bottom and releases");
-   gui.ScrollTo(0); gui.m_rules_focus=true; gui.m_rules.Focus(3); gui.RevealFocus();
+   gui.ScrollTo(0); gui.m_rules_focus=true; gui.m_rules.Focus(22); gui.RevealFocus();
    GuiRect focused; gui.m_rules.FocusBounds(focused);
    Check(focused.y>=160 && focused.y+focused.h<=733,"Keyboard focus reveals offscreen rule field");
    gui.m_rules.Click(focused.x+10,focused.y+10); gui.m_rules.Key(49);
-   string pending=gui.m_rules.m_text[1].Buffer();
+   string pending=gui.m_rules.m_text[11].Buffer();
    gui.ScrollTo(0);
-   Check(gui.m_rules.m_text[1].Buffer()==pending && gui.m_rules.m_edit==1,"Scrolling preserves uncommitted edit");
+   Check(gui.m_rules.m_text[11].Buffer()==pending && gui.m_rules.m_edit==11,"Scrolling preserves uncommitted edit");
    gui.m_rules.Finish(false);
    gui.ScrollTo(-100); Check(gui.m_scroll.offset==0,"Scroll clamps at top");
    // A expansão deve ser causada pela seleção real, mantendo o rodapé acessível.

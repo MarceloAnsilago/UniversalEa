@@ -127,8 +127,8 @@ public:
    int FilterHeight(const int condition) { return condition==0 ? 180 : 504; }
    int RulesHeight(const bool pending,const int condition=0)
      {
-      if(content_width>=760) return (int)MathMax(464,FilterHeight(condition))+72;
-      return 568+(pending ? 312 : 180)+FilterHeight(condition);
+      if(content_width>=760) return (int)MathMax(490,FilterHeight(condition))+72;
+      return 594+(pending ? 312 : 180)+FilterHeight(condition);
      }
    void StackIndicators(const bool parameters,const int offset=0,const bool slope=false,const bool pending=false,const int condition=0)
      {

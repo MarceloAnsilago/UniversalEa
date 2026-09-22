@@ -94,6 +94,7 @@ public:
    ENUM_GUI_CANDLE_FILTER candle_filter;
    double stop_loss,take_profit;
    double stop_multiplier,take_multiplier;
+   int take_mode; // 0 = vezes o stop; 1 = distancia fixa.
    int stop_bar,stop_measure; // 0 = total, 1 = corpo.
    string StopSummary()
      {
@@ -104,16 +105,14 @@ public:
      }
    string TakeSummary()
      {
-      if(take_profit==0 && take_multiplier==0) return "Desativado";
-      string result=Value(3)+" "+Unit();
-      if(take_multiplier>0) result+=" + "+Value(22)+" vezes o tamanho do stop";
-      return result;
+      if(take_mode==0) return take_multiplier==0 ? "Desativado" : Value(22)+" vezes o tamanho do stop";
+      return take_profit==0 ? "Desativado" : Value(3)+" "+Unit();
      }
    CGuiRulesState() { Reset(); }
    // Restaura os padrões e limpa os valores guardados para cada unidade.
    void Reset()
      {
-      editing_candle=0; stop_multiplier=1; take_multiplier=2; stop_bar=1; stop_measure=0;
+      editing_candle=0; take_mode=0; stop_multiplier=1; take_multiplier=2; stop_bar=1; stop_measure=0;
       for(int i=0;i<3;i++) { ZeroMemory(candle_sizes[i]); ZeroMemory(candle_percent[i]); candle_units[i]=0; }
       pending_reference=3; pending_bar=1;
       pending_unit=GUI_TARGET_POINTS; pending_distance=0;
@@ -125,6 +124,7 @@ public:
    // Retorna a opção selecionada; os IDs existentes permanecem compatíveis.
    int Choice(const int id)
      {
+      if(id==23) return take_mode;
       if(id==20) return stop_bar-1;
       if(id==21) return stop_measure;
       if(id==18) return candle_units[editing_candle];
@@ -136,6 +136,7 @@ public:
      }
    bool Choose(const int id,const int option)
      {
+      if(id==23 && option>=0 && option<2) { take_mode=option; return true; }
       if(id==20 && option>=0 && option<3) { stop_bar=option+1; return true; }
       if(id==21 && option>=0 && option<=1) { stop_measure=option; return true; }
       if(id==18 && option>=0 && option<=1) { candle_units[editing_candle]=option; return true; }
@@ -219,6 +220,7 @@ public:
    bool Validate(string &error)
      {
       error="";
+      if(take_mode<0 || take_mode>1) { error="Selecione o modo do take profit."; return false; }
       if(!MathIsValidNumber(take_multiplier) || take_multiplier<0 || take_multiplier>100000000)
         { error="Confira o multiplicador do take profit."; return false; }
       if(!MathIsValidNumber(stop_multiplier) || stop_multiplier<0 || stop_multiplier>100000000 ||

@@ -37,7 +37,7 @@ void OnStart()
    Check(gui.m_rules.m_focus==20,"Tab segue para candle");
    gui.m_rules.Key(13); gui.m_rules.Key(40); gui.m_rules.Key(40); gui.m_rules.Key(13);
    Check(gui.m_rules.state.stop_bar==3,"Selecionar terceiro candle");
-   gui.m_rules.Key(9); Check(gui.m_rules.m_focus==3,"Tab segue para take profit"); gui.m_rules.Finish(false);
+   gui.m_rules.Key(9); Check(gui.m_rules.m_focus==23,"Tab segue para modo do take profit"); gui.m_rules.Finish(false);
    gui.m_rules.Focus(19); gui.RevealFocus(); gui.m_rules.FocusBounds(field);
    gui.Click(field.x+field.w-12,field.y+8);
    Check(gui.m_rules.state.stop_multiplier==2.5,"Botão mais incrementa em 0,50");
@@ -54,7 +54,7 @@ void OnStart()
    gui.m_rules.state.Commit(19,"100000000",error); gui.Key(38);
    Check(gui.m_rules.state.stop_multiplier==100000000,"Incremento respeita limite superior");
    gui.m_rules.state.Commit(19,"2",error); gui.m_rules.UpdateTargets();
-   gui.m_rules.Focus(3); gui.m_rules.Key(9);
+   gui.m_rules.Focus(23); gui.m_rules.Key(9);
    Check(gui.m_rules.m_focus==22,"Tab reaches take multiplier");
    gui.RevealFocus(); gui.m_rules.FocusBounds(field);
    gui.Click(field.x+field.w-12,field.y+8);
@@ -68,6 +68,16 @@ void OnStart()
    gui.m_rules.state.Commit(22,"0",error); gui.Key(40);
    Check(gui.m_rules.state.take_multiplier==0,"Take minimum zero");
    gui.m_rules.state.Commit(22,"2",error); gui.m_rules.UpdateTargets();
+   gui.m_rules.Focus(23); gui.m_rules.Key(13); gui.m_rules.Key(40); gui.m_rules.Key(13);
+   Check(gui.m_rules.state.take_mode==1 && gui.m_rules.FieldVisible(3) && !gui.m_rules.FieldVisible(22),"Fixed mode shows only distance");
+   gui.m_rules.Key(9); Check(gui.m_rules.m_focus==3,"Tab reaches fixed distance");
+   gui.m_rules.Key(53); gui.m_rules.Key(48); gui.m_rules.Key(13);
+   Check(gui.m_rules.state.TakeSummary()=="50.00 pontos" && gui.m_rules.state.take_multiplier==2,"Fixed take ignores saved multiplier");
+   gui.m_rules.Focus(23); gui.m_rules.Key(13); gui.m_rules.Key(38); gui.m_rules.Key(13);
+   Check(gui.m_rules.state.take_mode==0 && !gui.m_rules.FieldVisible(3) && gui.m_rules.FieldVisible(22) &&
+         gui.m_rules.state.TakeSummary()=="2.00 vezes o tamanho do stop" && gui.m_rules.state.take_profit==50,
+         "Stop multiple ignores fixed distance and preserves it");
+   Check(!gui.m_rules.state.Choose(23,2),"Invalid mode rejected");
    gui.ScrollTo(100000); gui.Render();
    ResourceSave(gui.m_renderer.m_canvas.ResourceName(),"stop-candle-wide.bmp");
    int widths[]={600,960,1120,1792};
