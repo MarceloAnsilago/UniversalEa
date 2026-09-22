@@ -120,7 +120,7 @@ public:
       set_id="";
       if(m_automatic_magic) EnableAutomaticMagic(m_magic_error);
       market=GUI_SETUP_FOREX;
-      timeframe=chart_period;
+      timeframe=PERIOD_CURRENT;
       direction=GUI_SETUP_BUY_SELL;
       trade_mode=GUI_SETUP_DAY_TRADE;
       volume_min=min_volume;

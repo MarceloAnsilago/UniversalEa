@@ -23,7 +23,7 @@ input group "Setup"
 input string InpName="Meu setup";                              // Nome do setup
 input long InpMagic=1;                                         // Magic Number: 1 a 2147483647
 input ENUM_GUI_SETUP_MARKET InpMarket=GUI_SETUP_FOREX;          // Mercado: Forex ou B3
-input ENUM_UNI_TIMEFRAME InpTimeframe=UNI_PERIOD_M1;                   // Período da estratégia
+input ENUM_UNI_TIMEFRAME InpTimeframe=UNI_PERIOD_CURRENT;                   // Período da estratégia
 input ENUM_GUI_SETUP_DIRECTION InpDirection=GUI_SETUP_BUY_SELL; // Direcao permitida das operacoes
 input ENUM_GUI_SETUP_TRADE_MODE InpTradeMode=GUI_SETUP_DAY_TRADE; // Modalidade: operações no mesmo dia ou em vários dias
 input double InpLot=0.01;                                      // Volume por operacao; respeitar limites e passo do ativo

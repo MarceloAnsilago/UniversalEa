@@ -28,7 +28,7 @@ void CheckSchedule()
    Check(other.entry_start==0 && other.entry_end==1435 && other.close_time==1435 && !other.close_enabled,
          "Instâncias mantêm horários independentes");
    Check(state.name=="Meu setup" && state.magic==1 && state.market==GUI_SETUP_FOREX &&
-         state.direction==GUI_SETUP_BUY_SELL && state.timeframe==PERIOD_M5,
+         state.direction==GUI_SETUP_BUY_SELL && state.timeframe==PERIOD_CURRENT,
          "Horários preservam os demais campos do setup");
 
    string invalid_times[]={"", "9:05", "09:5", "009:05", "24:00", "23:60", "99:99", "-1:00",
@@ -118,7 +118,7 @@ void CheckTimeSelections()
             state.entry_start==previous_start && state.entry_end==previous_end && state.close_time==previous_close,
             "Opção fora da lista preserva todos os horários no campo "+IntegerToString(index));
       Check(state.name=="Meu setup" && state.magic==1 && state.market==GUI_SETUP_FOREX &&
-            state.timeframe==PERIOD_M5 && state.direction==GUI_SETUP_BUY_SELL,
+            state.timeframe==PERIOD_CURRENT && state.direction==GUI_SETUP_BUY_SELL,
             "Escolher horários preserva os demais campos do setup");
 
       int invalid_minutes[]={-1,1,546,1439,1440,2147483647};
@@ -161,7 +161,7 @@ void CheckTradeMode()
             state.Value(9)==(mode==GUI_SETUP_DAY_TRADE ? "Day trade" : "Swing trade") && state.Validate(error),
             "Selecionar modalidade e exibir rótulo correspondente: "+IntegerToString(mode));
       Check(state.name=="Setup modalidade" && state.magic==123456 && state.market==GUI_SETUP_B3 &&
-            state.timeframe==PERIOD_M5 && state.direction==GUI_SETUP_SELL_ONLY && state.entry_start==540 &&
+            state.timeframe==PERIOD_CURRENT && state.direction==GUI_SETUP_SELL_ONLY && state.entry_start==540 &&
             state.entry_end==1020 && state.close_enabled && state.close_time==1050,
             "Modalidade preserva identificação, mercado, direção, horários e encerramento");
      }
@@ -187,7 +187,7 @@ void CheckTradeMode()
          "Texto não altera modalidade");
    state.Reset(PERIOD_H4);
    Check(state.trade_mode==GUI_SETUP_DAY_TRADE && state.Choice(9)==0 && state.Value(9)=="Day trade" &&
-         state.timeframe==PERIOD_H4 && state.Validate(error) && error=="",
+         state.timeframe==PERIOD_CURRENT && state.Validate(error) && error=="",
          "Reset restaura Day trade válido");
   }
 
@@ -209,7 +209,7 @@ void CheckLot()
    Check(state.CommitText(10,"0.50",error) && state.lot==0.5 && state.Validate(error),
          "Lote aceita ponto decimal");
    Check(state.name=="Setup lote" && state.magic==123456 && state.market==GUI_SETUP_B3 &&
-         state.timeframe==PERIOD_M5 && state.direction==GUI_SETUP_SELL_ONLY &&
+         state.timeframe==PERIOD_CURRENT && state.direction==GUI_SETUP_SELL_ONLY &&
          state.trade_mode==GUI_SETUP_SWING_TRADE && state.entry_start==540 && state.entry_end==1020 &&
          state.close_enabled && state.close_time==1050 && state.volume_min==0.01 &&
          state.volume_max==100.0 && state.volume_step==0.01 && other.lot==0.01,
@@ -275,7 +275,7 @@ void CheckLot()
    Check(!state.Validate(error) && error!="","Validação rejeita limite do ativo não finito");
    state.Reset(PERIOD_H4);
    Check(state.lot==0.01 && state.volume_min==0.01 && state.volume_max==100.0 &&
-         state.volume_step==0.01 && state.timeframe==PERIOD_H4 && state.Validate(error) && error=="",
+         state.volume_step==0.01 && state.timeframe==PERIOD_CURRENT && state.Validate(error) && error=="",
          "Reset restaura volume e limites padrão válidos");
   }
 
@@ -287,7 +287,7 @@ void OnStart()
    string error;
    Check(state.name=="Meu setup" && state.magic==1,"Identificação inicial");
    Check(state.market==GUI_SETUP_FOREX && state.direction==GUI_SETUP_BUY_SELL,"Mercado e direção iniciais");
-   Check(state.timeframe==PERIOD_M5 && state.Value(3)=="M5","Timeframe inicial acompanha o gráfico");
+   Check(state.timeframe==PERIOD_CURRENT && state.Value(3)=="Tempo corrente","Timeframe inicial usa Tempo corrente");
    Check(state.Validate(error) && error=="","Padrões válidos");
    Check(state.CommitText(0,"  Setup B3  ",error) && state.name=="Setup B3","Nome preserva texto e remove espaços externos");
    Check(state.CommitText(1,"123456",error) && state.magic==123456,"Editar magic number");
@@ -295,8 +295,8 @@ void OnStart()
    Check(state.Choose(4,1) && state.Value(4)=="Somente compra","Escolher somente compra");
    Check(state.Choose(4,2) && state.Value(4)=="Somente venda","Escolher somente venda");
    Check(state.Choose(4,0) && state.Value(4)=="Compra e venda","Escolher compra e venda");
-   Check(state.name=="Setup B3" && state.magic==123456 && state.timeframe==PERIOD_M5,"Seleções preservam campos independentes");
-   Check(other.name=="Meu setup" && other.magic==1 && other.market==GUI_SETUP_FOREX && other.timeframe==PERIOD_H1,"Instâncias independentes");
+   Check(state.name=="Setup B3" && state.magic==123456 && state.timeframe==PERIOD_CURRENT,"Seleções preservam campos independentes");
+   Check(other.name=="Meu setup" && other.magic==1 && other.market==GUI_SETUP_FOREX && other.timeframe==PERIOD_CURRENT,"Instâncias independentes");
 
    string max_name="123456789012345678901234567890123456789012345678";
    Check(StringLen(max_name)==48 && state.CommitText(0,max_name,error),"Nome com 48 caracteres");
@@ -346,8 +346,8 @@ void OnStart()
    state.Reset(PERIOD_M1); state.name=max_name+"9";
    Check(!state.Validate(error),"Validação global rejeita nome longo");
    state.Reset(PERIOD_H4);
-   Check(state.Validate(error) && error=="" && state.name=="Meu setup" && state.magic==1 && state.timeframe==PERIOD_H4,
-         "Reset restaura configuração válida com timeframe do gráfico");
+   Check(state.Validate(error) && error=="" && state.name=="Meu setup" && state.magic==1 && state.timeframe==PERIOD_CURRENT,
+         "Reset restaura configuração válida com Tempo corrente");
    CheckSchedule();
    CheckTimeSelections();
    CheckTradeMode();
