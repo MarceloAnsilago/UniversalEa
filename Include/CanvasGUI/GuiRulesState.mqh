@@ -93,7 +93,7 @@ public:
    ENUM_GUI_ORDER_MODE order_mode;
    ENUM_GUI_CANDLE_FILTER candle_filter;
    double stop_loss,take_profit;
-   double stop_multiplier;
+   double stop_multiplier,take_multiplier;
    int stop_bar,stop_measure; // 0 = total, 1 = corpo.
    string StopSummary()
      {
@@ -102,11 +102,18 @@ public:
       if(stop_multiplier>0) result+=" + "+Value(19)+" vezes o candle "+Value(20)+" ("+(stop_measure==0 ? "Total" : "Corpo")+")";
       return result;
      }
+   string TakeSummary()
+     {
+      if(take_profit==0 && take_multiplier==0) return "Desativado";
+      string result=Value(3)+" "+Unit();
+      if(take_multiplier>0) result+=" + "+Value(22)+" vezes o tamanho do stop";
+      return result;
+     }
    CGuiRulesState() { Reset(); }
    // Restaura os padrões e limpa os valores guardados para cada unidade.
    void Reset()
      {
-      editing_candle=0; stop_multiplier=0; stop_bar=1; stop_measure=0;
+      editing_candle=0; stop_multiplier=1; take_multiplier=2; stop_bar=1; stop_measure=0;
       for(int i=0;i<3;i++) { ZeroMemory(candle_sizes[i]); ZeroMemory(candle_percent[i]); candle_units[i]=0; }
       pending_reference=3; pending_bar=1;
       pending_unit=GUI_TARGET_POINTS; pending_distance=0;
@@ -154,6 +161,7 @@ public:
      }
    string Value(const int id)
      {
+      if(id==22) return DoubleToString(take_multiplier,2);
       if(id==19) return DoubleToString(stop_multiplier,2);
       if(id==20) return IntegerToString(stop_bar);
       if(id>=12 && id<=17) return DoubleToString(CandleValue(id),2);
@@ -166,8 +174,8 @@ public:
    bool Commit(const int id,string value,string &error)
      {
       error="";
-      if(id!=2 && id!=3 && id!=8 && id!=9 && id!=19 && (id<12 || id>17)) { error="Campo inválido."; return false; }
-      string unit=id==19 ? "vezes" : (id>=12 ? CandleUnit() : (id==8 ? PendingUnit() : (id==9 ? "velas" : Unit())));
+      if(id!=2 && id!=3 && id!=8 && id!=9 && id!=19 && id!=22 && (id<12 || id>17)) { error="Campo inválido."; return false; }
+      string unit=(id==19 || id==22) ? "vezes" : (id>=12 ? CandleUnit() : (id==8 ? PendingUnit() : (id==9 ? "velas" : Unit())));
       StringReplace(value,",",".");
       int digits=0,dots=0;
       for(int i=0;i<StringLen(value);i++)
@@ -201,7 +209,8 @@ public:
          if(candle_units[editing_candle]==1) candle_percent[editing_candle]=config; else candle_sizes[editing_candle]=config;
          return true;
         }
-      if(id==19) stop_multiplier=number;
+      if(id==22) take_multiplier=number;
+      else if(id==19) stop_multiplier=number;
       else if(id==8) pending_distance=number;
       else if(id==9) pending_bar=(int)number;
       else if(id==2) stop_loss=number; else take_profit=number;
@@ -210,6 +219,8 @@ public:
    bool Validate(string &error)
      {
       error="";
+      if(!MathIsValidNumber(take_multiplier) || take_multiplier<0 || take_multiplier>100000000)
+        { error="Confira o multiplicador do take profit."; return false; }
       if(!MathIsValidNumber(stop_multiplier) || stop_multiplier<0 || stop_multiplier>100000000 ||
          stop_bar<1 || stop_bar>3 || stop_measure<0 || stop_measure>1)
         { error="Confira o multiplicador, o candle e a medida do stop loss."; return false; }

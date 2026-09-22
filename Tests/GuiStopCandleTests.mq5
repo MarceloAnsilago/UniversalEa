@@ -8,7 +8,7 @@ void Check(const bool ok,const string label)
 void OnStart()
   {
    CGuiRulesState state; string error;
-   Check(state.stop_multiplier==0 && state.stop_bar==1 && state.stop_measure==0 && state.StopSummary()=="Desativado","Padrões preservam stop desativado");
+   Check(state.stop_multiplier==1 && state.take_multiplier==2 && state.stop_bar==1 && state.stop_measure==0 && state.StopSummary()!="Desativado","Padrões preservam stop desativado");
    Check(state.Commit(2,"25",error) && state.Commit(19,"1,50",error) && state.Choose(20,1) && state.Choose(21,1),"Configurar distância mais corpo do candle");
    Check(state.stop_loss==25 && state.stop_multiplier==1.5 && state.stop_bar==2 && state.stop_measure==1 && state.Validate(error),"Valores independentes e válidos");
    Check(state.StopSummary()=="25.00 pontos + 1.50 vezes o candle 2 (Corpo)","Resumo explicita a soma");
@@ -54,6 +54,20 @@ void OnStart()
    gui.m_rules.state.Commit(19,"100000000",error); gui.Key(38);
    Check(gui.m_rules.state.stop_multiplier==100000000,"Incremento respeita limite superior");
    gui.m_rules.state.Commit(19,"2",error); gui.m_rules.UpdateTargets();
+   gui.m_rules.Focus(3); gui.m_rules.Key(9);
+   Check(gui.m_rules.m_focus==22,"Tab reaches take multiplier");
+   gui.RevealFocus(); gui.m_rules.FocusBounds(field);
+   gui.Click(field.x+field.w-12,field.y+8);
+   Check(gui.m_rules.state.take_multiplier==2.5,"Take increment 0.5");
+   gui.Click(field.x+field.w-12,field.y+32);
+   Check(gui.m_rules.state.take_multiplier==2,"Take decrement 0.5");
+   gui.Key(38); gui.Key(40);
+   Check(gui.m_rules.state.take_multiplier==2 && gui.m_rules.state.stop_multiplier==2,"Take keyboard independent of stop");
+   gui.m_rules.Begin(22); gui.m_rules.Key(51); gui.m_rules.Key(13);
+   Check(gui.m_rules.state.take_multiplier==3,"Take manual edit");
+   gui.m_rules.state.Commit(22,"0",error); gui.Key(40);
+   Check(gui.m_rules.state.take_multiplier==0,"Take minimum zero");
+   gui.m_rules.state.Commit(22,"2",error); gui.m_rules.UpdateTargets();
    gui.ScrollTo(100000); gui.Render();
    ResourceSave(gui.m_renderer.m_canvas.ResourceName(),"stop-candle-wide.bmp");
    int widths[]={600,960,1120,1792};

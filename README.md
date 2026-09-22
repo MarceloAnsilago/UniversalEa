@@ -1,6 +1,6 @@
 # UniversalEa
 
-O **Stop loss** no card Alvos aceita **distância + X vezes o tamanho do candle**, com multiplicador decimal, número do candle (1 = último fechado) e medida **Total (com pavios)** ou **Corpo**. Total corresponde a máxima − mínima; Corpo, ao valor absoluto de fechamento − abertura. O multiplicador inicia em zero, preservando a distância fixa; para desativar o stop, zere a distância e o multiplicador. As opções são preservadas no histórico e nos sets v9; sets anteriores recebem multiplicador zero e candle 1. Essa configuração acompanha a interface; a execução de ordens continua sendo uma etapa futura.
+O **Stop loss** no card Alvos aceita **distancia + X vezes o tamanho do candle**, com multiplicador padrao **1**, selecao de ultimo, penultimo ou antepenultimo candle fechado e medida Total ou Corpo. O **Take Profit** aceita **distancia + X vezes o tamanho total do stop**, com multiplicador padrao **2**. Os dois multiplicadores possuem botoes + / - com passo **0,5** e permitem digitacao manual. Para desativar uma saida, zere sua distancia e seu multiplicador. As opcoes sao preservadas no historico e nos sets v10; sets anteriores preservam os valores salvos e recebem multiplicador do take zero. Essa configuracao acompanha a interface; a execucao de ordens continua sendo uma etapa futura.
 
 ## Navegação e página Indicadores
 

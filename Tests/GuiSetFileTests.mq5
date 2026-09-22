@@ -24,6 +24,7 @@ void OnStart()
    original.rules.candle_sizes[2].lower_minimum=3; original.rules.candle_sizes[2].lower_maximum=8;
    original.rules.candle_units[1]=1;
    original.rules.candle_percent[1].measure=1; original.rules.candle_percent[1].upper_maximum=25;
+   original.rules.take_multiplier=3.5;
    original.rules.stop_multiplier=1.75; original.rules.stop_bar=3; original.rules.stop_measure=1;
    original.rules.stop_loss=123; original.rules.take_profit=456;
    original.rules.Choose(4,1); original.rules.stop_loss=1.5; original.rules.take_profit=2.5;
@@ -128,7 +129,7 @@ void OnStart()
       FileClose(legacy_file);
      }
    Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) &&
-         migrated.version==9 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
+         migrated.version==10 && migrated.indicators[0].adxMinimum==25,"Ler arquivo v1 com checksum");
    FileDelete(legacy_path,FILE_COMMON);
    // O formato v2 preserva o limiar ADX e recebe tres velas de inclinacao.
    GuiSetRecordV2 legacy_v2;
@@ -208,7 +209,7 @@ void OnStart()
    GuiEncodeSet(original,data,error); data.indicators[1].maSlopeBars=1;
    Check(!GuiDecodeSet(data,loaded,error),"Rejeitar inclinacao invalida no set");
    GuiEncodeSet(original,data,error);
-   Check(GuiDecodeSet(data,loaded,error) && loaded.rules.stop_multiplier==1.75 &&
+   Check(GuiDecodeSet(data,loaded,error) && loaded.rules.take_multiplier==3.5 && loaded.rules.stop_multiplier==1.75 &&
          loaded.rules.stop_bar==3 && loaded.rules.stop_measure==1,"Stop por candle preservado no set");
    data.stop_bar=0;
    Check(!GuiDecodeSet(data,loaded,error) && loaded.rules.stop_bar==3,"Candle inválido não altera estado carregado");
@@ -229,9 +230,26 @@ void OnStart()
       FileClose(legacy_file);
      }
    Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) && GuiDecodeSet(migrated,loaded,error) &&
-         loaded.rules.stop_multiplier==0 && loaded.rules.stop_bar==1 && loaded.rules.stop_measure==0 &&
+         loaded.rules.take_multiplier==0 && loaded.rules.stop_multiplier==0 && loaded.rules.stop_bar==1 && loaded.rules.stop_measure==0 &&
          loaded.rules.stop_loss==original.rules.stop_loss && loaded.rules.candle_filter==original.rules.candle_filter,
          "Set v8 preserva distância e filtros e inicia multiplicador desativado");
+   FileDelete(legacy_path,FILE_COMMON);
+   GuiEncodeSet(original,data,error); data.take_multiplier=-1;
+   Check(!GuiDecodeSet(data,loaded,error),"Take multiplier invalid rejected");
+   GuiEncodeSet(original,data,error);
+   legacy_file=FileOpen(legacy_path,FILE_READ|FILE_WRITE|FILE_BIN|FILE_COMMON);
+   legacy_ok=false;
+   if(legacy_file!=INVALID_HANDLE)
+     {
+      uint checksum=0; data.version=9;
+      legacy_ok=FileWriteStruct(legacy_file,data,sizeof(GuiSetRecordV9))==sizeof(GuiSetRecordV9) &&
+                GuiSetChecksum(legacy_file,checksum,sizeof(GuiSetRecordV9)) &&
+                FileSeek(legacy_file,sizeof(GuiSetRecordV9),SEEK_SET) && FileWriteInteger(legacy_file,(int)checksum)==4;
+      FileClose(legacy_file);
+     }
+   Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) && GuiDecodeSet(migrated,loaded,error) &&
+         loaded.rules.take_multiplier==0 && loaded.rules.stop_multiplier==1.75 && loaded.rules.stop_bar==3,
+         "V9 preserves stop and fixed take");
    FileDelete(legacy_path,FILE_COMMON);
    FileDelete(path,FILE_COMMON); FileDelete(corrupt,FILE_COMMON);
    FileDelete(root+"\\owners\\1234567.txt",FILE_COMMON);
