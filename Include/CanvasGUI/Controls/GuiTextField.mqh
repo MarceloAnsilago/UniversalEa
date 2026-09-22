@@ -7,10 +7,18 @@ private:
    string m_value,m_buffer;
    int m_cursor;
    bool m_replace;
+   int m_spin_hover;
 public:
-   bool invalid,text_mode,time_mode;
+   bool invalid,text_mode,time_mode,spin;
    int max_length;
-   CGuiTextField() { invalid=false; text_mode=false; time_mode=false; max_length=12; m_cursor=0; m_replace=false; }
+   CGuiTextField() { invalid=false; text_mode=false; time_mode=false; spin=false; m_spin_hover=0; max_length=12; m_cursor=0; m_replace=false; }
+   int SpinAt(const int x,const int y)
+     {
+      if(!spin || !visible || !enabled || !bounds.Contains(x,y) || x<bounds.x+bounds.w-26) return 0;
+      return y<bounds.y+bounds.h/2 ? 1 : -1;
+     }
+   bool SpinHover(const int direction)
+     { if(m_spin_hover==direction) return false; m_spin_hover=direction; dirty=true; return true; }
    void SetValue(const string value) { m_value=value; dirty=true; }
    string Buffer() const { return m_buffer; }
    void Begin() { m_buffer=m_value; m_cursor=StringLen(m_buffer); m_replace=true; active=true; invalid=false; dirty=true; }
@@ -69,8 +77,19 @@ public:
          if(active) display=StringSubstr(m_buffer,0,m_cursor)+"|"+StringSubstr(m_buffer,m_cursor);
          // Long names keep the caret and the insertion position visible.
          if(text_mode && active) display=r.EditViewport(display,m_cursor,bounds.w-32);
-         if(active && m_replace) { GuiRect selection; selection.Set(bounds.x+8,bounds.y+7,bounds.w-16,bounds.h-14); r.Round(selection,GUI_HOVER,3); }
-         r.Text(bounds.x+12,bounds.y+11,display,enabled ? GUI_TEXT : GUI_MUTED,15,false,bounds.w-24);
+         int reserve=spin ? 26 : 0;
+         if(active && m_replace) { GuiRect selection; selection.Set(bounds.x+8,bounds.y+7,bounds.w-16-reserve,bounds.h-14); r.Round(selection,GUI_HOVER,3); }
+         r.Text(bounds.x+12,bounds.y+11,display,enabled ? GUI_TEXT : GUI_MUTED,15,false,bounds.w-24-reserve);
+         if(spin)
+           {
+            for(int i=0;i<2;i++)
+              {
+               int direction=i==0 ? 1 : -1;
+               GuiRect button; button.Set(bounds.x+bounds.w-26,bounds.y+i*(bounds.h/2),26,bounds.h/2);
+               r.Box(button,m_spin_hover==direction ? GUI_HOVER : GUI_CARD,GUI_BORDER);
+               r.Text(button.x+8,button.y+2,i==0 ? "+" : "−",enabled ? GUI_TEXT : GUI_MUTED,13,true,18);
+              }
+           }
         }
       dirty=false;
      }

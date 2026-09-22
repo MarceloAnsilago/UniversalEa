@@ -98,6 +98,15 @@ private:
       for(int i=6;i<10;i++) m_select[i].SetSelected(state.Choice(SelectFieldId(i)));
       m_dirty=true;
      }
+   void StepMultiplier(const int direction)
+     {
+      if(!Finish(true)) return;
+      double value=NormalizeDouble(MathMax(0.0,MathMin(100000000.0,state.stop_multiplier+direction*0.1)),2);
+      string error;
+      if(!state.Commit(19,DoubleToString(value,2),error)) { Status(error,true); return; }
+      m_text[10].SetValue(state.Value(19)); Focus(19);
+      Status("Multiplicador alterado. Salve para registrar.");
+     }
 public:
    CGuiRulesState state;
    void ReplaceState(CGuiRulesState &loaded)
@@ -130,6 +139,7 @@ public:
       for(int i=0;i<6;i++) m_labels[i+12].caption=captions[i];
       m_labels[18].caption="Unidade dos tamanhos"; m_select[8].SetOptions("Pontos|Porcentagem");
       m_labels[19].caption="+ Vezes"; m_labels[20].caption="Candle";
+      m_text[10].spin=true;
       m_labels[21].caption="Tamanho do candle"; m_select[9].SetOptions("Total (com pavios)|Corpo");
       UpdateTargets();
       m_back.caption="Indicadores"; m_back.secondary=true; m_back.show_icon=true; m_back.icon=GUI_ICON_ARROW_LEFT;
@@ -292,6 +302,7 @@ public:
       for(int i=0;i<2;i++) { m_select[i].SetHover(false); m_text[i].SetHover(false); }
       for(int i=2;i<10;i++) m_select[i].SetHover(false);
       for(int i=2;i<12;i++) m_text[i].SetHover(false);
+      m_text[10].SpinHover(0);
       m_next.SetHover(false); m_next.active=false;
       m_back.SetHover(false); m_save.SetHover(false); m_back.active=false; m_save.active=false; m_dirty=true;
      }
@@ -326,6 +337,11 @@ public:
          if(option>=0) { SelectOption(option); return 0; }
          bool same=m_select[m_open].ContainsPoint(x,y); CloseSelect(); if(same) return 0;
         }
+      if(m_embedded)
+        {
+         int direction=m_text[10].SpinAt(x,y);
+         if(direction!=0) { StepMultiplier(direction); return 0; }
+        }
       int hit=-1;
       for(int i=0;i<2;i++) { if(m_select[i].ContainsPoint(x,y)) hit=i; if(m_text[i].ContainsPoint(x,y)) hit=i+2; }
       if(m_embedded && m_select[2].ContainsPoint(x,y)) hit=4;
@@ -350,6 +366,7 @@ public:
    void Mouse(const int x,const int y,const string flags)
      {
       bool overlay=m_open>=0 && m_select[m_open].popup.Contains(x,y);
+      if(m_text[10].SpinHover(m_embedded && !overlay ? m_text[10].SpinAt(x,y) : 0)) m_dirty=true;
       for(int i=0;i<2;i++)
         {
          if(m_select[i].SetHover(!overlay && m_select[i].ContainsPoint(x,y))) m_dirty=true;
@@ -395,6 +412,8 @@ public:
          else if(key==13) SelectOption(m_select[m_open].hot);
          return 0;
         }
+      if(m_embedded && m_focus==19 && (key==38 || key==40))
+        { StepMultiplier(key==38 ? 1 : -1); return 0; }
       if(m_edit>=0)
         {
          if(key==27) Finish(false);
