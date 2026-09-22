@@ -30,11 +30,13 @@ void OnStart()
    gui.Click(field.x+10,field.y+10); gui.Key(50); gui.Key(13);
    Check(gui.m_rules.state.stop_multiplier==2,"Mouse e teclado editam vezes");
    gui.m_rules.Key(9);
-   Check(gui.m_rules.m_focus==20 && gui.m_rules.m_edit==-1,"Tab avança para candle");
-   gui.m_rules.Key(13); gui.m_rules.Key(40); gui.m_rules.Key(40); gui.m_rules.Key(13); gui.m_rules.Key(9);
-   Check(gui.m_rules.state.stop_bar==3 && gui.m_rules.m_focus==21,"Candle editável e Tab para medida");
+   Check(gui.m_rules.m_focus==21 && gui.m_rules.m_edit==-1,"Tab segue para tamanho do candle");
    gui.m_rules.Key(13); gui.m_rules.Key(40); gui.m_rules.Key(13);
    Check(gui.m_rules.state.stop_measure==1,"Seletor escolhe corpo");
+   gui.m_rules.Key(9);
+   Check(gui.m_rules.m_focus==20,"Tab segue para candle");
+   gui.m_rules.Key(13); gui.m_rules.Key(40); gui.m_rules.Key(40); gui.m_rules.Key(13);
+   Check(gui.m_rules.state.stop_bar==3,"Selecionar terceiro candle");
    gui.m_rules.Key(9); Check(gui.m_rules.m_focus==3,"Tab segue para take profit"); gui.m_rules.Finish(false);
    gui.m_rules.Focus(19); gui.RevealFocus(); gui.m_rules.FocusBounds(field);
    gui.Click(field.x+field.w-12,field.y+8);
@@ -60,7 +62,7 @@ void OnStart()
       gui.m_renderer.Resize(widths[i],733); gui.m_layout.Calculate(widths[i],733); gui.Reflow(); gui.ScrollTo(100000); gui.Render();
       GuiRect card=gui.m_rules.m_cards[1],last=gui.m_rules.m_text[1].bounds;
       Check(last.y+last.h<card.y+card.h && gui.m_layout.status.y+gui.m_layout.status.h<=733,"Alvos e rodapé cabem com rolagem");
-      Check(gui.m_rules.m_text[10].bounds.x+gui.m_rules.m_text[10].bounds.w<gui.m_rules.m_select[10].bounds.x,"Vezes e candle não se sobrepõem");
+      Check(gui.m_rules.m_text[10].bounds.x+gui.m_rules.m_text[10].bounds.w<gui.m_rules.m_select[9].bounds.x,"Vezes e tamanho do candle não se sobrepõem");
       if(widths[i]==600) ResourceSave(gui.m_renderer.m_canvas.ResourceName(),"stop-candle-narrow.bmp");
      }
    gui.Destroy();

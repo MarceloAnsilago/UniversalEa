@@ -41,7 +41,7 @@ private:
    int NextFocus(const bool back)
      {
       if(!m_embedded) return m_focus<0 ? (back ? 6 : 0) : m_focus+(back ? -1 : 1);
-      int order[]={0,1,2,19,20,21,3,4,6,9,10,11,18,12,13,14,15,16,17};
+      int order[]={0,1,2,19,21,20,3,4,6,9,10,11,18,12,13,14,15,16,17};
       int index=back ? ArraySize(order) : -1;
       for(int i=0;i<ArraySize(order);i++) if(order[i]==m_focus) { index=i; break; }
       for(index+=back ? -1 : 1;index>=0 && index<ArraySize(order);index+=back ? -1 : 1)
@@ -230,6 +230,7 @@ public:
         {
          GuiRect card=m_cards[id==0 ? 0 : 1];
          int x=card.x+24,y=card.y+78+(id==0 ? 0 : (id==3 ? 4 : id-1))*76,width=card.w-48;
+         if(id==3) y+=12;
          m_labels[id].SetBounds(x,y-22,width,18);
          if(id<2) m_select[id].SetBounds(x,y,width,42);
          else m_text[id-2].SetBounds(x,y,width,42);
@@ -239,12 +240,12 @@ public:
       for(int i=0;i<2;i++)
         {
          int x=target.x+24+i*(half+16),y=target.y+230;
-         m_labels[19+i].SetBounds(x,y-22,half,18);
+         m_labels[i==0 ? 19 : 21].SetBounds(x,y-22,half,18);
          if(i==0) m_text[10].SetBounds(x,y,half,42);
-         else m_select[10].SetBounds(x,y,half,42);
+         else m_select[9].SetBounds(x,y,half,42);
         }
-      m_labels[21].SetBounds(target.x+24,target.y+284,target.w-48,18);
-      m_select[9].SetBounds(target.x+24,target.y+306,target.w-48,42);
+      m_labels[20].SetBounds(target.x+24,target.y+284,target.w-48,18);
+      m_select[10].SetBounds(target.x+24,target.y+306,target.w-48,42);
       m_labels[4].SetBounds(m_cards[2].x+24,m_cards[2].y+56,m_cards[2].w-48,18);
       m_select[2].SetBounds(m_cards[2].x+24,m_cards[2].y+78,m_cards[2].w-48,42);
       GuiRect filter=m_cards[2];
@@ -287,6 +288,8 @@ public:
       for(int id=0;id<4;id++) { m_labels[id].Draw(r); if(id<2) m_select[id].Draw(r); else m_text[id-2].Draw(r); }
       for(int i=0;i<2;i++) { m_labels[19+i].Draw(r); if(i==0) m_text[10].Draw(r); else m_select[10].Draw(r); }
       m_labels[21].Draw(r); m_select[9].Draw(r);
+      GuiRect separator; separator.Set(m_cards[1].x+24,m_cards[1].y+360,m_cards[1].w-48,1);
+      r.Fill(separator,GUI_BORDER);
       m_labels[4].Draw(r); m_select[2].Draw(r);
       for(int id=6;id<=9;id++)
         if(FieldVisible(id)) { m_labels[id].Draw(r); if(id<=7) m_select[id-2].Draw(r); else m_text[id-6].Draw(r); }
