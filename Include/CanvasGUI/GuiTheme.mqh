@@ -1,6 +1,6 @@
 #ifndef CANVAS_GUI_THEME_MQH
 #define CANVAS_GUI_THEME_MQH
-#define GUI_BG       0xFFF7F8FA
+#define GUI_BG       0xFFE6EDF5
 #define GUI_CARD     0xFFFFFFFF
 #define GUI_TEXT     0xFF1C293D
 #define GUI_MUTED    0xFF718096
