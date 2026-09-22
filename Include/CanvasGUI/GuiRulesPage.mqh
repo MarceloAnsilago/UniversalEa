@@ -10,8 +10,8 @@ class CGuiRulesPage
   {
 private:
    CGuiLabel m_labels[22];
-   CGuiSelectBox m_select[10];
-   CGuiTextField m_text[12];
+   CGuiSelectBox m_select[11];
+   CGuiTextField m_text[11];
    CGuiButton m_back,m_save,m_next;
    GuiRect m_cards[3],m_status,m_summary;
    int m_open,m_edit,m_focus,m_height;
@@ -49,7 +49,7 @@ private:
       return -1;
      }
    int TextFieldId(const int index) { return index>=10 ? index+9 : (index>=4 ? index+8 : (index<2 ? index+2 : index+6)); }
-   int SelectFieldId(const int index) { return index==9 ? 21 : (index==8 ? 18 : (index>=6 ? index+4 : (index==0 ? 0 : (index==1 ? 4 : (index==2 ? 1 : index+2))))); }
+   int SelectFieldId(const int index) { return index==10 ? 20 : (index==9 ? 21 : (index==8 ? 18 : (index>=6 ? index+4 : (index==0 ? 0 : (index==1 ? 4 : (index==2 ? 1 : index+2)))))); }
    void Status(const string message,const bool error=false)
      { m_message=message; m_error=error; m_dirty=true; }
    void Focus(const int id)
@@ -63,7 +63,8 @@ private:
       for(int i=4;i<10;i++) m_text[i].focused=m_embedded && id==i+8;
       m_select[8].focused=m_embedded && id==18;
       m_select[9].focused=m_embedded && id==21;
-      for(int i=10;i<12;i++) m_text[i].focused=m_embedded && id==TextFieldId(i);
+      m_select[10].focused=m_embedded && id==20;
+      for(int i=10;i<11;i++) m_text[i].focused=m_embedded && id==TextFieldId(i);
       m_back.focused=!m_embedded && id==4; m_save.focused=!m_embedded && id==5; m_next.focused=!m_embedded && id==6; m_dirty=true;
      }
    void Begin(const int id)
@@ -78,7 +79,8 @@ private:
       else if(m_embedded && id>=10 && id<=11) { m_select[id-4].Open(m_height,160); m_open=m_select[id-4].active ? id-4 : -1; }
       else if(m_embedded && id>=12 && id<=17) { m_edit=id-8; m_text[m_edit].Begin(); }
       else if(m_embedded && id==18) { m_select[8].Open(m_height,160); m_open=m_select[8].active ? 8 : -1; }
-      if(m_embedded && id>=19 && id<=20) { m_edit=id-9; m_text[m_edit].Begin(); }
+      if(m_embedded && id==19) { m_edit=id-9; m_text[m_edit].Begin(); }
+      if(m_embedded && id==20) { m_select[10].Open(m_height,160); m_open=m_select[10].active ? 10 : -1; }
       if(m_embedded && id==21) { m_select[9].Open(m_height,160); m_open=m_select[9].active ? 9 : -1; }
       m_dirty=true;
      }
@@ -94,14 +96,14 @@ private:
       m_labels[2].caption="Stop loss ("+state.Unit()+")";
       m_labels[3].caption="Take profit ("+state.Unit()+")";
       for(int i=0;i<2;i++) m_text[i].SetValue(state.Value(i+2));
-      for(int i=2;i<12;i++) m_text[i].SetValue(state.Value(TextFieldId(i)));
-      for(int i=6;i<10;i++) m_select[i].SetSelected(state.Choice(SelectFieldId(i)));
+      for(int i=2;i<11;i++) m_text[i].SetValue(state.Value(TextFieldId(i)));
+      for(int i=6;i<11;i++) m_select[i].SetSelected(state.Choice(SelectFieldId(i)));
       m_dirty=true;
      }
    void StepMultiplier(const int direction)
      {
       if(!Finish(true)) return;
-      double value=NormalizeDouble(MathMax(0.0,MathMin(100000000.0,state.stop_multiplier+direction*0.1)),2);
+      double value=NormalizeDouble(MathMax(0.0,MathMin(100000000.0,state.stop_multiplier+direction*0.5)),2);
       string error;
       if(!state.Commit(19,DoubleToString(value,2),error)) { Status(error,true); return; }
       m_text[10].SetValue(state.Value(19)); Focus(19);
@@ -139,6 +141,7 @@ public:
       for(int i=0;i<6;i++) m_labels[i+12].caption=captions[i];
       m_labels[18].caption="Unidade dos tamanhos"; m_select[8].SetOptions("Pontos|Porcentagem");
       m_labels[19].caption="+ Vezes"; m_labels[20].caption="Candle";
+      m_select[10].SetOptions("Último|Penúltimo|Antepenúltimo");
       m_text[10].spin=true;
       m_labels[21].caption="Tamanho do candle"; m_select[9].SetOptions("Total (com pavios)|Corpo");
       UpdateTargets();
@@ -180,7 +183,8 @@ public:
          return true;
         }
       if(m_focus==21) { r=m_select[9].bounds; return true; }
-      if(m_focus==19 || m_focus==20) { r=m_text[m_focus-9].bounds; return true; }
+      if(m_focus==20) { r=m_select[10].bounds; return true; }
+      if(m_focus==19) { r=m_text[m_focus-9].bounds; return true; }
       if(m_focus==18) { r=m_select[8].bounds; return true; }
       if(m_focus>=12) { r=m_text[m_focus-8].bounds; return true; }
       if(m_focus>=10) { r=m_select[m_focus-4].bounds; return true; }
@@ -236,7 +240,8 @@ public:
         {
          int x=target.x+24+i*(half+16),y=target.y+230;
          m_labels[19+i].SetBounds(x,y-22,half,18);
-         m_text[10+i].SetBounds(x,y,half,42);
+         if(i==0) m_text[10].SetBounds(x,y,half,42);
+         else m_select[10].SetBounds(x,y,half,42);
         }
       m_labels[21].SetBounds(target.x+24,target.y+284,target.w-48,18);
       m_select[9].SetBounds(target.x+24,target.y+306,target.w-48,42);
@@ -280,7 +285,7 @@ public:
          r.Text(card.x+52,card.y+20,i==0 ? "ORDEM" : (i==1 ? "ALVOS" : "FILTRO DE CANDLE"),GUI_TEXT,14,true,card.w-76);
         }
       for(int id=0;id<4;id++) { m_labels[id].Draw(r); if(id<2) m_select[id].Draw(r); else m_text[id-2].Draw(r); }
-      for(int i=0;i<2;i++) { m_labels[19+i].Draw(r); m_text[10+i].Draw(r); }
+      for(int i=0;i<2;i++) { m_labels[19+i].Draw(r); if(i==0) m_text[10].Draw(r); else m_select[10].Draw(r); }
       m_labels[21].Draw(r); m_select[9].Draw(r);
       m_labels[4].Draw(r); m_select[2].Draw(r);
       for(int id=6;id<=9;id++)
@@ -300,8 +305,8 @@ public:
    void ClearHover()
      {
       for(int i=0;i<2;i++) { m_select[i].SetHover(false); m_text[i].SetHover(false); }
-      for(int i=2;i<10;i++) m_select[i].SetHover(false);
-      for(int i=2;i<12;i++) m_text[i].SetHover(false);
+      for(int i=2;i<11;i++) m_select[i].SetHover(false);
+      for(int i=2;i<11;i++) m_text[i].SetHover(false);
       m_text[10].SpinHover(0);
       m_next.SetHover(false); m_next.active=false;
       m_back.SetHover(false); m_save.SetHover(false); m_back.active=false; m_save.active=false; m_dirty=true;
@@ -352,8 +357,8 @@ public:
         }
       if(m_embedded)
         {
-         for(int i=6;i<10;i++) if(FieldVisible(SelectFieldId(i)) && m_select[i].ContainsPoint(x,y)) hit=SelectFieldId(i);
-         for(int i=4;i<12;i++) if(FieldVisible(TextFieldId(i)) && m_text[i].ContainsPoint(x,y)) hit=TextFieldId(i);
+         for(int i=6;i<11;i++) if(FieldVisible(SelectFieldId(i)) && m_select[i].ContainsPoint(x,y)) hit=SelectFieldId(i);
+         for(int i=4;i<11;i++) if(FieldVisible(TextFieldId(i)) && m_text[i].ContainsPoint(x,y)) hit=TextFieldId(i);
         }
       if(m_edit>=0 && hit==TextFieldId(m_edit)) return 0;
       if(!Finish(true)) return 0;
@@ -380,8 +385,8 @@ public:
         }
       if(m_embedded)
         {
-         for(int i=6;i<10;i++) if(m_select[i].SetHover(FieldVisible(SelectFieldId(i)) && !overlay && m_select[i].ContainsPoint(x,y))) m_dirty=true;
-         for(int i=4;i<12;i++) if(m_text[i].SetHover(FieldVisible(TextFieldId(i)) && !overlay && m_text[i].ContainsPoint(x,y))) m_dirty=true;
+         for(int i=6;i<11;i++) if(m_select[i].SetHover(FieldVisible(SelectFieldId(i)) && !overlay && m_select[i].ContainsPoint(x,y))) m_dirty=true;
+         for(int i=4;i<11;i++) if(m_text[i].SetHover(FieldVisible(TextFieldId(i)) && !overlay && m_text[i].ContainsPoint(x,y))) m_dirty=true;
         }
       if(m_back.SetHover(!overlay && m_back.ContainsPoint(x,y))) m_dirty=true;
       if(m_save.SetHover(!overlay && m_save.ContainsPoint(x,y))) m_dirty=true;
@@ -403,7 +408,7 @@ public:
          int next=NextFocus(back);
          while(next>=0 && next<=LastFocus() && !FieldVisible(next)) next+=back ? -1 : 1;
          if(next<0 || next>LastFocus()) { Focus(-1); return 3; }
-         Focus(next); if((next>=2 && next<4) || (Pending() && next==9) || (m_embedded && ((next>=12 && next<=17) || next==19 || next==20))) Begin(next); return 0;
+         Focus(next); if((next>=2 && next<4) || (Pending() && next==9) || (m_embedded && ((next>=12 && next<=17) || next==19))) Begin(next); return 0;
         }
       if(m_open>=0)
         {
@@ -428,8 +433,8 @@ public:
          if(!m_embedded && m_focus==6) return Ready() ? 4 : 0;
          Begin(m_focus); return 0;
         }
-      if(((m_focus>=0 && m_focus<2) || (m_embedded && m_focus==4) || (Pending() && m_focus>=5 && m_focus<=7) || (m_embedded && m_focus>=10 && m_focus<=11) || (m_embedded && (m_focus==18 || m_focus==21))) && (key==38 || key==40)) Begin(m_focus);
-      else if(((m_focus>=2 && m_focus<4) || (Pending() && m_focus>=8 && m_focus<=9) || (m_embedded && ((m_focus>=12 && m_focus<=17) || m_focus==19 || m_focus==20))) && ((key>=48 && key<=57) || (key>=96 && key<=105) || key==8 || key==46 || key==189 || key==109 || key==190 || key==188 || key==110))
+      if(((m_focus>=0 && m_focus<2) || (m_embedded && m_focus==4) || (Pending() && m_focus>=5 && m_focus<=7) || (m_embedded && m_focus>=10 && m_focus<=11) || (m_embedded && (m_focus==18 || m_focus==20 || m_focus==21))) && (key==38 || key==40)) Begin(m_focus);
+      else if(((m_focus>=2 && m_focus<4) || (Pending() && m_focus>=8 && m_focus<=9) || (m_embedded && ((m_focus>=12 && m_focus<=17) || m_focus==19))) && ((key>=48 && key<=57) || (key>=96 && key<=105) || key==8 || key==46 || key==189 || key==109 || key==190 || key==188 || key==110))
         { Begin(m_focus); m_text[m_edit].Key(key); m_dirty=true; }
       return 0;
      }

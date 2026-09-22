@@ -118,6 +118,7 @@ public:
    // Retorna a opção selecionada; os IDs existentes permanecem compatíveis.
    int Choice(const int id)
      {
+      if(id==20) return stop_bar-1;
       if(id==21) return stop_measure;
       if(id==18) return candle_units[editing_candle];
       if(id==10) return editing_candle;
@@ -128,6 +129,7 @@ public:
      }
    bool Choose(const int id,const int option)
      {
+      if(id==20 && option>=0 && option<3) { stop_bar=option+1; return true; }
       if(id==21 && option>=0 && option<=1) { stop_measure=option; return true; }
       if(id==18 && option>=0 && option<=1) { candle_units[editing_candle]=option; return true; }
       if(id==10 && option>=0 && option<3) { editing_candle=option; return true; }
@@ -164,8 +166,8 @@ public:
    bool Commit(const int id,string value,string &error)
      {
       error="";
-      if(id!=2 && id!=3 && id!=8 && id!=9 && id!=19 && id!=20 && (id<12 || id>17)) { error="Campo inválido."; return false; }
-      string unit=id==19 ? "vezes" : (id==20 ? "candles" : (id>=12 ? CandleUnit() : (id==8 ? PendingUnit() : (id==9 ? "velas" : Unit()))));
+      if(id!=2 && id!=3 && id!=8 && id!=9 && id!=19 && (id<12 || id>17)) { error="Campo inválido."; return false; }
+      string unit=id==19 ? "vezes" : (id>=12 ? CandleUnit() : (id==8 ? PendingUnit() : (id==9 ? "velas" : Unit())));
       StringReplace(value,",",".");
       int digits=0,dots=0;
       for(int i=0;i<StringLen(value);i++)
@@ -177,7 +179,7 @@ public:
         }
       if(digits==0) { error="Informe o valor em "+unit+"."; return false; }
       int decimal=StringFind(value,".");
-      if((id==9 || id==20) && (decimal>=0 || StringToDouble(value)<1 || StringToDouble(value)>100000)) { error="Vela de referência: inteiro de 1 a 100000; 1 = última fechada."; return false; }
+      if(id==9 && (decimal>=0 || StringToDouble(value)<1 || StringToDouble(value)>100000)) { error="Vela de referência: inteiro de 1 a 100000; 1 = última fechada."; return false; }
       if(decimal>=0 && StringLen(value)-decimal-1>2) { error="Use no máximo duas casas decimais."; return false; }
       double number=StringToDouble(value);
       if(!MathIsValidNumber(number) || number<0 || number>100000000)
@@ -200,7 +202,6 @@ public:
          return true;
         }
       if(id==19) stop_multiplier=number;
-      else if(id==20) stop_bar=(int)number;
       else if(id==8) pending_distance=number;
       else if(id==9) pending_bar=(int)number;
       else if(id==2) stop_loss=number; else take_profit=number;
@@ -210,7 +211,7 @@ public:
      {
       error="";
       if(!MathIsValidNumber(stop_multiplier) || stop_multiplier<0 || stop_multiplier>100000000 ||
-         stop_bar<1 || stop_bar>100000 || stop_measure<0 || stop_measure>1)
+         stop_bar<1 || stop_bar>3 || stop_measure<0 || stop_measure>1)
         { error="Confira o multiplicador, o candle e a medida do stop loss."; return false; }
       if(editing_candle<0 || editing_candle>2) { error="Selecione o candle 1, 2 ou 3."; return false; }
       for(int i=0;i<3;i++)
