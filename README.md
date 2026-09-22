@@ -1,5 +1,7 @@
 # UniversalEa
 
+O **Stop loss** no card Alvos aceita **distância + X vezes o tamanho do candle**, com multiplicador decimal, número do candle (1 = último fechado) e medida **Total (com pavios)** ou **Corpo**. Total corresponde a máxima − mínima; Corpo, ao valor absoluto de fechamento − abertura. O multiplicador inicia em zero, preservando a distância fixa; para desativar o stop, zere a distância e o multiplicador. As opções são preservadas no histórico e nos sets v9; sets anteriores recebem multiplicador zero e candle 1. Essa configuração acompanha a interface; a execução de ordens continua sendo uma etapa futura.
+
 ## Navegação e página Indicadores
 
 A navegação usa uma barra vertical à esquerda: **Setup, Indicadores, Gestão, Filtros, Revisão e Ativação**. As três últimas etapas permanecem futuras. Regras deixa de ser uma etapa separada: os controles de tipo de ordem, unidade dos alvos, stop loss e take profit ficam no bloco **Regras de entrada e saída**, dentro de Indicadores. **Continuar** segue diretamente para Gestão e o retorno de Gestão abre Indicadores.

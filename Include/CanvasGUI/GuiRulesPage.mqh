@@ -282,7 +282,8 @@ public:
          r.Text(m_cards[2].x+24,m_cards[2].y+m_cards[2].h-48,state.CandleUnit()=="%" ? "100% = máxima − mínima" : "Tamanhos em pontos do símbolo",GUI_MUTED,11,false,m_cards[2].w-48);
          r.Text(m_cards[2].x+24,m_cards[2].y+m_cards[2].h-28,"Em "+state.CandleUnit()+" · 0 = sem restrição",GUI_MUTED,11,false,m_cards[2].w-48);
         }
-      r.Text(c.x+24,c.y+c.h-28,m_error ? m_message : "Stop = distância + vezes o candle. 1 = último fechado. Stop desligado: distância e vezes = 0.",m_error ? GUI_ERROR : GUI_MUTED,12,false,c.w-48);
+      r.Text(c.x+24,c.y+c.h-30,m_error ? m_message : "Stop: distância + vezes × tamanho do candle.",m_error ? GUI_ERROR : GUI_MUTED,11,false,c.w-48);
+      if(!m_error) r.Text(c.x+24,c.y+c.h-14,"Candle 1: último fechado. Distância e vezes 0: desliga.",GUI_MUTED,11,false,c.w-48);
       m_dirty=false;
      }
    void CloseSelect() { if(m_open>=0) { m_select[m_open].Close(); m_open=-1; m_dirty=true; } }

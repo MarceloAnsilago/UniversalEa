@@ -8,19 +8,19 @@ void Check(const bool ok,const string label)
 void OnStart()
   {
    CGuiRulesState state; string error;
-   Check(state.stop_multiplier==0 && state.stop_bar==1 && state.stop_measure==0 && state.StopSummary()=="Desativado","Padr?es preservam stop desativado");
-   Check(state.Commit(2,"25",error) && state.Commit(19,"1,50",error) && state.Commit(20,"2",error) && state.Choose(21,1),"Configurar dist?ncia mais corpo do candle");
-   Check(state.stop_loss==25 && state.stop_multiplier==1.5 && state.stop_bar==2 && state.stop_measure==1 && state.Validate(error),"Valores independentes e v?lidos");
+   Check(state.stop_multiplier==0 && state.stop_bar==1 && state.stop_measure==0 && state.StopSummary()=="Desativado","Padrões preservam stop desativado");
+   Check(state.Commit(2,"25",error) && state.Commit(19,"1,50",error) && state.Commit(20,"2",error) && state.Choose(21,1),"Configurar distância mais corpo do candle");
+   Check(state.stop_loss==25 && state.stop_multiplier==1.5 && state.stop_bar==2 && state.stop_measure==1 && state.Validate(error),"Valores independentes e válidos");
    Check(state.StopSummary()=="25.00 pontos + 1.50 vezes o candle 2 (Corpo)","Resumo explicita a soma");
-   Check(!state.Commit(19,"-1",error) && !state.Commit(19,"1.001",error) && state.stop_multiplier==1.5,"Multiplicador inv?lido preserva valor");
-   Check(!state.Commit(20,"0",error) && !state.Commit(20,"1.5",error) && !state.Commit(20,"100001",error) && state.stop_bar==2,"Candle exige inteiro fechado v?lido");
-   Check(!state.Choose(21,2) && state.stop_measure==1,"Medida inv?lida preserva valor");
+   Check(!state.Commit(19,"-1",error) && !state.Commit(19,"1.001",error) && state.stop_multiplier==1.5,"Multiplicador inválido preserva valor");
+   Check(!state.Commit(20,"0",error) && !state.Commit(20,"1.5",error) && !state.Commit(20,"100001",error) && state.stop_bar==2,"Candle exige inteiro fechado válido");
+   Check(!state.Choose(21,2) && state.stop_measure==1,"Medida inválida preserva valor");
    state.Commit(2,"0",error);
-   Check(state.StopSummary()!="Desativado","Somente candle mant?m stop habilitado");
+   Check(state.StopSummary()!="Desativado","Somente candle mantém stop habilitado");
    state.Choose(4,1);
-   Check(state.stop_multiplier==1.5 && state.stop_bar==2 && state.stop_measure==1,"Unidade da dist?ncia n?o altera componente do candle");
+   Check(state.stop_multiplier==1.5 && state.stop_bar==2 && state.stop_measure==1,"Unidade da distância não altera componente do candle");
    CGuiState combined; combined.Reset(); combined.rules=state;
-   Check(combined.Apply() && combined.applications[0].rules.stop_multiplier==1.5 && combined.applications[0].rules.stop_bar==2,"Hist?rico preserva stop por candle");
+   Check(combined.Apply() && combined.applications[0].rules.stop_multiplier==1.5 && combined.applications[0].rules.stop_bar==2,"Histórico preserva stop por candle");
    CGuiApp gui;
    if(!gui.Create(ChartID(),false)) { Check(false,"Criar GUI"); return; }
    gui.m_step=1; gui.m_renderer.Resize(1792,733); gui.m_layout.Calculate(1792,733); gui.Reflow();
@@ -30,9 +30,9 @@ void OnStart()
    gui.Click(field.x+10,field.y+10); gui.Key(50); gui.Key(13);
    Check(gui.m_rules.state.stop_multiplier==2,"Mouse e teclado editam vezes");
    gui.m_rules.Key(9);
-   Check(gui.m_rules.m_focus==20 && gui.m_rules.m_edit==11,"Tab avan?a para candle");
+   Check(gui.m_rules.m_focus==20 && gui.m_rules.m_edit==11,"Tab avança para candle");
    gui.m_rules.Key(51); gui.m_rules.Key(13); gui.m_rules.Key(9);
-   Check(gui.m_rules.state.stop_bar==3 && gui.m_rules.m_focus==21,"Candle edit?vel e Tab para medida");
+   Check(gui.m_rules.state.stop_bar==3 && gui.m_rules.m_focus==21,"Candle editável e Tab para medida");
    gui.m_rules.Key(13); gui.m_rules.Key(40); gui.m_rules.Key(13);
    Check(gui.m_rules.state.stop_measure==1,"Seletor escolhe corpo");
    gui.m_rules.Key(9); Check(gui.m_rules.m_focus==3,"Tab segue para take profit"); gui.m_rules.Finish(false);
@@ -43,8 +43,8 @@ void OnStart()
      {
       gui.m_renderer.Resize(widths[i],733); gui.m_layout.Calculate(widths[i],733); gui.Reflow(); gui.ScrollTo(100000); gui.Render();
       GuiRect card=gui.m_rules.m_cards[1],last=gui.m_rules.m_text[1].bounds;
-      Check(last.y+last.h<card.y+card.h && gui.m_layout.status.y+gui.m_layout.status.h<=733,"Alvos e rodap? cabem com rolagem");
-      Check(gui.m_rules.m_text[10].bounds.x+gui.m_rules.m_text[10].bounds.w<gui.m_rules.m_text[11].bounds.x,"Vezes e candle n?o se sobrep?em");
+      Check(last.y+last.h<card.y+card.h && gui.m_layout.status.y+gui.m_layout.status.h<=733,"Alvos e rodapé cabem com rolagem");
+      Check(gui.m_rules.m_text[10].bounds.x+gui.m_rules.m_text[10].bounds.w<gui.m_rules.m_text[11].bounds.x,"Vezes e candle não se sobrepõem");
       if(widths[i]==600) ResourceSave(gui.m_renderer.m_canvas.ResourceName(),"stop-candle-narrow.bmp");
      }
    gui.Destroy();

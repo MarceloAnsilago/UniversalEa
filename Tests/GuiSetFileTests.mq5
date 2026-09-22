@@ -211,12 +211,12 @@ void OnStart()
    Check(GuiDecodeSet(data,loaded,error) && loaded.rules.stop_multiplier==1.75 &&
          loaded.rules.stop_bar==3 && loaded.rules.stop_measure==1,"Stop por candle preservado no set");
    data.stop_bar=0;
-   Check(!GuiDecodeSet(data,loaded,error) && loaded.rules.stop_bar==3,"Candle inv?lido n?o altera estado carregado");
+   Check(!GuiDecodeSet(data,loaded,error) && loaded.rules.stop_bar==3,"Candle inválido não altera estado carregado");
    GuiEncodeSet(original,data,error); data.stop_multiplier=-1;
    Check(!GuiDecodeSet(data,loaded,error),"Multiplicador negativo rejeitado no set");
    GuiEncodeSet(original,data,error); data.stop_measure=2;
-   Check(!GuiDecodeSet(data,loaded,error),"Medida inv?lida rejeitada no set");
-   // Grava o prefixo bin?rio antigo e seu checksum para exercitar a migra??o real.
+   Check(!GuiDecodeSet(data,loaded,error),"Medida inválida rejeitada no set");
+   // Grava o prefixo binário antigo e seu checksum para exercitar a migração real.
    GuiEncodeSet(original,data,error);
    legacy_file=FileOpen(legacy_path,FILE_READ|FILE_WRITE|FILE_BIN|FILE_COMMON);
    legacy_ok=false;
@@ -231,7 +231,7 @@ void OnStart()
    Check(legacy_ok && GuiReadSetRecord(legacy_path,migrated,error) && GuiDecodeSet(migrated,loaded,error) &&
          loaded.rules.stop_multiplier==0 && loaded.rules.stop_bar==1 && loaded.rules.stop_measure==0 &&
          loaded.rules.stop_loss==original.rules.stop_loss && loaded.rules.candle_filter==original.rules.candle_filter,
-         "Set v8 preserva dist?ncia e filtros e inicia multiplicador desativado");
+         "Set v8 preserva distância e filtros e inicia multiplicador desativado");
    FileDelete(legacy_path,FILE_COMMON);
    FileDelete(path,FILE_COMMON); FileDelete(corrupt,FILE_COMMON);
    FileDelete(root+"\\owners\\1234567.txt",FILE_COMMON);
