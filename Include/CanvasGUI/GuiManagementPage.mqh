@@ -12,7 +12,7 @@ private:
    CGuiLabel m_labels[11];
    CGuiSelectBox m_select[3];
    CGuiTextField m_text[8];
-   CGuiButton m_back,m_save;
+   CGuiButton m_back,m_save,m_next;
    GuiRect m_cards[3],m_status,m_summary;
    int m_open,m_edit,m_focus,m_height;
    bool m_dirty,m_error;
@@ -24,7 +24,7 @@ private:
       m_focus=id;
       for(int i=0;i<3;i++) m_select[i].focused=id==(i==2 ? 10 : i);
       for(int i=0;i<8;i++) m_text[i].focused=id==i+2;
-      m_back.focused=id==11; m_save.focused=id==12; m_dirty=true;
+      m_back.focused=id==11; m_save.focused=id==12; m_next.focused=id==13; m_dirty=true;
      }
    void Begin(const int id)
      {
@@ -69,6 +69,7 @@ public:
       m_labels[10].caption="Stop móvel"; m_labels[7].caption="Ativar após"; m_labels[8].caption="Distância do preço"; m_labels[9].caption="Passo de ajuste";
       UpdateTargets();
       m_back.caption="Indicadores"; m_back.secondary=true; m_back.show_icon=true; m_back.icon=GUI_ICON_ARROW_LEFT;
+      m_next.caption="Revisar";
       m_save.caption="Salvar gestão";
       Status("Configure o breakeven e o trailing stop.");
      }
@@ -85,7 +86,8 @@ public:
          else m_text[id-2].SetBounds(field.x,field.y,field.w,field.h);
         }
       m_back.SetBounds(layout.left,layout.apply.y,172,44);
-      m_save.SetBounds(layout.apply.x,layout.apply.y,layout.apply.w,44);
+      m_save.SetBounds(layout.apply.x-168,layout.apply.y,156,44);
+      m_next.SetBounds(layout.apply.x,layout.apply.y,layout.apply.w,44);
       m_status.Set(layout.left,layout.apply.y+56,layout.content_width,40);
       m_dirty=true;
      }
@@ -95,7 +97,7 @@ public:
      {
       for(int i=0;i<3;i++) m_select[i].SetHover(false);
       for(int i=0;i<8;i++) m_text[i].SetHover(false);
-      m_back.SetHover(false); m_save.SetHover(false); m_back.active=false; m_save.active=false; m_dirty=true;
+      m_next.SetHover(false); m_back.SetHover(false); m_save.SetHover(false); m_back.active=false; m_save.active=false; m_dirty=true;
      }
    bool Finish(const bool save)
      {
@@ -128,6 +130,7 @@ public:
          if(option>=0) { SelectOption(option); return 0; }
          bool same=m_select[m_open].ContainsPoint(x,y); CloseSelect(); if(same) return 0;
         }
+      if(m_next.ContainsPoint(x,y)) { Focus(13); return Ready() ? 4 : 0; }
       int hit=-1;
       for(int i=0;i<3;i++) if(m_select[i].ContainsPoint(x,y)) hit=i==2 ? 10 : i;
       for(int i=0;i<8;i++) if(m_text[i].ContainsPoint(x,y)) hit=i+2;
@@ -148,6 +151,7 @@ public:
         }
       for(int i=0;i<8;i++) if(m_text[i].SetHover(!overlay && m_text[i].ContainsPoint(x,y))) m_dirty=true;
       if(m_back.SetHover(!overlay && m_back.ContainsPoint(x,y))) m_dirty=true;
+      if(m_next.SetHover(!overlay && m_next.ContainsPoint(x,y))) m_dirty=true;
       if(m_save.SetHover(!overlay && m_save.ContainsPoint(x,y))) m_dirty=true;
       bool down=(StringToInteger(flags)&1)!=0;
       if(m_back.active!=(down && m_back.hover) || m_save.active!=(down && m_save.hover)) m_dirty=true;
@@ -161,11 +165,11 @@ public:
          if(!Finish(true)) return 0;
          if(m_open>=0) { int option=m_select[m_open].hot; if(option>=0) SelectOption(option); else CloseSelect(); }
          bool back=(TerminalInfoInteger(TERMINAL_KEYSTATE_SHIFT)&0x8000)!=0;
-         int order[]={10,7,8,9,0,2,3,1,4,5,6,11,12};
-         int position=back ? 13 : -1;
-         for(int i=0;i<13;i++) if(order[i]==m_focus) { position=i; break; }
+         int order[]={10,7,8,9,0,2,3,1,4,5,6,11,12,13};
+         int position=back ? 14 : -1;
+         for(int i=0;i<14;i++) if(order[i]==m_focus) { position=i; break; }
          int next=-1;
-         for(position+=back ? -1 : 1;position>=0 && position<13;position+=back ? -1 : 1)
+         for(position+=back ? -1 : 1;position>=0 && position<14;position+=back ? -1 : 1)
            { int id=order[position]; if(id<2 || id>9 || state.Enabled(id)) { next=id; break; } }
          if(next<0) { Focus(-1); return 3; }
          Focus(next); if(next>=2 && next<10) Begin(next); return 0;
@@ -188,6 +192,7 @@ public:
         {
          if(m_focus==11) return Ready() ? 2 : 0;
          if(m_focus==12) return Ready() ? 1 : 0;
+         if(m_focus==13) return Ready() ? 4 : 0;
          Begin(m_focus); return 0;
         }
       if(((m_focus>=0 && m_focus<2) || m_focus==10) && (key==38 || key==40)) Begin(m_focus);
@@ -195,7 +200,7 @@ public:
         { Begin(m_focus); m_text[m_edit].Key(key); m_dirty=true; }
       return 0;
      }
-   void EnterFocus(const bool last) { Focus(last ? 12 : 10); }
+   void EnterFocus(const bool last) { Focus(last ? 13 : 10); }
    void Render(CGuiRenderer &r,const bool full)
      {
       if(!full && !m_dirty) return;
@@ -215,8 +220,8 @@ public:
       r.Text(m_summary.x+24,m_summary.y+84,"Stop móvel: "+state.Summary(2),GUI_MUTED,12,false,m_summary.w-48);
       r.Fill(m_status,GUI_BG);
       r.Text(m_status.x,m_status.y,m_message,m_error ? GUI_ERROR : GUI_MUTED,13,false,m_status.w);
-      r.Text(m_status.x,m_status.y+22,"Próxima etapa: Filtros · em breve",GUI_MUTED,11,false,m_status.w);
-      m_back.Draw(r); m_save.Draw(r); m_dirty=false;
+      r.Text(m_status.x,m_status.y+22,"Próxima etapa: Revisão",GUI_MUTED,11,false,m_status.w);
+      m_back.Draw(r); m_save.Draw(r); m_next.Draw(r); m_dirty=false;
      }
    void DrawOverlay(CGuiRenderer &r) { if(m_open>=0) { r.SaveOverlay(m_select[m_open].popup); m_select[m_open].DrawOverlay(r); } }
   };

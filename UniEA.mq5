@@ -2,7 +2,7 @@
 #property version "1.00"
 #property description "EA com GUI Canvas e inicialização de indicadores. Sem envio de ordens."
 #include "Include/CanvasGUI/GuiApp.mqh"
-#include "Include/MyUnEA.mqh"
+#include "Include/UniRuntime.mqh"
 #include "Include/Configuration/UniInputOptions.mqh"
 
 MqlTick lastest_price; // Armazena o último tick recebido para evitar processamento duplicado  
@@ -17,7 +17,7 @@ enum ENUM_UNI_MANAGEMENT_MODE
   };
 
 // Parametros de entrada: declarados para a futura carga da configuracao.
-// OnInit transfere estes valores para MyUnEA; a edicao pela GUI ainda e independente.
+// Os inputs preenchem o Canvas. Aplicar ao motor valida e transfere a configuracao.
 // Identidade do arquivo e limites de volume sao dados internos, nao inputs.
 input group "Setup"
 input string InpName="Meu setup";                              // Nome do setup
@@ -127,12 +127,26 @@ input int InpAdxPeriod=14; // Período: 1 a 100000
 input double InpAdxMinimum=25.0; // ADX mínimo (0 a 100): exige valor acima; otimizável
 
 CGuiApp gui;
-// Instancia da classe responsavel pela logica do Expert Advisor.
-MyUnEA ea;
-// Monta a configuracao de cada indicador a partir dos inputs.
-// MA usa os parametros da sua posicao; os demais tipos usam o grupo unico.
-bool ConfigureInputIndicators()
+CUniRuntime runtime;
+
+void BuildInitialConfiguration(CGuiState &config)
   {
+   config.Reset();
+   config.setup.name=InpName; config.setup.magic=InpMagic; config.setup.market=(int)InpMarket;
+   config.setup.timeframe=(ENUM_TIMEFRAMES)InpTimeframe; config.setup.direction=(int)InpDirection;
+   config.setup.trade_mode=(int)InpTradeMode; config.setup.lot=InpLot;
+   config.setup.entry_start=InpEntryStart; config.setup.entry_end=InpEntryEnd;
+   config.setup.close_enabled=InpCloseEnabled==UNI_YES; config.setup.close_time=InpCloseTime;
+   config.rules.order_mode=InpOrderMode; config.rules.candle_filter=InpCandleFilter;
+   config.rules.target_unit=InpTargetUnit; config.rules.stop_loss=InpStopLoss; config.rules.take_profit=InpTakeProfit;
+   // Distancia de take fornecida nos inputs seleciona o modo fixo.
+   if(InpTakeProfit>0) config.rules.take_mode=1;
+   config.management.Choose(0,(int)InpBreakevenMode);
+   config.management.Choose(1,(int)InpTrailingMode);
+   config.management.Choose(2,(int)InpMovingStopMode);
+   config.management.values[0]=InpBreakevenTrigger; config.management.values[1]=InpBreakevenOffset;
+   config.management.values[2]=InpTrailingTrigger; config.management.values[3]=InpTrailingDistance; config.management.values[4]=InpTrailingStep;
+   config.management.values[5]=InpMovingStopTrigger; config.management.values[6]=InpMovingStopDistance; config.management.values[7]=InpMovingStopStep;
    ENUM_GUI_INDICATOR_TYPE types[]={InpIndicator1Type,InpIndicator2Type,InpIndicator3Type,InpIndicator4Type};
    int periods[]={InpIndicator1MaPeriod,InpIndicator2MaPeriod,InpIndicator3MaPeriod,InpIndicator4MaPeriod};
    int slopes[]={InpIndicator1MaSlopeBars,InpIndicator2MaSlopeBars,InpIndicator3MaSlopeBars,InpIndicator4MaSlopeBars};
@@ -141,103 +155,51 @@ bool ConfigureInputIndicators()
    ENUM_UNI_APPLIED_PRICE prices[]={InpIndicator1MaPrice,InpIndicator2MaPrice,InpIndicator3MaPrice,InpIndicator4MaPrice};
    for(int i=0;i<4;i++)
      {
-      IndicatorConfig config;
-      config.type=types[i];
-      config.maSlopeBars=slopes[i]; config.maPeriod=periods[i]; config.maShift=shifts[i];
-      config.maMethod=(ENUM_MA_METHOD)methods[i];
-      config.maPrice=(ENUM_APPLIED_PRICE)prices[i];
-      config.rsiPeriod=InpRsiPeriod; config.rsiPrice=(ENUM_APPLIED_PRICE)InpRsiPrice;
-      config.rsiLower=InpRsiLower; config.rsiUpper=InpRsiUpper;
-      config.adxPeriod=InpAdxPeriod; config.adxMinimum=InpAdxMinimum;
-      string error;
-      if(!ea.ConfigureIndicator(i,config,error))
-        { PrintFormat("Indicador %d: %s",i+1,error); return false; }
+      config.indicators[i].type=types[i];
+      config.indicators[i].maSlopeBars=slopes[i]; config.indicators[i].maPeriod=periods[i];
+      config.indicators[i].maShift=shifts[i]; config.indicators[i].maMethod=(ENUM_MA_METHOD)methods[i];
+      config.indicators[i].maPrice=(ENUM_APPLIED_PRICE)prices[i];
+      config.indicators[i].rsiPeriod=InpRsiPeriod; config.indicators[i].rsiPrice=(ENUM_APPLIED_PRICE)InpRsiPrice;
+      config.indicators[i].rsiLower=InpRsiLower; config.indicators[i].rsiUpper=InpRsiUpper;
+      config.indicators[i].adxPeriod=InpAdxPeriod; config.indicators[i].adxMinimum=InpAdxMinimum;
      }
-   return true;
   }
-// Inicializacao: configura primeiro a classe, depois cria seus recursos.
+
 int OnInit()
   {
-   //--- 1. Identificar o ativo e transferir os parametros gerais do setup.
-   ea.setSymbol(_Symbol);
-   ea.setPeriod((ENUM_TIMEFRAMES)InpTimeframe);
-   ea.setMagic(InpMagic);
-   ea.setLOTS(InpLot);
-   ea.setSetup(InpName,InpMarket,InpDirection,InpTradeMode);
-
-   //--- 2. Transferir horarios, regras e gestao para a classe.
-   ea.setSchedule(InpEntryStart,InpEntryEnd,InpCloseEnabled==UNI_YES,InpCloseTime);
-   // Os alvos ja estao em pontos ou percentual: nao multiplicar por 10 em ativos de 5 digitos.
-   ea.setRules(InpOrderMode,InpCandleFilter,InpTargetUnit,InpStopLoss,InpTakeProfit);
-   ea.setBreakeven((int)InpBreakevenMode,InpBreakevenTrigger,InpBreakevenOffset);
-   ea.setTrailing((int)InpTrailingMode,InpTrailingTrigger,InpTrailingDistance,InpTrailingStep);
-   ea.setMovingStop((int)InpMovingStopMode,InpMovingStopTrigger,InpMovingStopDistance,InpMovingStopStep);
-
-   //--- 3. Configurar os quatro indicadores com os parametros dos inputs.
-   if(!ConfigureInputIndicators()) return INIT_PARAMETERS_INCORRECT;
-
-   //--- 4. Validar o setup e criar os handles no ativo e periodo definidos acima.
-   string error;
-   int result=ea.doInit(error);
-   if(result!=INIT_SUCCEEDED)
-     {
-      Print("Falha na inicialização da MyUnEA: ",error);
-      return result;
-     }
-
-   //--- 5. Abrir a interface; se falhar, liberar os recursos da classe.
-   if(!gui.Create(ChartID(),DebugGUI==UNI_YES))
-     {
-      Print("Falha ao criar a interface gráfica.");
-      ea.doDeinit();
-      return INIT_FAILED;
-     }
+   if(!gui.Create(ChartID(),DebugGUI==UNI_YES)) return INIT_FAILED;
+   CGuiState initial; BuildInitialConfiguration(initial); gui.LoadInitialConfiguration(initial);
+   gui.ExecutionResult(false,false,0,"","Aplique a configuracao na etapa Revisao.");
    return INIT_SUCCEEDED;
   }
+void OnDeinit(const int reason) { runtime.Shutdown(); gui.Destroy(); }
 
-// Finalizacao: desfaz a inicializacao, inclusive se OnInit tiver falhado.
-void OnDeinit(const int reason)
-  {
-   gui.Destroy();
-   ea.doDeinit();
-  }
-
-
-// Recebe cada tick do gráfico e delega o processamento para a classe do EA.
 void OnTick()
   {
-   //--- 1. Avaliar posições, obter cotação, velas e buffers dos indicadores.
-   // A leitura de posições acontece a cada tick, inclusive na mesma barra.
-   // A classe usa o ativo e o período configurados durante OnInit.
    string error;
-   bool new_bar=ea.doTick(error);
-
-   //--- 2. Registrar uma falha apenas quando a mensagem mudar.
-   // Evita abrir alertas ou repetir o mesmo aviso a cada tick enquanto espera.
+   int signal=runtime.PollSignal(error);
    static string previous_error="";
-   if(error!="")
+   if(error!=previous_error)
      {
-      if(error!=previous_error) Print("OnTick: ",error);
       previous_error=error;
-      return;
+      if(error!="") Print("Analise: ",error);
      }
-   previous_error="";
-
-   //--- 3. Encerrar este evento se a vela atual já tiver sido reconhecida.
-   // O EA continua ativo e receberá normalmente os próximos ticks.
-   if(!new_bar) return;
-
-   //--- 4. Dados prontos e nova vela reconhecida.
-   // ea.GetIndicatorValue(indicador,buffer,barra,valor) consulta os valores lidos.
-   // Exemplo: indicador 0, buffer 0, barra 1 = valor da ultima vela fechada.
-   // ea.GetPositionSummary() permite consultar compras e vendas deste EA.
-   // Em hedge, os dois lados podem estar abertos simultaneamente.
-   //--- 5. Avaliar as regras individuais; todos os indicadores devem confirmar.
-   // A Media Movel compara fechamento e media; RSI avalia cruzamentos nas velas 2 e 1.
-   // ADX confirma forca acima do minimo e direcao pelas linhas +DI e -DI.
-   // Esta etapa apenas registra o sinal; a execucao de ordens sera implementada depois.
-   if(ea.checkBuy()) Print("Sinal de compra: todos os indicadores ativos confirmaram.");
-   else if(ea.checkSell()) Print("Sinal de venda: todos os indicadores ativos confirmaram.");
+   if(signal==1) Print("Sinal de compra / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
+   if(signal==-1) Print("Sinal de venda / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
   }
 void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
-  { gui.Event(id,lparam,dparam,sparam); }
+  {
+   gui.Event(id,lparam,dparam,sparam);
+   int action=gui.TakeExecutionRequest();
+   if(action==0) return;
+   string error,message; bool ok=true;
+   if(action==1)
+     {
+      GuiAppliedConfiguration config;
+      ok=gui.CaptureConfiguration(config,error) && runtime.Apply(_Symbol,config,error);
+      message="Configuracao aplicada. Analise pausada.";
+     }
+   else if(action==2) { ok=runtime.Activate(error); message="Analise ativa a partir da proxima vela. Sem ordens."; }
+   else { runtime.Pause(); message="Analise pausada."; }
+   gui.ExecutionResult(runtime.HasConfiguration(),runtime.Active(),runtime.Revision(),runtime.AppliedName(),ok ? message : error,!ok);
+  }

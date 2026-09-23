@@ -4,6 +4,7 @@
 #include "Indicators/MyIndicatorFactory.mqh"
 #include "Indicators/MyIndicatorData.mqh"
 #include "Configuration/UniPositionState.mqh"
+#include "Configuration/UniCanvasConfiguration.mqh"
 
 // Classe responsavel pela futura logica do Expert Advisor.
 class MyUnEA
@@ -519,7 +520,24 @@ public:
      }
 
    //--- Metodos de integracao com a interface grafica.
-   // Futuros metodos para receber as configuracoes escolhidas pelo usuario.
+   // Usar em uma instância candidata: o controlador só troca o motor após doInit.
+   bool ConfigureCanvas(const string symbol,GuiAppliedConfiguration &config,string &error)
+     {
+      if(!UniValidateCanvasConfiguration(config,error)) return false;
+      setSymbol(symbol); setPeriod(config.setup.timeframe); setMagic(config.setup.magic); setLOTS(config.setup.lot);
+      setSetup(config.setup.name,(ENUM_GUI_SETUP_MARKET)config.setup.market,
+               (ENUM_GUI_SETUP_DIRECTION)config.setup.direction,(ENUM_GUI_SETUP_TRADE_MODE)config.setup.trade_mode);
+      m_set_id=config.setup.set_id;
+      setSchedule(config.setup.entry_start,config.setup.entry_end,config.setup.close_enabled,config.setup.close_time);
+      setRules(config.rules.order_mode,config.rules.candle_filter,config.rules.target_unit,config.rules.stop_loss,config.rules.take_profit);
+      setBreakeven(config.management.mode[0],config.management.values[0],config.management.values[1]);
+      setTrailing(config.management.mode[1],config.management.values[2],config.management.values[3],config.management.values[4]);
+      setMovingStop(config.management.mode[2],config.management.values[5],config.management.values[6],config.management.values[7]);
+      for(int i=0;i<4;i++) if(!ConfigureIndicator(i,config.indicators[i],error)) return false;
+      return true;
+     }
+   datetime SignalBarTime() { return m_previous_bar_time; }
+   datetime QuoteTime() { return m_latest_price.time; }
   };
 
 #endif // MY_UN_EA_MQH

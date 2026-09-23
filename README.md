@@ -1,5 +1,13 @@
 # UniversalEa
 
+## Conexão do Canvas com o motor
+
+**Revisão** e **Ativação** permitem aplicar uma cópia validada do painel ao motor e ativar ou pausar a **análise de sinais**. O botão **Revisar**, em Gestão, abre esse fluxo. O cabeçalho mostra o estado e a página informa a versão aplicada. Editar ou salvar um set não muda a configuração em análise; uma nova aplicação bem-sucedida substitui o motor e o deixa pausado. Se a validação ou a criação dos indicadores falhar, o motor anterior é preservado.
+
+Os inputs preenchem a configuração inicial do Canvas. O Magic padrão mantém a geração automática do painel; um Magic explícito nos inputs é preservado. Aplicar exige pelo menos um indicador válido, lote compatível com o ativo e Stop Loss habilitado quando o Take Profit depende dele. A análise respeita direção, janela de entradas no horário do servidor e filtros dos três candles fechados. Ativar ou retomar aguarda a próxima vela, sem repetir o sinal da vela em andamento.
+
+**Ainda não há envio de ordens, execução de breakeven/trailing, cancelamento de pendentes nem encerramento por horário.** Esses parâmetros são transferidos e preservados na configuração aplicada para a próxima etapa de execução. Os botões desta versão controlam somente a análise, e isso é indicado no painel. `CanvasRuntimeTests.mq5` verifica validação, aplicação atômica, cópia independente da configuração, pausa, filtros e navegação; os testes não negociam.
+
 O **Stop loss** no card Alvos aceita **distancia + X vezes o tamanho do candle**, com multiplicador padrao **1**, selecao de ultimo, penultimo ou antepenultimo candle fechado e medida Total ou Corpo. O **Take Profit** permite escolher entre **X vezes o tamanho total do stop** (padrao **2**) ou **distancia fixa** definida pelo usuario. Os modos sao exclusivos: os valores nunca sao somados. Alternar o modo preserva ambos os valores e aplica apenas o escolhido. Os dois multiplicadores possuem botoes + / - com passo **0,5** e permitem digitacao manual. Para desativar o stop, zere sua distancia e seu multiplicador; para desativar o take, zere o valor do modo selecionado. As opcoes sao preservadas no historico e nos sets v11; sets anteriores preservam os valores salvos e recebem multiplicador do take zero. Essa configuracao acompanha a interface; a execucao de ordens continua sendo uma etapa futura.
 
 ## Navegação e página Indicadores

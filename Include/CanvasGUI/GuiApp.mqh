@@ -8,6 +8,8 @@
 #include "GuiManagementPage.mqh"
 #include "GuiSetFile.mqh"
 #include "GuiScrollBar.mqh"
+#include "GuiExecutionPage.mqh"
+#include "../Configuration/UniCanvasConfiguration.mqh"
 class CGuiApp
   {
 private:
@@ -26,6 +28,8 @@ private:
    CGuiSetupPage m_setup;
    CGuiRulesPage m_rules;
    CGuiManagementPage m_management;
+   CGuiExecutionPage m_execution;
+   int m_execution_request;
    CGuiButton m_next;
    CGuiButton m_back;
    int m_step;
@@ -105,11 +109,11 @@ private:
    void ChangeStep(const int step)
      {
       if(step==2) { ChangeStep(3); return; }
-      if(step<0 || step>3 || step==m_step) return;
+      if(step<0 || step>5 || step==m_step) return;
       if(m_step==0) { if(!m_setup.Ready()) { m_dirty=true; return; } }
       else if(m_step==3) { if(!m_management.Ready()) { m_dirty=true; return; } }
       else if(m_step==2) { if(!m_rules.Ready()) { m_dirty=true; return; } }
-      else if(!FinishEdit(true) || !m_rules.Ready()) { m_dirty=true; return; }
+      else if(m_step==1 && (!FinishEdit(true) || !m_rules.Ready())) { m_dirty=true; return; }
       CloseSelect(); m_setup.CloseSelect(); m_setup.ClearHover(); m_rules.CloseSelect(); m_management.CloseSelect(); m_rules.ClearHover(); m_management.ClearHover();
       m_step=step; m_focus=-1; m_rules_focus=false; m_rules.LeaveFocus();
       m_scroll.Set(0); m_scroll_drag=false; m_scroll_down=false;
@@ -181,8 +185,8 @@ private:
       m_renderer.Text(28,49,"Desenvolvendo setup para o ativo "+ChartSymbol(m_chart)+" · "+period,GUI_MUTED,13,false,title_width);
       if(m_layout.width>=880)
         {
-         r.Set(m_layout.width-356,25,8,8); m_renderer.Round(r,0xFF16A085,4);
-         m_renderer.Text(m_layout.width-338,22,"CONFIGURAÇÃO",GUI_MUTED,12,true);
+         r.Set(m_layout.width-356,25,8,8); m_renderer.Round(r,m_execution.Active() ? 0xFF16A085 : GUI_MUTED,4);
+         m_renderer.Text(m_layout.width-338,22,m_execution.Active() ? "ANÁLISE ATIVA" : "PAUSADO",GUI_MUTED,12,true);
         }
       string steps[6]={"Setup","Indicadores","Gestão","Filtros","Revisão","Ativação"};
       int active_step=m_step==3 ? 2 : m_step;
@@ -198,7 +202,7 @@ private:
             m_renderer.Icon(i==0 ? GUI_ICON_PARAMETERS : (ENUM_GUI_ICON)(i-1),24,y-2,i==active_step ? GUI_ACCENT : GUI_MUTED,20);
             m_renderer.Text(52,y,steps[i],i==active_step ? GUI_ACCENT : GUI_MUTED,14,i==active_step);
            }
-         m_renderer.Text(24,428,"Etapas 4–6 em breve",GUI_MUTED,11);
+         m_renderer.Text(24,428,"Filtros extras: em breve",GUI_MUTED,11);
         }
       else
         {
@@ -208,14 +212,14 @@ private:
       m_renderer.Text(m_layout.left,y,"PASSO "+IntegerToString(active_step+1)+" DE 6",GUI_ACCENT,12,true);
       if(m_layout.dense)
         {
-         m_renderer.Text(m_layout.left,y+21,m_step==0 ? "Vamos começar pelo seu setup" : (m_step==3 ? "Configure o stop móvel" : m_step==2 ? "Configure as regras da sua estratégia" : "Configure os indicadores da sua estratégia"),GUI_TEXT,24,true,m_layout.content_width);
-         m_renderer.Text(m_layout.left,y+49,m_step==0 ? "Identifique a estratégia e defina como ela poderá operar." : (m_step==3 ? "Defina o breakeven e o trailing stop da estratégia." : m_step==2 ? "Escolha o tipo de ordem e os valores de saída." : "Configure os indicadores e as regras de entrada e saída."),GUI_MUTED,13,false,m_layout.content_width);
+         m_renderer.Text(m_layout.left,y+21,m_step>=4 ? (m_step==4 ? "Revise a configuração" : "Controle da análise") : m_step==0 ? "Vamos começar pelo seu setup" : (m_step==3 ? "Configure o stop móvel" : m_step==2 ? "Configure as regras da sua estratégia" : "Configure os indicadores da sua estratégia"),GUI_TEXT,24,true,m_layout.content_width);
+         m_renderer.Text(m_layout.left,y+49,m_step>=4 ? "Aplique ao motor e ative a análise. Sem envio de ordens." : m_step==0 ? "Identifique a estratégia e defina como ela poderá operar." : (m_step==3 ? "Defina o breakeven e o trailing stop da estratégia." : m_step==2 ? "Escolha o tipo de ordem e os valores de saída." : "Configure os indicadores e as regras de entrada e saída."),GUI_MUTED,13,false,m_layout.content_width);
         }
       else
         {
          m_renderer.Text(m_layout.left,y+30,m_step==0 ? "Defina a base" : (m_step==3 ? "Configure o stop móvel" : m_step==2 ? "Configure as regras" : "Configure os indicadores"),GUI_TEXT,28,true,m_layout.content_width);
          m_renderer.Text(m_layout.left,y+65,m_step==0 ? "do seu setup" : "da sua estratégia",GUI_TEXT,28,true,m_layout.content_width);
-         m_renderer.Text(m_layout.left,y+100,m_step==0 ? "Identifique a estratégia e defina como ela poderá operar." : (m_step==3 ? "Defina o breakeven e o trailing stop da estratégia." : m_step==2 ? "Escolha o tipo de ordem e os valores de saída." : "Configure os indicadores e as regras de entrada e saída."),GUI_MUTED,14,false,m_layout.content_width);
+         m_renderer.Text(m_layout.left,y+100,m_step>=4 ? "Aplique ao motor e ative a analise. Sem envio de ordens." : m_step==0 ? "Identifique a estratégia e defina como ela poderá operar." : (m_step==3 ? "Defina o breakeven e o trailing stop da estratégia." : m_step==2 ? "Escolha o tipo de ordem e os valores de saída." : "Configure os indicadores e as regras de entrada e saída."),GUI_MUTED,14,false,m_layout.content_width);
         }
      }
    bool FieldVisible(const int index)
@@ -319,6 +323,8 @@ private:
         {
          m_layout.Calculate(w,h,m_step==0,false,m_step==3);
          if(m_step==1) PositionIndicators();
+         if(m_step>=4) { m_layout.dense=true; m_layout.too_small=m_layout.width<600 || m_layout.height<480; }
+         m_execution.Place(m_layout);
          m_setup.Place(m_layout); m_rules.PlaceEmbedded(m_layout); m_management.Place(m_layout);
          // Reposition without rebinding: preserve even the current edit buffer.
          for(int i=0;i<24;i++)
@@ -390,6 +396,8 @@ private:
    void Reflow()
      {
       if(m_step==1) PositionIndicators();
+      if(m_step>=4) { m_layout.dense=true; m_layout.too_small=m_layout.width<600 || m_layout.height<480; }
+      m_execution.Place(m_layout);
       for(int i=0;i<4;i++) BuildIndicator(i);
       GuiRect r=m_layout.apply; m_apply.SetBounds(r.x,r.y,r.w,r.h);
       PlaceToggle();
@@ -442,8 +450,9 @@ private:
       if(m_layout.too_small) return;
       if(m_step==1 && (m_scroll.track.Contains(x,y) || (x>=m_layout.sidebar && y<160))) return;
       if(m_layout.sidebar>0 && x>=12 && x<m_layout.sidebar-12)
-         for(int step=0;step<3;step++)
-            if(y>=136+step*46 && y<176+step*46) { ChangeStep(step); return; }
+         for(int step=0;step<6;step++)
+            if(y>=136+step*46 && y<176+step*46) { if(step!=3) ChangeStep(step); return; }
+      if(m_step>=4) { m_execution_request=m_execution.Click(x,y); m_dirty=true; m_full=true; return; }
       if(m_step==0)
         {
          m_focus=-1; m_toggle.focused=false; m_toggle.dirty=true;
@@ -530,6 +539,7 @@ private:
      }
    void ManagementAction(const int action)
      {
+      if(action==4) { ChangeStep(4); return; }
       if(action==2) { ChangeStep(1); return; }
       if(action==3) { m_focus=11; m_toggle.focused=true; m_toggle.dirty=true; return; }
       if(action!=1) return;
@@ -564,6 +574,7 @@ private:
       if(m_collapsed) return;
       if(m_step>0 && m_layout.too_small && m_back.SetHover(m_back.ContainsPoint(x,y))) m_dirty=true;
       if(m_layout.too_small) return;
+      if(m_step>=4) { m_execution.Mouse(x,y); m_dirty=true; m_full=true; return; }
       if(m_step==0) { m_setup.Mouse(x,y,flags); if(m_setup.Dirty()) m_dirty=true; return; }
       if(m_step==1 && y<160)
         {
@@ -601,6 +612,7 @@ private:
       if(m_collapsed)
         { if(key==13 || key==32) ToggleInterface(); return; }
       if(m_layout.too_small) { if(m_step>0 && key==27) ChangeStep(m_step==3 ? 1 : 0); return; }
+      if(m_step>=4) { m_execution_request=m_execution.Key(key); m_dirty=true; m_full=true; return; }
       if(m_step==0)
         {
          if(m_focus==11)
@@ -712,7 +724,7 @@ private:
       m_layout.Calculate(w,h,m_step==0,false,m_step==3); Reflow(); Log(StringFormat("Canvas redimensionado: %dx%d",w,h));
      }
 public:
-   CGuiApp() { m_ready=false; m_saved=false; m_dirty=false; m_open=-1; m_edit=-1; m_focus=-1; m_error=false; m_collapsed=false; m_active_indicator=0; m_summary_dirty=false; m_summary_draft=true; m_first_application=0; m_step=0; m_rules_focus=false; m_scroll_drag=false; m_scroll_down=false; m_scroll_grab=0; }
+   CGuiApp() { m_execution_request=0; m_ready=false; m_saved=false; m_dirty=false; m_open=-1; m_edit=-1; m_focus=-1; m_error=false; m_collapsed=false; m_active_indicator=0; m_summary_dirty=false; m_summary_draft=true; m_first_application=0; m_step=0; m_rules_focus=false; m_scroll_drag=false; m_scroll_down=false; m_scroll_grab=0; }
    bool Create(const long chart,const bool debug)
      {
       m_chart=chart; m_debug=debug; m_state.Reset(); m_name="CanvasGUI_"+IntegerToString(chart)+"_"+IntegerToString((long)GetTickCount64());
@@ -733,6 +745,41 @@ public:
       m_layout.Calculate(w,h,true); m_apply.caption="Salvar indicadores";
       m_ready=true; Reflow(); Status("Selecione o indicador que deseja configurar."); Render();
       Log("Inicializada"); Log(StringFormat("Tamanho: %dx%d",w,h)); return true;
+     }
+   int TakeExecutionRequest() { int result=m_execution_request; m_execution_request=0; return result; }
+   bool CaptureConfiguration(GuiAppliedConfiguration &config,string &error)
+     {
+      if(!FinishEdit(true) || !m_setup.Ready() || !m_rules.Ready() || !m_management.Ready())
+        { error="Corrija os campos destacados antes de aplicar."; return false; }
+      config.setup=m_setup.state; config.rules=m_rules.state; config.management=m_management.state;
+      for(int i=0;i<4;i++) config.indicators[i]=m_state.indicators[i];
+      m_state.setup=config.setup; m_state.rules=config.rules; m_state.management=config.management;
+      return UniValidateCanvasConfiguration(config,error);
+     }
+   void LoadInitialConfiguration(CGuiState &initial)
+     {
+      // O valor padrão do input não substitui o Magic automático reservado pelo Canvas.
+      if(initial.setup.magic==1)
+        {
+         if(initial.setup.name==m_setup.state.name)
+           {
+            initial.setup.magic=m_setup.state.magic; initial.setup.set_id=m_setup.state.set_id;
+            initial.setup.UseSavedIdentity();
+           }
+         else { string error; initial.setup.EnableAutomaticMagic(error); }
+        }
+      else
+        {
+         initial.setup.set_id=GuiNewSetId(initial.setup.magic);
+         initial.setup.UseSavedIdentity();
+        }
+      m_state=initial; m_setup.ReplaceState(initial.setup); m_rules.ReplaceState(initial.rules); m_management.ReplaceState(initial.management);
+      m_state.setup=m_setup.state; Reflow(); Render();
+     }
+   void ExecutionResult(const bool applied,const bool active,const int revision,const string name,const string message,const bool error=false)
+     {
+      m_execution.SetResult(applied,active,revision,name,message,error);
+      m_full=true; m_dirty=true; Render();
      }
    void Destroy()
      {
@@ -778,7 +825,8 @@ public:
         }
       if(!m_layout.too_small)
         {
-         if(m_step==0) { m_setup.Render(m_renderer,m_full); m_setup.DrawOverlay(m_renderer); }
+         if(m_step>=4) { m_execution.Render(m_renderer,m_state,ChartSymbol(m_chart)); }
+         else if(m_step==0) { m_setup.Render(m_renderer,m_full); m_setup.DrawOverlay(m_renderer); }
          else if(m_step==2) { m_rules.Render(m_renderer,m_full); m_rules.DrawOverlay(m_renderer); }
          else if(m_step==3) { m_management.Render(m_renderer,m_full); m_management.DrawOverlay(m_renderer); }
          else
@@ -850,7 +898,7 @@ public:
       else if(id==CHARTEVENT_MOUSE_MOVE) Mouse((int)lparam,(int)dparam,sparam);
       else if(id==CHARTEVENT_CLICK) Click((int)lparam,(int)dparam);
       else if(id==CHARTEVENT_MOUSE_WHEEL)
-        { if(dparam!=0) ScrollTo(m_scroll.offset-(int)MathRound(dparam/120.0*64)); }
+        { if(dparam!=0) { if(m_step>=4) { m_execution.Scroll(-(int)MathRound(dparam/120.0*64)); m_full=true; m_dirty=true; } else ScrollTo(m_scroll.offset-(int)MathRound(dparam/120.0*64)); } }
       else if(id==CHARTEVENT_KEYDOWN)
         {
          int key=(int)lparam;
