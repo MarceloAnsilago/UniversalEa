@@ -61,7 +61,7 @@ public:
       rows[2]="Ativo: "+symbol+"  |  Período: "+draft.setup.Value(3);
       rows[3]="Direção: "+draft.setup.Value(4)+"  |  Lote: "+draft.setup.Value(10);
       rows[4]="Entradas: "+draft.setup.Value(5)+" a "+draft.setup.Value(6)+" (servidor)";
-      rows[5]="Encerramento: "+(draft.setup.close_enabled ? draft.setup.Value(8) : "Desativado");
+      rows[5]="Posições: "+draft.setup.Value(9)+(draft.setup.trade_mode==GUI_SETUP_DAY_TRADE ? " / encerrar no dia" : " / pode manter entre dias");
       rows[6]="Ordem: "+draft.rules.Value(0);
       string references[]={"Máxima","Mínima","Abertura","Fechamento"};
       int ref=draft.rules.pending_reference;

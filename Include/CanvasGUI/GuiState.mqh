@@ -152,7 +152,7 @@ public:
       Print("Setup: ",setup.name," | Magic: ",setup.magic);
       Print("Mercado: ",setup.Value(2)," | Timeframe: ",setup.Value(3)," | Direção: ",setup.Value(4));
       Print("Modalidade: ",setup.Value(9)," | Lote: ",setup.Value(10));
-      Print("Entradas: ",setup.Value(5)," a ",setup.Value(6)," | Encerramento: ",setup.close_enabled ? setup.Value(8) : "Não encerrar"," | Horário do servidor");
+      Print("Entradas: ",setup.Value(5)," a ",setup.Value(6)," | Posições: ",setup.Value(9)," | Horário do servidor");
       Print("Breakeven: ",management.Summary(0));
       Print("Trailing stop: ",management.Summary(1));
       Print("Stop móvel: ",management.Summary(2));

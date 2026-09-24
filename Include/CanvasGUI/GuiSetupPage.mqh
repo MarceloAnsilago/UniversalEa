@@ -25,7 +25,7 @@ private:
      { return id>=2 && id<=9 ? id-2 : -1; }
    int TextId(const int index) { return index==2 ? 10 : index; }
    int SelectId(const int index) { return index+2; }
-   bool FocusAvailable(const int id) { return id>=0 && id<=13 && id!=1 && (id!=8 || state.close_enabled); }
+   bool FocusAvailable(const int id) { return id>=0 && id<=13 && id!=1 && id!=7 && id!=8; }
    int NextFocus(const bool backward)
      {
       // Follow the visible rows, including timeframe and lot on the same row.
@@ -99,9 +99,12 @@ public:
       m_labels[3].caption="Timeframe";
       m_labels[4].caption="Direção permitida";
       m_labels[5].caption="Início entradas";
-      m_labels[6].caption="Fim entradas";
+      m_labels[6].caption="Encerramento entradas";
       m_labels[7].caption="Encerrar posições";
       m_labels[8].caption="Horário de encerramento";
+      // Campos antigos mantidos apenas para compatibilidade dos sets.
+      m_labels[7].visible=false; m_labels[8].visible=false;
+      m_select[5].visible=false; m_select[6].visible=false;
       m_labels[9].caption="Modalidade";
       m_labels[10].caption="Lote";
       m_text[0].text_mode=true; m_text[0].max_length=48;
@@ -318,6 +321,8 @@ public:
       r.Text(m_cards[0].x+24,m_cards[0].y+211,"Magic Number identifica as ordens deste setup.",GUI_MUTED,12,false,m_cards[0].w-48);
       string lot_hint="Lote: mín. "+DoubleToString(state.volume_min,state.LotDigits())+" · Passo "+DoubleToString(state.volume_step,state.LotDigits());
       r.Text(m_cards[1].x+24,m_cards[1].y+m_cards[1].h-28,lot_hint,GUI_MUTED,11,false,m_cards[1].w-48);
+      r.Text(m_cards[2].x+24,m_cards[2].y+158,"Posições: conforme a modalidade.",GUI_MUTED,12,false,m_cards[2].w-48);
+      r.Text(m_cards[2].x+24,m_cards[2].y+184,state.trade_mode==GUI_SETUP_DAY_TRADE ? "Day trade: encerrar no dia." : "Swing trade: pode manter entre dias.",GUI_MUTED,12,false,m_cards[2].w-48);
       r.Text(m_cards[2].x+24,m_cards[2].y+m_cards[2].h-28,"Horário do servidor da corretora · HH:MM",GUI_MUTED,11,false,m_cards[2].w-48);
       r.Fill(m_status,GUI_BG);
       r.Text(m_status.x,m_status.y,m_message,m_error ? GUI_ERROR : GUI_MUTED,13,false,m_status.w);

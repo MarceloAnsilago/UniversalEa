@@ -23,7 +23,7 @@ input group "Setup"
 input string InpName="Meu setup";                              // Nome do setup
 input long InpMagic=1;                                         // Magic Number: 1 a 2147483647
 input ENUM_GUI_SETUP_MARKET InpMarket=GUI_SETUP_FOREX;          // Mercado: Forex ou B3
-input ENUM_UNI_TIMEFRAME InpTimeframe=UNI_PERIOD_CURRENT;                   // Período da estratégia
+input ENUM_UNI_TIMEFRAME InpStrategyTimeframe=UNI_PERIOD_CURRENT;                   // Período da estratégia
 input ENUM_GUI_SETUP_DIRECTION InpDirection=GUI_SETUP_BUY_SELL; // Direcao permitida das operacoes
 input ENUM_GUI_SETUP_TRADE_MODE InpTradeMode=GUI_SETUP_DAY_TRADE; // Modalidade: operações no mesmo dia ou em vários dias
 input double InpLot=0.01;                                      // Volume por operacao; respeitar limites e passo do ativo
@@ -32,9 +32,8 @@ input double InpLot=0.01;                                      // Volume por ope
 // Exemplo: 09:30 = 570. Inicio e fim devem ser diferentes.
 input group "Horarios"
 input int InpEntryStart=0;         // Inicio das entradas: 0 = 00:00
-input int InpEntryEnd=1435;        // Fim das entradas: 1435 = 23:55
-input ENUM_UNI_YES_NO InpCloseEnabled=UNI_NO; // Habilitar encerramento por horario
-input int InpCloseTime=1435;       // Encerramento: minutos desde 00:00; usado quando habilitado
+input int InpEntryEnd=1435;        // Encerramento das entradas: 1435 = 23:55
+// Encerramento das entradas usa InpEntryEnd. Posições seguem a modalidade.
 
 input group "Regras de entrada e saida"
 input ENUM_GUI_ORDER_MODE InpOrderMode=GUI_ORDER_MARKET;           // Tipo de ordem: a mercado ou pendente
@@ -133,10 +132,10 @@ void BuildInitialConfiguration(CGuiState &config)
   {
    config.Reset();
    config.setup.name=InpName; config.setup.magic=InpMagic; config.setup.market=(int)InpMarket;
-   config.setup.timeframe=(ENUM_TIMEFRAMES)InpTimeframe; config.setup.direction=(int)InpDirection;
+   config.setup.timeframe=(ENUM_TIMEFRAMES)InpStrategyTimeframe; config.setup.direction=(int)InpDirection;
    config.setup.trade_mode=(int)InpTradeMode; config.setup.lot=InpLot;
    config.setup.entry_start=InpEntryStart; config.setup.entry_end=InpEntryEnd;
-   config.setup.close_enabled=InpCloseEnabled==UNI_YES; config.setup.close_time=InpCloseTime;
+   config.setup.close_enabled=false; config.setup.close_time=config.setup.entry_end;
    config.rules.order_mode=InpOrderMode; config.rules.candle_filter=InpCandleFilter;
    config.rules.target_unit=InpTargetUnit; config.rules.stop_loss=InpStopLoss; config.rules.take_profit=InpTakeProfit;
    // Distancia de take fornecida nos inputs seleciona o modo fixo.

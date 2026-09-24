@@ -1,3 +1,9 @@
+# Configuração atual de timeframe e horários
+
+O timeframe inicial é **Tempo corrente**, acompanhando o período do gráfico. O input agora se chama `InpStrategyTimeframe` para não herdar o antigo `InpTimeframe=M1` salvo pelo terminal. Timeframes escolhidos explicitamente no painel ou em sets continuam preservados.
+
+O card Horários contém somente início e encerramento das **entradas**, no horário do servidor. A modalidade define a política das posições: Day trade encerra no dia; Swing trade permite manter entre dias. A execução dessa política e o instante de zeragem do Day trade serão implementados na etapa de ordens. Os campos antigos de encerramento de posições permanecem nos sets por compatibilidade, sem controlar o motor. As descrições históricas abaixo podem mencionar esses controles removidos.
+
 # UniversalEa
 
 ## Conexão do Canvas com o motor

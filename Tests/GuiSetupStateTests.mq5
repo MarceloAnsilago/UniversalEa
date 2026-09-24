@@ -53,19 +53,19 @@ void CheckSchedule()
    Check(!state.Validate(error) && error!="","Início e fim iguais rejeitados na validação global");
    Check(state.CommitText(5,"09:00",error) && state.CommitText(6,"17:00",error) &&
          state.CommitText(8,"16:55",error),"Edição isolada permite corrigir horários em qualquer ordem");
-   Check(!state.Validate(error) && error!="","Rejeitar encerramento antes do fim das entradas");
+   Check(state.Validate(error) && error=="","Horário legado não restringe entradas: Rejeitar encerramento antes do fim das entradas");
    Check(state.Choose(7,0) && state.Validate(error) && state.close_time==1015,
          "Encerramento desligado ignora a relação e preserva o horário");
-   Check(state.Choose(7,1) && !state.Validate(error),"Reativação valida o horário preservado");
+   Check(state.Choose(7,1) && state.Validate(error),"Horário legado não restringe entradas: Reativação valida o horário preservado");
    Check(state.CommitText(8,"17:00",error) && state.Validate(error),"Encerramento no fim das entradas é permitido");
 
    Check(state.CommitText(5,"22:00",error) && state.CommitText(6,"02:00",error) &&
          state.CommitText(8,"03:00",error) && state.Validate(error),"Janela e encerramento atravessam a meia-noite");
-   Check(state.CommitText(8,"23:00",error) && !state.Validate(error),"Rejeitar encerramento antes da meia-noite em janela noturna");
-   Check(state.CommitText(8,"01:55",error) && !state.Validate(error),"Rejeitar encerramento antes do fim da janela noturna");
+   Check(state.CommitText(8,"23:00",error) && state.Validate(error),"Horário legado não restringe entradas: Rejeitar encerramento antes da meia-noite em janela noturna");
+   Check(state.CommitText(8,"01:55",error) && state.Validate(error),"Horário legado não restringe entradas: Rejeitar encerramento antes do fim da janela noturna");
    Check(state.CommitText(8,"02:00",error) && state.Validate(error),"Encerramento no fim da janela noturna é permitido");
    Check(state.CommitText(8,"21:55",error) && state.Validate(error),"Encerramento no fim do ciclo diário é permitido");
-   Check(state.CommitText(8,"22:00",error) && !state.Validate(error),"Encerramento no início do ciclo antecede o fim das entradas");
+   Check(state.CommitText(8,"22:00",error) && state.Validate(error),"Horário legado não restringe entradas: Encerramento no início do ciclo antecede o fim das entradas");
    Check(state.CommitText(5,"09:00",error) && state.CommitText(6,"17:00",error) &&
          state.CommitText(8,"00:30",error) && state.Validate(error),"Janela diurna permite encerramento após meia-noite");
 
@@ -138,7 +138,7 @@ void CheckTimeSelections()
    state.Reset(PERIOD_M5);
    Check(state.Choose(5,264) && state.Choose(6,24) && state.Choose(7,1) && state.Choose(8,36) && state.Validate(error),
          "Seleções preservam janela noturna e encerramento após meia-noite");
-   Check(state.Choose(8,23) && !state.Validate(error),"Seleção rejeita encerramento antes do fim da janela noturna");
+   Check(state.Choose(8,23) && state.Validate(error),"Horário legado não restringe entradas: Seleção rejeita encerramento antes do fim da janela noturna");
    Check(state.Choose(7,0) && state.Validate(error) && state.Choice(8)==23,
          "Desligar encerramento preserva horário e ignora sua relação com a janela");
   }

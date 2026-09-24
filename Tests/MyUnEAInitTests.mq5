@@ -32,7 +32,7 @@ void OnStart()
    ea.setSchedule(1320,120,true,180);
    Check(ea.doInit(error)==INIT_SUCCEEDED,"Janela noturna aceita");
    ea.setSchedule(1320,120,true,60);
-   Check(ea.doInit(error)==INIT_PARAMETERS_INCORRECT,"Encerramento anterior ao fim rejeitado");
+   Check(ea.doInit(error)==INIT_SUCCEEDED,"Horário legado não restringe entradas");
    ea.setSchedule(0,1435,false,1435);
    ea.setBreakeven(1,10,10);
    Check(ea.doInit(error)==INIT_PARAMETERS_INCORRECT,"Breakeven invalido");

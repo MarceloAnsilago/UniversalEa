@@ -113,8 +113,7 @@ private:
       if(!ValidTime(m_entry_start) || !ValidTime(m_entry_end) || !ValidTime(m_close_time) ||
          m_entry_start==m_entry_end)
         { error="Horários: 00:00 a 23:55 em passos de 5 minutos; início e fim diferentes."; return false; }
-      if(m_close_enabled && (m_close_time-m_entry_start+1440)%1440<(m_entry_end-m_entry_start+1440)%1440)
-        { error="Encerramento deve ocorrer no fim das entradas ou depois."; return false; }
+      // A modalidade define a política de posições; o horário legado não é usado.
       if((int)m_order_mode<0 || (int)m_order_mode>1 || (int)m_candle_filter<0 ||
          (int)m_candle_filter>2 || (int)m_target_unit<0 || (int)m_target_unit>1 ||
          !ValidAmount(m_stop_loss) || !ValidAmount(m_take_profit))
@@ -184,7 +183,7 @@ public:
       m_set_id="";
       m_magic=1;
       m_market=GUI_SETUP_FOREX;
-      m_timeframe=PERIOD_M1;
+      m_timeframe=(ENUM_TIMEFRAMES)_Period;
       m_direction=GUI_SETUP_BUY_SELL;
       m_trade_mode=GUI_SETUP_DAY_TRADE;
       m_lot=0.01;
@@ -528,7 +527,7 @@ public:
       setSetup(config.setup.name,(ENUM_GUI_SETUP_MARKET)config.setup.market,
                (ENUM_GUI_SETUP_DIRECTION)config.setup.direction,(ENUM_GUI_SETUP_TRADE_MODE)config.setup.trade_mode);
       m_set_id=config.setup.set_id;
-      setSchedule(config.setup.entry_start,config.setup.entry_end,config.setup.close_enabled,config.setup.close_time);
+      setSchedule(config.setup.entry_start,config.setup.entry_end,false,config.setup.entry_end);
       setRules(config.rules.order_mode,config.rules.candle_filter,config.rules.target_unit,config.rules.stop_loss,config.rules.take_profit);
       setBreakeven(config.management.mode[0],config.management.values[0],config.management.values[1]);
       setTrailing(config.management.mode[1],config.management.values[2],config.management.values[3],config.management.values[4]);

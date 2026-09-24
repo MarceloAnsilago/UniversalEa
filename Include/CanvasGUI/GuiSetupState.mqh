@@ -109,6 +109,7 @@ public:
    double volume_step;
    int entry_start;
    int entry_end;
+   // Legado dos sets: não define mais a política de encerramento de posições.
    bool close_enabled;
    int close_time;
 
@@ -335,10 +336,7 @@ public:
         { error="Encerramento: selecione de 00:00 a 23:55, de 5 em 5 minutos."; return false; }
       if(entry_start==entry_end)
         { error="Início e fim das entradas devem ser diferentes."; return false; }
-      // Measure both times from the entry start to support overnight windows.
-      // Validate the relationship here so each field can be edited in any order.
-      if(close_enabled && (close_time-entry_start+1440)%1440<(entry_end-entry_start+1440)%1440)
-        { error="Encerramento deve ocorrer no fim das entradas ou depois, no mesmo ciclo diário."; return false; }
+      // O horário legado de posições não restringe a janela de entradas.
       return true;
      }
   };
