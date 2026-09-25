@@ -212,14 +212,14 @@ private:
       m_renderer.Text(m_layout.left,y,"PASSO "+IntegerToString(active_step+1)+" DE 6",GUI_ACCENT,12,true);
       if(m_layout.dense)
         {
-         m_renderer.Text(m_layout.left,y+21,m_step>=4 ? (m_step==4 ? "Revise a configuração" : "Controle da análise") : m_step==0 ? "Vamos começar pelo seu setup" : (m_step==3 ? "Configure o stop móvel" : m_step==2 ? "Configure as regras da sua estratégia" : "Configure os indicadores da sua estratégia"),GUI_TEXT,24,true,m_layout.content_width);
-         m_renderer.Text(m_layout.left,y+49,m_step>=4 ? "Aplique ao motor e ative a análise. Sem envio de ordens." : m_step==0 ? "Identifique a estratégia e defina como ela poderá operar." : (m_step==3 ? "Defina o breakeven e o trailing stop da estratégia." : m_step==2 ? "Escolha o tipo de ordem e os valores de saída." : "Configure os indicadores e as regras de entrada e saída."),GUI_MUTED,13,false,m_layout.content_width);
+         m_renderer.Text(m_layout.left,y+21,m_step>=4 ? (m_step==4 ? "Revise a configuração" : "Controle de ordens") : m_step==0 ? "Vamos começar pelo seu setup" : (m_step==3 ? "Configure o stop móvel" : m_step==2 ? "Configure as regras da sua estratégia" : "Configure os indicadores da sua estratégia"),GUI_TEXT,24,true,m_layout.content_width);
+         m_renderer.Text(m_layout.left,y+49,m_step>=4 ? "Aplique ao motor e ative as ordens." : m_step==0 ? "Identifique a estratégia e defina como ela poderá operar." : (m_step==3 ? "Defina o breakeven e o trailing stop da estratégia." : m_step==2 ? "Escolha o tipo de ordem e os valores de saída." : "Configure os indicadores e as regras de entrada e saída."),GUI_MUTED,13,false,m_layout.content_width);
         }
       else
         {
          m_renderer.Text(m_layout.left,y+30,m_step==0 ? "Defina a base" : (m_step==3 ? "Configure o stop móvel" : m_step==2 ? "Configure as regras" : "Configure os indicadores"),GUI_TEXT,28,true,m_layout.content_width);
          m_renderer.Text(m_layout.left,y+65,m_step==0 ? "do seu setup" : "da sua estratégia",GUI_TEXT,28,true,m_layout.content_width);
-         m_renderer.Text(m_layout.left,y+100,m_step>=4 ? "Aplique ao motor e ative a analise. Sem envio de ordens." : m_step==0 ? "Identifique a estratégia e defina como ela poderá operar." : (m_step==3 ? "Defina o breakeven e o trailing stop da estratégia." : m_step==2 ? "Escolha o tipo de ordem e os valores de saída." : "Configure os indicadores e as regras de entrada e saída."),GUI_MUTED,14,false,m_layout.content_width);
+         m_renderer.Text(m_layout.left,y+100,m_step>=4 ? "Aplique ao motor e ative as ordens." : m_step==0 ? "Identifique a estratégia e defina como ela poderá operar." : (m_step==3 ? "Defina o breakeven e o trailing stop da estratégia." : m_step==2 ? "Escolha o tipo de ordem e os valores de saída." : "Configure os indicadores e as regras de entrada e saída."),GUI_MUTED,14,false,m_layout.content_width);
         }
      }
    bool FieldVisible(const int index)

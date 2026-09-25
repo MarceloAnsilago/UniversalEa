@@ -1,12 +1,14 @@
 #ifndef UNI_RUNTIME_MQH
 #define UNI_RUNTIME_MQH
 #include "MyUnEA.mqh"
+#include "UniOrders.mqh"
 
-// Controla somente análise. Não possui funções de negociação.
+// Análise separada de execução para permitir testes de sinais sem negociar.
 class CUniRuntime
   {
 private:
    MyUnEA *m_engine;
+   CUniOrders m_orders;
    GuiAppliedConfiguration m_applied;
    string m_symbol;
    ENUM_TIMEFRAMES m_period;
@@ -25,6 +27,8 @@ public:
      { if(m_engine==NULL) return false; value=m_applied; return true; }
    bool Apply(const string symbol,GuiAppliedConfiguration &draft,string &error)
      {
+      if(m_engine!=NULL && m_orders.Busy())
+        { error="Encerre posições e pendentes da configuração atual antes de reaplicar."; return false; }
       GuiAppliedConfiguration candidate; candidate=draft;
       if(!SymbolInfoDouble(symbol,SYMBOL_VOLUME_MIN,candidate.setup.volume_min) ||
          !SymbolInfoDouble(symbol,SYMBOL_VOLUME_MAX,candidate.setup.volume_max) ||
@@ -38,6 +42,7 @@ public:
       if(m_engine!=NULL) delete m_engine;
       m_engine=next; m_applied=candidate; m_symbol=symbol;
       m_period=candidate.setup.timeframe==PERIOD_CURRENT ? (ENUM_TIMEFRAMES)_Period : candidate.setup.timeframe;
+      m_orders.Configure(symbol,candidate,m_period);
       m_active=false; m_resume_bar=0; m_evaluated_bar=0; m_revision++; error=""; return true;
      }
    bool Activate(string &error)
@@ -50,6 +55,17 @@ public:
       m_resume_bar=times[0]; m_active=true; error=""; return true;
      }
    void Pause() { m_active=false; }
+   void Service(string &error)
+     { error=""; if(m_engine!=NULL) m_orders.Service(m_active,error); }
+   int Process(string &error)
+     {
+      string maintenance; Service(maintenance);
+      int signal=PollSignal(error);
+      if(maintenance!="") { error=maintenance; return 0; }
+      if(error!="" || signal==0) return 0;
+      if(!m_orders.Enter(signal,m_engine.SignalBarTime(),error)) return 0;
+      return signal;
+     }
    int PollSignal(string &error)
      {
       error="";

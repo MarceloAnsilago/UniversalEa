@@ -228,6 +228,16 @@
       "path":"Include\\UniRuntime.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"Include\\UniOrders.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"Include\\UniOrderMath.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ]
 }

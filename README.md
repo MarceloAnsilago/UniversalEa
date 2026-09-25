@@ -1,4 +1,18 @@
-# Configuração atual de timeframe e horários
+# UniEA 1.10 — ordens implementadas
+
+A base foi revisada e agora executa entradas a mercado e pendentes, SL/TP, breakeven, trailing e stop móvel. **Ativar ordens** habilita negociação a partir da próxima vela; **Pausar entradas** cancela pendentes e mantém a gestão das posições. Day trade zera no fim da janela de entradas; Swing mantém posições. Há no máximo uma exposição por símbolo/Magic e a troca de configuração fica bloqueada enquanto houver exposição.
+
+Stop móvel ajusta na primeira atualização de uma nova vela; trailing ajusta a cada tick. Percentuais da gestão usam o preço de abertura. Pendentes usam o OHLC exato selecionado e escolhem Stop/Limit automaticamente. O módulo confere `OrderCheck` e o retorno de `OrderSend`; não considera apenas o retorno booleano como confirmação da operação.
+
+**Pronto para iniciar testes no Testador de Estratégias.** Compilação sem erros/avisos; 31 verificações de cálculo, 20 de requisições com transporte simulado e 33 de integração Canvas/runtime passaram. Execução com preenchimentos no testador e validação da corretora em demo ainda precisam ser realizadas. Nenhuma ordem real foi enviada durante esta implementação.
+
+Para teste sem interface, use `InpTesterAutoStart=true`, selecione ao menos um indicador e configure lote/horários do ativo. Fora do testador, a ativação continua manual. Consulte [comportamentos, limitações e roteiro de teste](Tests/ORDER_TESTING.md).
+
+## Histórico das etapas anteriores
+
+Os registros abaixo descrevem versões anteriores; as referências a ausência de ordens e execução futura foram superadas pela versão 1.10 acima.
+
+# Configuração anterior de timeframe e horários
 
 O timeframe inicial é **Tempo corrente**, acompanhando o período do gráfico. O input agora se chama `InpStrategyTimeframe` para não herdar o antigo `InpTimeframe=M1` salvo pelo terminal. Timeframes escolhidos explicitamente no painel ou em sets continuam preservados.
 

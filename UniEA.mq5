@@ -1,6 +1,6 @@
 #property strict
-#property version "1.00"
-#property description "EA com GUI Canvas e inicialização de indicadores. Sem envio de ordens."
+#property version "1.10"
+#property description "EA Canvas com ordens, SL/TP e gestão de posições."
 #include "Include/CanvasGUI/GuiApp.mqh"
 #include "Include/UniRuntime.mqh"
 #include "Include/Configuration/UniInputOptions.mqh"
@@ -16,7 +16,7 @@ enum ENUM_UNI_MANAGEMENT_MODE
    UNI_MANAGEMENT_PERCENT=2   // Porcentagem
   };
 
-// Parametros de entrada: declarados para a futura carga da configuracao.
+// Parâmetros iniciais da configuração.
 // Os inputs preenchem o Canvas. Aplicar ao motor valida e transfere a configuracao.
 // Identidade do arquivo e limites de volume sao dados internos, nao inputs.
 input group "Setup"
@@ -41,9 +41,15 @@ input ENUM_GUI_CANDLE_FILTER InpCandleFilter=GUI_CANDLE_DISABLED;   // Filtro: d
 input ENUM_GUI_TARGET_UNIT InpTargetUnit=GUI_TARGET_POINTS;        // Unidade do stop loss e take profit
 input double InpStopLoss=0.0;                                      // Stop loss na unidade selecionada; 0 desativa
 input double InpTakeProfit=0.0;                                    // Take profit na unidade selecionada; 0 desativa
+input double InpStopCandleMultiplier=1.0;                          // Stop: multiplicador do candle
+input int InpStopCandle=1;                                        // Stop: candle fechado 1 a 3
+input bool InpStopBody=false;                                     // Stop: usar corpo em vez de total
+input double InpTakeStopMultiplier=2.0;                           // Take: vezes o stop quando InpTakeProfit = 0
+input int InpPendingReference=3;                                  // Pendente: 0 máxima, 1 mínima, 2 abertura, 3 fechamento
+input int InpPendingCandle=1;                                     // Pendente: candle fechado 1 a 100000
 
 // Valores de gestao usam a unidade do respectivo modo.
-// A base de calculo percentual sera definida na implementacao da gestao.
+// Percentuais da gestão usam o preço de abertura da posição.
 input group "Breakeven"
 input ENUM_UNI_MANAGEMENT_MODE InpBreakevenMode=UNI_MANAGEMENT_DISABLED; // Modo do breakeven
 input double InpBreakevenTrigger=0.0; // Ativacao: maior que zero quando habilitado
@@ -63,6 +69,7 @@ input double InpMovingStopStep=0.0;     // Passo de ajuste: maior que zero quand
 
 input group "Diagnostico"
 input ENUM_UNI_YES_NO DebugGUI=UNI_YES; // Habilitar mensagens de diagnostico da interface
+input bool InpTesterAutoStart=false; // Aplicar inputs e ativar automaticamente SOMENTE no testador
 
 // Selecione o tipo em cada indicador; configure seus parametros no grupo do indicador.
 // Apenas a Media Movel possui parametros independentes por indicador.
@@ -80,7 +87,7 @@ input group "▪▪▪▪▪ Indicador 4 ▪▪▪▪▪"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator4Type=GUI_INDICATOR_NONE; // Tipo do Indicador 4; Não usar = desativado
 
 input group "Média Móvel — Parâmetros por indicador"
-// Use os campos do indicador que selecionou Media Movel; os demais ficam inativos na futura carga.
+// Use os campos do indicador que selecionou Media Movel; os demais ficam inativos.
 // Linha apenas visual; nao participa da configuracao nem da otimizacao.
 sinput string InpSeparatorMa1="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Indicador 1 ▪▪▪
 input int InpIndicator1MaPeriod=20; // Indicador 1 │ Período: 1 a 100000
@@ -127,6 +134,7 @@ input double InpAdxMinimum=25.0; // ADX mínimo (0 a 100): exige valor acima; ot
 
 CGuiApp gui;
 CUniRuntime runtime;
+bool gui_ready=false;
 
 void BuildInitialConfiguration(CGuiState &config)
   {
@@ -138,6 +146,9 @@ void BuildInitialConfiguration(CGuiState &config)
    config.setup.close_enabled=false; config.setup.close_time=config.setup.entry_end;
    config.rules.order_mode=InpOrderMode; config.rules.candle_filter=InpCandleFilter;
    config.rules.target_unit=InpTargetUnit; config.rules.stop_loss=InpStopLoss; config.rules.take_profit=InpTakeProfit;
+   config.rules.stop_multiplier=InpStopCandleMultiplier; config.rules.stop_bar=InpStopCandle;
+   config.rules.stop_measure=InpStopBody ? 1 : 0; config.rules.take_multiplier=InpTakeStopMultiplier;
+   config.rules.pending_reference=InpPendingReference; config.rules.pending_bar=InpPendingCandle;
    // Distancia de take fornecida nos inputs seleciona o modo fixo.
    if(InpTakeProfit>0) config.rules.take_mode=1;
    config.management.Choose(0,(int)InpBreakevenMode);
@@ -166,28 +177,52 @@ void BuildInitialConfiguration(CGuiState &config)
 
 int OnInit()
   {
-   if(!gui.Create(ChartID(),DebugGUI==UNI_YES)) return INIT_FAILED;
-   CGuiState initial; BuildInitialConfiguration(initial); gui.LoadInitialConfiguration(initial);
-   gui.ExecutionResult(false,false,0,"","Aplique a configuracao na etapa Revisao.");
+   CGuiState initial; BuildInitialConfiguration(initial);
+   bool tester=(bool)MQLInfoInteger(MQL_TESTER);
+   if(!tester || MQLInfoInteger(MQL_VISUAL_MODE))
+     {
+      if(!gui.Create(ChartID(),DebugGUI==UNI_YES)) return INIT_FAILED;
+      gui_ready=true; gui.LoadInitialConfiguration(initial);
+      gui.ExecutionResult(false,false,0,"","Aplique a configuracao na etapa Revisao.");
+     }
+   if(tester && InpTesterAutoStart)
+     {
+      GuiAppliedConfiguration config;
+      config.setup=initial.setup; config.rules=initial.rules; config.management=initial.management;
+      for(int i=0;i<4;i++) config.indicators[i]=initial.indicators[i];
+      string error;
+      if(!runtime.Apply(_Symbol,config,error) || !runtime.Activate(error))
+        { Print("Inicializacao do teste: ",error); return INIT_FAILED; }
+      if(gui_ready) gui.ExecutionResult(true,true,runtime.Revision(),runtime.AppliedName(),"Teste: ordens ativas a partir da proxima vela.");
+     }
+   else if(tester && !gui_ready)
+     { Print("Teste sem interface exige InpTesterAutoStart=true e ao menos um indicador."); return INIT_PARAMETERS_INCORRECT; }
+   EventSetTimer(1);
    return INIT_SUCCEEDED;
   }
-void OnDeinit(const int reason) { runtime.Shutdown(); gui.Destroy(); }
+void OnDeinit(const int reason) { EventKillTimer(); runtime.Shutdown(); if(gui_ready) gui.Destroy(); gui_ready=false; }
+
+void ReportExecutionError(const string error)
+  {
+   static string previous="";
+   if(error==previous) return;
+   previous=error;
+   if(error!="") Print("Execucao: ",error);
+  }
+void OnTimer()
+  { string error; runtime.Service(error); ReportExecutionError(error); }
 
 void OnTick()
   {
    string error;
-   int signal=runtime.PollSignal(error);
-   static string previous_error="";
-   if(error!=previous_error)
-     {
-      previous_error=error;
-      if(error!="") Print("Analise: ",error);
-     }
+   int signal=runtime.Process(error);
+   ReportExecutionError(error);
    if(signal==1) Print("Sinal de compra / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
    if(signal==-1) Print("Sinal de venda / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
   }
 void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
   {
+   if(!gui_ready) return;
    gui.Event(id,lparam,dparam,sparam);
    int action=gui.TakeExecutionRequest();
    if(action==0) return;
@@ -196,9 +231,9 @@ void OnChartEvent(const int id,const long &lparam,const double &dparam,const str
      {
       GuiAppliedConfiguration config;
       ok=gui.CaptureConfiguration(config,error) && runtime.Apply(_Symbol,config,error);
-      message="Configuracao aplicada. Analise pausada.";
+      message="Configuracao aplicada. Entradas pausadas; gestao habilitada.";
      }
-   else if(action==2) { ok=runtime.Activate(error); message="Analise ativa a partir da proxima vela. Sem ordens."; }
-   else { runtime.Pause(); message="Analise pausada."; }
+   else if(action==2) { ok=runtime.Activate(error); message="Ordens habilitadas a partir da proxima vela."; }
+   else { runtime.Pause(); runtime.Service(error); ok=error==""; message="Entradas pausadas. Gestao das posicoes continua."; }
    gui.ExecutionResult(runtime.HasConfiguration(),runtime.Active(),runtime.Revision(),runtime.AppliedName(),ok ? message : error,!ok);
   }
