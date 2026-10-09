@@ -29,9 +29,9 @@ void OnStart()
    int objects_before=ObjectsTotal(ChartID());
    SetupCheck(UniTestInit()==INIT_SUCCEEDED,"Default placeholder initializes without indicators");
    SetupCheck(!runtime.Active() && !runtime.HasConfiguration(),"Placeholder does not activate engine");
-   SetupCheck(ObjectsTotal(ChartID())==objects_before+4,"Panel creates four native objects");
-   SetupCheck(panel.Create(ChartID(),"Teste"),"Panel recreation succeeds");
-   SetupCheck(ObjectsTotal(ChartID())==objects_before+4,"Recreation leaves no orphan objects");
+   SetupCheck(ObjectsTotal(ChartID())==objects_before+1,"Panel creates one Canvas object");
+   SetupCheck(panel.Create(ChartID(),"Teste",initial),"Panel recreation succeeds");
+   SetupCheck(ObjectsTotal(ChartID())==objects_before+1,"Recreation leaves no orphan objects");
    UniTestDeinit(REASON_REMOVE);
    SetupCheck(ObjectsTotal(ChartID())==objects_before && ObjectFind(ChartID(),"UnrelatedTestObject")>=0,"Deinit removes only owned objects");
    test_timer_failure=true;

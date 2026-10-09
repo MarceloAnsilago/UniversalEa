@@ -197,7 +197,7 @@ int OnInit()
    string status=!runtime.HasConfiguration() ? "Sem configuracao ativa" :
                  (runtime.Active() ? "Entradas habilitadas" : "Entradas pausadas; gestao habilitada");
    if(!tester || MQLInfoInteger(MQL_VISUAL_MODE))
-      if(!panel.Create(ChartID(),status))
+      if(!panel.Create(ChartID(),status,initial))
         { Print("Falha ao criar painel: ",GetLastError()); runtime.Shutdown(); return INIT_FAILED; }
    if(!EventSetTimer(1))
      { Print("Falha ao iniciar timer: ",GetLastError()); panel.Destroy(); runtime.Shutdown(); return INIT_FAILED; }
@@ -225,3 +225,6 @@ void OnTick()
    if(signal==1) Print("Sinal de compra / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
    if(signal==-1) Print("Sinal de venda / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
   }
+
+void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
+  { panel.OnChartEvent(id,lparam,dparam,sparam); }

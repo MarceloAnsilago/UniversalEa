@@ -1,10 +1,10 @@
-﻿# UniEA
+# UniEA
 
 Expert Advisor MQL5 com configuração pelos inputs, motor de indicadores, execução de ordens e gestão de posições.
 
-## Painel provisório
+## Painel Canvas
 
-O Canvas foi removido. `Include/UniPanel.mqh` cria um painel básico com objetos nativos do gráfico, título, indicação de desenvolvimento e estado inicial do motor. Não há botões nem edição pelo painel; a implementação da interface fica para uma próxima etapa. Ao remover o EA, somente os objetos pertencentes ao painel são apagados.
+`Include/UniPanel.mqh` desenha um resumo em Canvas com cartões claros, bordas suaves, identificação do indicador, selo Ativo/Inativo e parâmetros dos quatro slots. Anterior/Próximo permitem percorrer os cartões; a altura acompanha o gráfico. O selo identifica indicadores configurados; o estado das entradas aparece no cabeçalho. A configuração continua pelos inputs. Ao remover o EA, o objeto e o recurso do Canvas são liberados.
 
 ## Configuração e ativação
 
@@ -18,7 +18,7 @@ O Canvas foi removido. `Include/UniPanel.mqh` cria um painel básico com objetos
 ## Organização
 
 - `UniEA.mq5`: inputs e eventos do EA.
-- `Include/UniPanel.mqh`: painel provisório, sem Canvas.
+- `Include/UniPanel.mqh`: resumo dos indicadores em Canvas, somente leitura.
 - `Include/Configuration`: modelos, validações e persistência, independentes da interface. Os nomes legados `Gui*` foram mantidos para preservar os contratos e testes dos dados.
 - `Include/UniRuntime.mqh`, `MyUnEA.mqh`, `UniOrders.mqh`: sinais, execução e gestão.
 - `Tests`: regressões de configuração, indicadores, cálculos e requisições simuladas. `RuntimeTests.mq5` verifica o motor sem negociar; `SetupDefaultsTests.mq5` verifica a inicialização padrão.
