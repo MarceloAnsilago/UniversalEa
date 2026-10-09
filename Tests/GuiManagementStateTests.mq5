@@ -1,6 +1,5 @@
 #property script_show_inputs
-#include "../Include/CanvasGUI/GuiState.mqh"
-#include "../Include/CanvasGUI/GuiLayout.mqh"
+#include "../Include/Configuration/GuiState.mqh"
 int checks=0,failures=0;
 void Check(const bool ok,const string message)
   { checks++; if(!ok) { failures++; Print("FAIL: ",message); } }
@@ -35,27 +34,6 @@ void OnStart()
    Check(!state.Apply() && ArraySize(state.applications)==1,"Invalid mode cannot enter history");
    state.Reset();
    Check(state.management.mode[0]==0 && state.management.values[0]==0,"Reset clears management");
-   int widths[]={600,960,1120,1600};
-   for(int i=0;i<ArraySize(widths);i++)
-     {
-      CGuiLayout layout; layout.Calculate(widths[i],1000,false,false,true);
-      Check(!layout.too_small && layout.status.y+layout.status.h+8<=1000,"Management fits viewport");
-      Check(layout.cards[1].h>=376 && layout.cards[0].x+layout.cards[0].w<layout.cards[1].x,"Fields and cards do not overlap");
-     }
-   CGuiLayout screenshot; screenshot.Calculate(1792,733,false,false,true);
-   Check(!screenshot.too_small && screenshot.status.y+screenshot.status.h+8<=733,"User viewport 1792x733 shows management");
-   for(int id=0;id<11;id++)
-     {
-      GuiRect field; screenshot.ManagementFieldBounds(id,field);
-      GuiRect card;
-      if(id>=7) card=screenshot.schedule;
-      else card=screenshot.cards[id<2 ? id : (id<4 ? 0 : 1)];
-      Check(field.x>=card.x+24 && field.x+field.w<=card.x+card.w-24 && field.y+field.h<=card.y+card.h-28,"Compact field stays inside card above hint");
-     }
-   GuiRect distance,step; screenshot.ManagementFieldBounds(5,distance); screenshot.ManagementFieldBounds(6,step);
-   Check(distance.y==step.y && distance.x+distance.w<step.x,"Distance and step share a row without overlap");
-   screenshot.Calculate(1792,719,false,false,true);
-   Check(screenshot.too_small,"Guard remains active below compact footer");
    state.Reset();
    Check(state.management.Choose(2,1) && !state.management.Validate(error),"Mobile stop requires positive parameters when enabled");
    state.management.Commit(7,"200",error); state.management.Commit(8,"80",error); state.management.Commit(9,"5",error);

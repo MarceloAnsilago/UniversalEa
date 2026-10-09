@@ -1,14 +1,12 @@
 #property strict
 #property version "1.10"
-#property description "EA Canvas com ordens, SL/TP e gestão de posições."
-#include "Include/CanvasGUI/GuiApp.mqh"
+#property description "EA com painel padrao, ordens, SL/TP e gestao de posicoes."
+#include "Include/UniPanel.mqh"
 #include "Include/UniRuntime.mqh"
 #include "Include/Configuration/UniInputOptions.mqh"
 
-MqlTick lastest_price; // Armazena o último tick recebido para evitar processamento duplicado  
-MqlRates mrate[]; // Armazena os dados de preço do ativo
 
-// Modos de gestao com os mesmos valores usados pela interface.
+// Modos de gestao da configuracao.
 enum ENUM_UNI_MANAGEMENT_MODE
   {
    UNI_MANAGEMENT_DISABLED=0, // Desativado
@@ -17,7 +15,7 @@ enum ENUM_UNI_MANAGEMENT_MODE
   };
 
 // Parâmetros iniciais da configuração.
-// Os inputs preenchem o Canvas. Aplicar ao motor valida e transfere a configuracao.
+// Os inputs sao validados e aplicados ao motor durante a inicializacao.
 // Identidade do arquivo e limites de volume sao dados internos, nao inputs.
 input group "Setup"
 input string InpName="Meu setup";                              // Nome do setup
@@ -67,8 +65,8 @@ input double InpMovingStopTrigger=0.0;  // Ativacao: maior que zero quando habil
 input double InpMovingStopDistance=0.0; // Distancia do preco: maior que zero quando habilitado
 input double InpMovingStopStep=0.0;     // Passo de ajuste: maior que zero quando habilitado
 
-input group "Diagnostico"
-input ENUM_UNI_YES_NO DebugGUI=UNI_YES; // Habilitar mensagens de diagnostico da interface
+input group "Execucao"
+input bool InpAutoStart=false; // Ativar novas entradas fora do testador; false mantem gestao e pausa entradas
 input bool InpTesterAutoStart=false; // Aplicar inputs e ativar automaticamente SOMENTE no testador
 
 // Selecione o tipo em cada indicador; configure seus parametros no grupo do indicador.
@@ -132,9 +130,9 @@ input group "ADX — Parâmetros compartilhados"
 input int InpAdxPeriod=14; // Período: 1 a 100000
 input double InpAdxMinimum=25.0; // ADX mínimo (0 a 100): exige valor acima; otimizável
 
-CGuiApp gui;
+CUniPanel panel;
 CUniRuntime runtime;
-bool gui_ready=false;
+
 
 void BuildInitialConfiguration(CGuiState &config)
   {
@@ -179,28 +177,35 @@ int OnInit()
   {
    CGuiState initial; BuildInitialConfiguration(initial);
    bool tester=(bool)MQLInfoInteger(MQL_TESTER);
-   if(!tester || MQLInfoInteger(MQL_VISUAL_MODE))
-     {
-      if(!gui.Create(ChartID(),DebugGUI==UNI_YES)) return INIT_FAILED;
-      gui_ready=true; gui.LoadInitialConfiguration(initial);
-      gui.ExecutionResult(false,false,0,"","Aplique a configuracao na etapa Revisao.");
-     }
-   if(tester && InpTesterAutoStart)
+   bool activate=tester ? InpTesterAutoStart : InpAutoStart;
+   bool configured=false;
+   for(int i=0;i<4;i++)
+      if(initial.indicators[i].type!=GUI_INDICATOR_NONE) configured=true;
+   string error;
+   if(configured || activate)
      {
       GuiAppliedConfiguration config;
       config.setup=initial.setup; config.rules=initial.rules; config.management=initial.management;
       for(int i=0;i<4;i++) config.indicators[i]=initial.indicators[i];
-      string error;
-      if(!runtime.Apply(_Symbol,config,error) || !runtime.Activate(error))
-        { Print("Inicializacao do teste: ",error); return INIT_FAILED; }
-      if(gui_ready) gui.ExecutionResult(true,true,runtime.Revision(),runtime.AppliedName(),"Teste: ordens ativas a partir da proxima vela.");
+      if(!runtime.Apply(_Symbol,config,error))
+        { Print("Configuracao: ",error); runtime.Shutdown(); return INIT_PARAMETERS_INCORRECT; }
+      if(activate && !runtime.Activate(error))
+        { Print("Ativacao: ",error); runtime.Shutdown(); return INIT_FAILED; }
      }
-   else if(tester && !gui_ready)
-     { Print("Teste sem interface exige InpTesterAutoStart=true e ao menos um indicador."); return INIT_PARAMETERS_INCORRECT; }
-   EventSetTimer(1);
+   else if(tester && !MQLInfoInteger(MQL_VISUAL_MODE))
+     { Print("Selecione ao menos um indicador para testar o motor."); return INIT_PARAMETERS_INCORRECT; }
+   string status=!runtime.HasConfiguration() ? "Sem configuracao ativa" :
+                 (runtime.Active() ? "Entradas habilitadas" : "Entradas pausadas; gestao habilitada");
+   if(!tester || MQLInfoInteger(MQL_VISUAL_MODE))
+      if(!panel.Create(ChartID(),status))
+        { Print("Falha ao criar painel: ",GetLastError()); runtime.Shutdown(); return INIT_FAILED; }
+   if(!EventSetTimer(1))
+     { Print("Falha ao iniciar timer: ",GetLastError()); panel.Destroy(); runtime.Shutdown(); return INIT_FAILED; }
+   Print("UniEA: ",status,". Configuracao pelos inputs.");
    return INIT_SUCCEEDED;
   }
-void OnDeinit(const int reason) { EventKillTimer(); runtime.Shutdown(); if(gui_ready) gui.Destroy(); gui_ready=false; }
+void OnDeinit(const int reason)
+  { EventKillTimer(); runtime.Shutdown(); panel.Destroy(); }
 
 void ReportExecutionError(const string error)
   {
@@ -219,21 +224,4 @@ void OnTick()
    ReportExecutionError(error);
    if(signal==1) Print("Sinal de compra / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
    if(signal==-1) Print("Sinal de venda / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
-  }
-void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
-  {
-   if(!gui_ready) return;
-   gui.Event(id,lparam,dparam,sparam);
-   int action=gui.TakeExecutionRequest();
-   if(action==0) return;
-   string error,message; bool ok=true;
-   if(action==1)
-     {
-      GuiAppliedConfiguration config;
-      ok=gui.CaptureConfiguration(config,error) && runtime.Apply(_Symbol,config,error);
-      message="Configuracao aplicada. Entradas pausadas; gestao habilitada.";
-     }
-   else if(action==2) { ok=runtime.Activate(error); message="Ordens habilitadas a partir da proxima vela."; }
-   else { runtime.Pause(); runtime.Service(error); ok=error==""; message="Entradas pausadas. Gestao das posicoes continua."; }
-   gui.ExecutionResult(runtime.HasConfiguration(),runtime.Active(),runtime.Revision(),runtime.AppliedName(),ok ? message : error,!ok);
   }

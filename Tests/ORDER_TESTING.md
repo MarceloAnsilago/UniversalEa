@@ -21,9 +21,9 @@
 3. Comece com ordens a mercado; confira entradas, direção, volume, SL/TP e ausência de repetição enquanto há posição. Depois teste pendentes e cada referência OHLC.
 4. Verifique breakeven, trailing e stop móvel separadamente e combinados. Confira compras e vendas, grade de ticks, passo e preservação do TP.
 5. Teste passagem pelo fim do horário, pausa com pendente, pausa com posição e janela atravessando meia-noite. Day trade deve zerar; Swing deve manter posições e cancelar pendentes.
-6. Em teste visual, também é possível deixar `InpTesterAutoStart=false` e usar Revisão → Aplicar ao motor → Ativar ordens. Fora do testador, esse fluxo manual é obrigatório.
+6. O painel provisorio nao possui controles. Use `InpTesterAutoStart` no testador e `InpAutoStart` fora dele. Ambos iniciam desabilitados.
 7. Antes de uso real, valide em conta demo a aceitação da corretora, políticas de preenchimento/expiração, netting/hedging e rejeições por margem, stops e mercado fechado.
 
-Os scripts `OrderLogicTests.mq5` e `OrderRequestTests.mq5` testam cálculos e montagem de requisições. O segundo usa transporte simulado e exige terminal sem posições/ordens. Eles não validam execução na corretora. `CanvasRuntimeTests.mq5` testa a integração de configuração, sinais e painel sem negociação.
+Os scripts `OrderLogicTests.mq5` e `OrderRequestTests.mq5` testam cálculos e montagem de requisições. O segundo usa transporte simulado e exige terminal sem posições/ordens. Eles não validam execução na corretora. `RuntimeTests.mq5` testa o motor sem negociar; `SetupDefaultsTests.mq5` verifica a inicializacao padrao.
 
 Referências oficiais: [OrderSend e retorno do servidor](https://www.mql5.com/en/docs/trading/ordersend), [OrderCheck](https://www.mql5.com/en/docs/trading/ordercheck), [propriedades do ativo](https://www.mql5.com/en/docs/constants/environment_state/marketinfoconstants).

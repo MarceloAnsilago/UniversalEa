@@ -54,15 +54,6 @@
 #undef Check
 #undef checks
 #undef failures
-#define OnStart RunGuiMergedLayoutTests
-#define Check CheckGuiMergedLayoutTests
-#define checks checksGuiMergedLayoutTests
-#define failures failuresGuiMergedLayoutTests
-#include "GuiMergedLayoutTests.mq5"
-#undef OnStart
-#undef Check
-#undef checks
-#undef failures
 void OnStart()
   {
    RunGuiStateTests();
@@ -71,8 +62,7 @@ void OnStart()
    RunGuiManagementStateTests();
    RunGuiMagicTests();
    RunGuiSetFileTests();
-   RunGuiMergedLayoutTests();
-   int total_checks=checksGuiMergedLayoutTests+checksGuiStateTests+checksGuiSetupStateTests+checksGuiRulesStateTests+checksGuiManagementStateTests+checksGuiMagicTests+checksGuiSetFileTests;
-   int total_failures=failuresGuiMergedLayoutTests+failuresGuiStateTests+failuresGuiSetupStateTests+failuresGuiRulesStateTests+failuresGuiManagementStateTests+failuresGuiMagicTests+failuresGuiSetFileTests;
+   int total_checks=checksGuiStateTests+checksGuiSetupStateTests+checksGuiRulesStateTests+checksGuiManagementStateTests+checksGuiMagicTests+checksGuiSetFileTests;
+   int total_failures=failuresGuiStateTests+failuresGuiSetupStateTests+failuresGuiRulesStateTests+failuresGuiManagementStateTests+failuresGuiMagicTests+failuresGuiSetFileTests;
    PrintFormat("[RunStateTests] %d checks, %d failures",total_checks,total_failures);
   }

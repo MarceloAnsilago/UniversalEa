@@ -4,7 +4,7 @@
 #include "Indicators/MyIndicatorFactory.mqh"
 #include "Indicators/MyIndicatorData.mqh"
 #include "Configuration/UniPositionState.mqh"
-#include "Configuration/UniCanvasConfiguration.mqh"
+#include "Configuration/UniConfiguration.mqh"
 
 // Classe responsavel pela futura logica do Expert Advisor.
 class MyUnEA
@@ -518,11 +518,11 @@ public:
       return true;
      }
 
-   //--- Metodos de integracao com a interface grafica.
+   //--- Metodos de integracao com a configuracao.
    // Usar em uma instância candidata: o controlador só troca o motor após doInit.
-   bool ConfigureCanvas(const string symbol,GuiAppliedConfiguration &config,string &error)
+   bool Configure(const string symbol,GuiAppliedConfiguration &config,string &error)
      {
-      if(!UniValidateCanvasConfiguration(config,error)) return false;
+      if(!UniValidateConfiguration(config,error)) return false;
       setSymbol(symbol); setPeriod(config.setup.timeframe); setMagic(config.setup.magic); setLOTS(config.setup.lot);
       setSetup(config.setup.name,(ENUM_GUI_SETUP_MARKET)config.setup.market,
                (ENUM_GUI_SETUP_DIRECTION)config.setup.direction,(ENUM_GUI_SETUP_TRADE_MODE)config.setup.trade_mode);

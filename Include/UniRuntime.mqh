@@ -36,7 +36,7 @@ public:
         { error="Não foi possível consultar os limites de volume do ativo."; return false; }
       MyUnEA *next=new MyUnEA;
       if(next==NULL) { error="Sem memória para preparar a configuração."; return false; }
-      if(!next.ConfigureCanvas(symbol,candidate,error) || next.doInit(error)!=INIT_SUCCEEDED)
+      if(!next.Configure(symbol,candidate,error) || next.doInit(error)!=INIT_SUCCEEDED)
         { delete next; return false; }
       // Troca atômica: erros acima preservam a configuração e o estado anteriores.
       if(m_engine!=NULL) delete m_engine;
@@ -83,7 +83,7 @@ public:
          datetime now[];
          if(CopyRates(m_symbol,m_period,1,3,closed)!=3 || CopyTime(m_symbol,m_period,0,1,now)!=1 ||
             now[0]!=m_engine.SignalBarTime()) { error="Aguardando candles do filtro."; return 0; }
-         if(!UniCanvasCandlesMatch(m_applied.rules,closed,SymbolInfoDouble(m_symbol,SYMBOL_POINT)))
+         if(!UniCandlesMatch(m_applied.rules,closed,SymbolInfoDouble(m_symbol,SYMBOL_POINT)))
            { m_evaluated_bar=bar; return 0; }
         }
       m_evaluated_bar=bar;

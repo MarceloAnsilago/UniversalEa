@@ -108,20 +108,17 @@ Os padroes sao 30 e 70, respeitando niveis personalizados. Tocar o nivel na
 ultima vela fechada nao confirma; sair do nivel na vela seguinte confirma.
 Permanecer entre os niveis sem cruzar nao sinaliza. Entrar nessa faixa vindo
 da sobrevenda/sobrecompra pode confirmar o respectivo cruzamento.
-A Canvas identifica Sobrevenda/Sobrecompra e mostra a regra no resumo.
+Os inputs RSI definem os limites de sobrevenda e sobrecompra.
 A integracao das edicoes da GUI com a classe continua pendente.
 Tests/RsiSignalTests.mq5 cobre cruzamentos, igualdade e niveis personalizados.
 ADX confirma compra quando +DI[1] > -DI[1] e ADX[1] > minimo; confirma venda
 quando -DI[1] > +DI[1] com a mesma exigencia de forca. Nao exige novo cruzamento.
 DI iguais ou ADX menor/igual ao minimo nao sinalizam. InpAdxMinimum e o campo
-ADX minimo da Canvas sao configuraveis de 0 a 100, padrao 25. Um minimo 20
+ADX minimo dos inputs sao configuraveis de 0 a 100, padrao 25. Um minimo 20
 substitui 25, sem manter um segundo limite fixo. Periodos, parametros de MA,
 niveis RSI e limiar ADX sao inputs otimizaveis; os padroes sao referencias.
 Sets da GUI usam versao 3. Arquivos v1 recebem ADX minimo 25; arquivos v2
-preservam o minimo existente. Ambas as versoes recebem inclinacao de 3 velas. A ligacao da edicao Canvas a classe segue pendente.
+preservam o minimo existente. Ambas as versoes recebem inclinacao de 3 velas.
 Tests/AdxSignalTests.mq5 cobre direcao, limiar personalizado e valores invalidos.
 
-A Canvas oferece Velas de inclinacao em cada Media Movel e amplia o card para
-acomodar o campo. Inputs InpIndicator1MaSlopeBars a InpIndicator4MaSlopeBars
-permitem otimizar cada media independentemente. A edicao da Canvas ainda nao
-altera a configuracao ativa da classe; essa integracao continua pendente.
+Os inputs de Media Movel definem a inclinacao em velas para cada indicador.

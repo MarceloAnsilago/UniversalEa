@@ -1,6 +1,6 @@
 #ifndef UNI_ORDER_MATH_MQH
 #define UNI_ORDER_MATH_MQH
-#include "Configuration/UniCanvasConfiguration.mqh"
+#include "Configuration/UniConfiguration.mqh"
 
 double UniDistance(const double value,const bool percent,const double entry,const double point)
   { return value*(percent ? entry/100.0 : point); }

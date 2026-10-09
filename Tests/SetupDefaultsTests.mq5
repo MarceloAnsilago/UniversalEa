@@ -1,37 +1,44 @@
 #property strict
-#define private public
 #define OnInit UniTestInit
 #define OnDeinit UniTestDeinit
 #define OnTick UniTestTick
-#define OnChartEvent UniTestChartEvent
+#define OnTimer UniTestTimer
+// Scripts do not support timers: simulate registration to test EA lifecycle.
+bool test_timer_failure=false;
+bool TestEventSetTimer(const int seconds) { return !test_timer_failure && seconds==1; }
+void TestEventKillTimer() {}
+#define EventSetTimer TestEventSetTimer
+#define EventKillTimer TestEventKillTimer
 #include "../UniEA.mq5"
-#undef private
+#undef EventSetTimer
+#undef EventKillTimer
 #undef OnInit
 #undef OnDeinit
 #undef OnTick
-#undef OnChartEvent
+#undef OnTimer
 int setup_checks=0,setup_failures=0;
 void SetupCheck(const bool ok,const string label)
   { setup_checks++; if(!ok) { setup_failures++; Print("FAIL: ",label); } }
 void OnStart()
   {
    CGuiState initial; BuildInitialConfiguration(initial);
-   SetupCheck(initial.setup.timeframe==PERIOD_CURRENT,"Actual EA input defaults to current timeframe");
-   SetupCheck(gui.Create(ChartID(),false),"Create actual panel");
-   initial.setup.magic=1234567;
-   gui.LoadInitialConfiguration(initial);
-   SetupCheck(gui.m_setup.state.timeframe==PERIOD_CURRENT && gui.m_setup.m_select[1].selected==GuiSetupTimeframeIndex(PERIOD_CURRENT),"Initial load renders current timeframe");
-   SetupCheck(!gui.m_setup.m_select[5].visible && !gui.m_setup.m_select[6].visible && !gui.m_setup.FocusAvailable(7) && !gui.m_setup.FocusAvailable(8),"Legacy position controls hidden and skipped by keyboard");
-   initial.setup.timeframe=PERIOD_H1; gui.LoadInitialConfiguration(initial);
-   SetupCheck(gui.m_setup.state.timeframe==PERIOD_H1 && gui.m_setup.m_select[1].selected==GuiSetupTimeframeIndex(PERIOD_H1),"Explicit timeframe is preserved");
-   initial.setup.timeframe=PERIOD_CURRENT; gui.LoadInitialConfiguration(initial);
-   int widths[]={1792,600};
-   for(int i=0;i<ArraySize(widths);i++)
-     {
-      int height=widths[i]<960 ? 1400 : 733;
-      gui.m_renderer.Resize(widths[i],height); gui.m_layout.Calculate(widths[i],height,true); gui.Reflow(); gui.Render();
-      ResourceSave(gui.m_renderer.m_canvas.ResourceName(),"setup-default-"+IntegerToString(widths[i])+".bmp");
-     }
-   gui.Destroy();
+   SetupCheck(initial.setup.timeframe==PERIOD_CURRENT,"Current timeframe preserved");
+   SetupCheck(initial.setup.magic==InpMagic && initial.setup.lot==InpLot,"Identity and volume reach configuration");
+   SetupCheck(!InpAutoStart && !InpTesterAutoStart,"Entries disabled by default");
+   ObjectCreate(ChartID(),"UnrelatedTestObject",OBJ_LABEL,0,0,0);
+   int objects_before=ObjectsTotal(ChartID());
+   SetupCheck(UniTestInit()==INIT_SUCCEEDED,"Default placeholder initializes without indicators");
+   SetupCheck(!runtime.Active() && !runtime.HasConfiguration(),"Placeholder does not activate engine");
+   SetupCheck(ObjectsTotal(ChartID())==objects_before+4,"Panel creates four native objects");
+   SetupCheck(panel.Create(ChartID(),"Teste"),"Panel recreation succeeds");
+   SetupCheck(ObjectsTotal(ChartID())==objects_before+4,"Recreation leaves no orphan objects");
+   UniTestDeinit(REASON_REMOVE);
+   SetupCheck(ObjectsTotal(ChartID())==objects_before && ObjectFind(ChartID(),"UnrelatedTestObject")>=0,"Deinit removes only owned objects");
+   test_timer_failure=true;
+   SetupCheck(UniTestInit()==INIT_FAILED,"Timer failure rejects initialization");
+   SetupCheck(ObjectsTotal(ChartID())==objects_before && !runtime.HasConfiguration(),"Timer failure cleans panel and engine");
+   test_timer_failure=false;
+   ObjectDelete(ChartID(),"UnrelatedTestObject");
+   SetupCheck(!runtime.Active() && !runtime.HasConfiguration(),"Deinit releases runtime");
    PrintFormat("[SetupDefaultsTests] %d checks, %d failures",setup_checks,setup_failures);
   }

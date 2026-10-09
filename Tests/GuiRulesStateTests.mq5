@@ -1,6 +1,5 @@
 #property script_show_inputs
-#include "../Include/CanvasGUI/GuiState.mqh"
-#include "../Include/CanvasGUI/GuiLayout.mqh"
+#include "../Include/Configuration/GuiState.mqh"
 int checks=0,failures=0;
 void Check(const bool ok,const string message)
   { checks++; if(!ok) { failures++; Print("FAIL: ",message); } }
@@ -77,13 +76,5 @@ void OnStart()
    Check(state.rules.Choose(18,1) && state.rules.CandleValue(12)==25,"Restaurar limites percentuais");
    Check(state.rules.Choose(10,1) && state.rules.CandleUnit()=="pontos","Unidade independente por candle");
    Check(!state.rules.Choose(18,2),"Unidade inválida rejeitada");
-   int widths[]={600,960,1120,1600};
-   for(int i=0;i<ArraySize(widths);i++)
-     {
-      CGuiLayout layout; layout.Calculate(widths[i],1200,false,true);
-      Check(!layout.too_small && layout.status.y+layout.status.h+8<=1200,"Rules footer fits supported viewport");
-      Check(layout.cards[1].y+272<=layout.cards[1].y+layout.cards[1].h-28,"Unit and target inputs leave room for card hint");
-      Check(layout.apply.x>=layout.left+172+16,"Navigation buttons do not overlap");
-     }
    PrintFormat("[GuiRulesStateTests] %d checks, %d failures",checks,failures);
   }

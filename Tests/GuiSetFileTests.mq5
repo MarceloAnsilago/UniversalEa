@@ -1,5 +1,5 @@
 #property strict
-#include "../Include/CanvasGUI/GuiSetFile.mqh"
+#include "../Include/Configuration/GuiSetFile.mqh"
 int checks=0,failures=0;
 void Check(const bool ok,const string label)
   { checks++; if(!ok) { failures++; Print("FAIL: ",label); } }

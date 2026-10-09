@@ -1,6 +1,6 @@
-#ifndef CANVAS_GUI_RULES_STATE_MQH
-#define CANVAS_GUI_RULES_STATE_MQH
-#include "../Configuration/UniTypes.mqh"
+#ifndef UNI_RULES_STATE_MQH
+#define UNI_RULES_STATE_MQH
+#include "UniTypes.mqh"
 #include "GuiCandleFilter.mqh"
 
 
@@ -22,7 +22,7 @@ public:
    GuiCandleFilterConfig candle_sizes[3]; // Limites em pontos, preservados ao trocar a unidade.
    GuiCandleFilterConfig candle_percent[3]; // Banco independente dos limites percentuais.
    int candle_units[3]; // 0 = pontos; 1 = porcentagem.
-   // Informa a unidade do candle que está sendo editado na Canvas.
+   // Informa a unidade do candle que está sendo editado na configuracao.
    string CandleUnit() { return candle_units[editing_candle]==1 ? "%" : "pontos"; }
    int editing_candle; // Seleção visual; não altera qual filtro está habilitado.
    // Obtém o limite exibido no campo: candle, pavio superior ou pavio inferior.

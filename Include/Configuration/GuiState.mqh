@@ -1,6 +1,6 @@
-#ifndef CANVAS_GUI_STATE_MQH
-#define CANVAS_GUI_STATE_MQH
-#include "../Configuration/UniTypes.mqh"
+#ifndef UNI_STATE_MQH
+#define UNI_STATE_MQH
+#include "UniTypes.mqh"
 #include "GuiSetupState.mqh"
 #include "GuiRulesState.mqh"
 #include "GuiManagementState.mqh"

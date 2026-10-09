@@ -1,5 +1,5 @@
-#ifndef CANVAS_GUI_MANAGEMENT_STATE_MQH
-#define CANVAS_GUI_MANAGEMENT_STATE_MQH
+#ifndef UNI_MANAGEMENT_STATE_MQH
+#define UNI_MANAGEMENT_STATE_MQH
 // Mode: 0 disabled, 1 points, 2 percent. Values are configuration only.
 struct GuiManagementStorage
   { int mode[3],unit[3]; double bank[2][8]; };

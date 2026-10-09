@@ -1,6 +1,6 @@
 #property strict
 #property script_show_inputs
-#include "../Include/CanvasGUI/GuiMagicRegistry.mqh"
+#include "../Include/Configuration/GuiMagicRegistry.mqh"
 int checks=0,failures=0;
 void Check(bool condition,string label)
   { checks++; if(!condition) { failures++; Print("FAIL: ",label); } }

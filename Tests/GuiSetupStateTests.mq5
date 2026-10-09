@@ -1,6 +1,6 @@
 #property strict
 #property script_show_inputs
-#include "../Include/CanvasGUI/GuiSetupState.mqh"
+#include "../Include/Configuration/GuiSetupState.mqh"
 
 int failures=0,checks=0;
 void Check(const bool condition,const string label)

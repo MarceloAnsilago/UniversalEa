@@ -1,6 +1,6 @@
-#ifndef CANVAS_GUI_SETUP_STATE_MQH
-#define CANVAS_GUI_SETUP_STATE_MQH
-#include "../Configuration/UniTypes.mqh"
+#ifndef UNI_SETUP_STATE_MQH
+#define UNI_SETUP_STATE_MQH
+#include "UniTypes.mqh"
 #include "GuiMagicRegistry.mqh"
 
 

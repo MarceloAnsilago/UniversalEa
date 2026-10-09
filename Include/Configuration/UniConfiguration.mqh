@@ -1,10 +1,10 @@
-#ifndef UNI_CANVAS_CONFIGURATION_MQH
-#define UNI_CANVAS_CONFIGURATION_MQH
-#include "../CanvasGUI/GuiState.mqh"
+#ifndef UNI_CONFIGURATION_MQH
+#define UNI_CONFIGURATION_MQH
+#include "GuiState.mqh"
 #include "../Indicators/MyIndicatorFactory.mqh"
 
 // Validação compartilhada pelo painel e pela aplicação no motor.
-bool UniValidateCanvasConfiguration(GuiAppliedConfiguration &config,string &error)
+bool UniValidateConfiguration(GuiAppliedConfiguration &config,string &error)
   {
    if(!config.setup.Validate(error) || !config.rules.Validate(error) || !config.management.Validate(error)) return false;
    int active=0; bool rsi=false,adx=false;
@@ -38,7 +38,7 @@ bool UniEntryWindow(const int start,const int end,const datetime server_time)
 bool UniCandleRangeMatches(const double value,const double minimum,const double maximum)
   { return (minimum==0 || value>=minimum) && (maximum==0 || value<=maximum); }
 
-bool UniCanvasCandlesMatch(CGuiRulesState &rules,const MqlRates &closed[],const double point)
+bool UniCandlesMatch(CGuiRulesState &rules,const MqlRates &closed[],const double point)
   {
    if(rules.candle_filter==GUI_CANDLE_DISABLED) return true;
    if(ArraySize(closed)<3 || point<=0) return false;
