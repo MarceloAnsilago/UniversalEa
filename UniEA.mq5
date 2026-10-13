@@ -17,14 +17,16 @@ enum ENUM_UNI_MANAGEMENT_MODE
 // Parâmetros iniciais da configuração.
 // Os inputs sao validados e aplicados ao motor durante a inicializacao.
 // Identidade do arquivo e limites de volume sao dados internos, nao inputs.
-input group "Setup"
+input group "Identificação"
 input string InpName="Meu setup";                              // Nome do setup
 input long InpMagic=1;                                         // Magic Number: 1 a 2147483647
+
+input group "Mercado e operação"
 input ENUM_GUI_SETUP_MARKET InpMarket=GUI_SETUP_FOREX;          // Mercado: Forex ou B3
-input ENUM_UNI_TIMEFRAME InpStrategyTimeframe=UNI_PERIOD_CURRENT;                   // Período da estratégia
-input ENUM_GUI_SETUP_DIRECTION InpDirection=GUI_SETUP_BUY_SELL; // Direcao permitida das operacoes
 input ENUM_GUI_SETUP_TRADE_MODE InpTradeMode=GUI_SETUP_DAY_TRADE; // Modalidade: operações no mesmo dia ou em vários dias
+input ENUM_UNI_TIMEFRAME InpStrategyTimeframe=UNI_PERIOD_CURRENT;                   // Período da estratégia
 input double InpLot=0.01;                                      // Volume por operacao; respeitar limites e passo do ativo
+input ENUM_GUI_SETUP_DIRECTION InpDirection=GUI_SETUP_BUY_SELL; // Direcao permitida das operacoes
 
 // Horarios em minutos desde 00:00 no servidor, de 0 a 1435, em passos de 5.
 // Exemplo: 09:30 = 570. Inicio e fim devem ser diferentes.
