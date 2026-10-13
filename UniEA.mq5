@@ -30,9 +30,9 @@ input ENUM_GUI_SETUP_DIRECTION InpDirection=GUI_SETUP_BUY_SELL; // Direcao permi
 
 // Horarios em minutos desde 00:00 no servidor, de 0 a 1435, em passos de 5.
 // Exemplo: 09:30 = 570. Inicio e fim devem ser diferentes.
-input group "Horarios"
-input int InpEntryStart=0;         // Inicio das entradas: 0 = 00:00
-input int InpEntryEnd=1435;        // Encerramento das entradas: 1435 = 23:55
+input group "Horários"
+input int InpEntryStart=0;         // Início entradas (minutos): 0 = 00:00; passo 5
+input int InpEntryEnd=1435;        // Encerramento entradas (minutos): 1435 = 23:55; passo 5
 // Encerramento das entradas usa InpEntryEnd. Posições seguem a modalidade.
 
 input group "Regras de entrada e saida"

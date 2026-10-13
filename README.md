@@ -35,6 +35,13 @@ Terminar e as marcações no Testador de Estratégias após carregar o arquivo.
 O timeframe usa os códigos do `ENUM_UNI_TIMEFRAME`, incluindo Tempo corrente=0.
 Não é necessário recompilar o Uni para carregar esses inputs.
 
+O card **Horários** exporta `InpEntryStart` e `InpEntryEnd` em minutos desde
+00:00 no servidor (09:30 = 570), com intervalos de otimização em passo 5.
+Limites iguais desativam a otimização. Os valores fixos de início e encerramento
+devem ser diferentes; uma janela que atravessa meia-noite é preservada.
+Combinações otimizadas com início igual ao encerramento são rejeitadas pelo Uni.
+Recompile para ver o nome e as descrições atualizados do grupo Horários.
+
 - `UniEA.mq5`: inputs e eventos do EA.
 - `Include/UniPanel.mqh`: resumo dos indicadores em Canvas, somente leitura.
 - `Include/Configuration`: modelos, validações e persistência, independentes da interface. Os nomes legados `Gui*` foram mantidos para preservar os contratos e testes dos dados.
