@@ -17,15 +17,23 @@ Expert Advisor MQL5 com configuração pelos inputs, motor de indicadores, execu
 
 ## Organização
 
-### Integração GeraSet — identificação
+### Integração GeraSet — identificação, mercado e operação
 
 O GeraSet exporta um preset nativo `.set` (UTF-16LE com BOM) com `InpName`
-e `InpMagic`. Carregue nas propriedades do EA, em **Parâmetros de entrada →
-Carregar**, e confira os dois valores antes de aplicar. Nesta etapa, os demais
+e `InpMagic`, além de `InpMarket`, `InpTradeMode`, `InpStrategyTimeframe`,
+`InpLot` e `InpDirection`. Carregue nas propriedades do EA, em **Parâmetros de entrada →
+Carregar**, e confira os valores antes de aplicar. Nesta etapa, os demais
 dados do GeraSet são comentários e não configuram o motor. O leitor binário
 legado `GuiLoadSet` não participa desse fluxo. O Magic é preservado como input,
 sem regeneração ou reserva automática. O Flask valida a faixa de 1 a 2147483647,
 mas não verifica exclusividade no histórico de ordens do terminal.
+
+Timeframe e Direção incluem os intervalos da aba Otimizar do GeraSet.
+Limites diferentes ativam a otimização; iguais a desativam. Mercado,
+Modalidade e Lote permanecem fixos. Confira as colunas Valor, Iniciar, Passo,
+Terminar e as marcações no Testador de Estratégias após carregar o arquivo.
+O timeframe usa os códigos do `ENUM_UNI_TIMEFRAME`, incluindo Tempo corrente=0.
+Não é necessário recompilar o Uni para carregar esses inputs.
 
 - `UniEA.mq5`: inputs e eventos do EA.
 - `Include/UniPanel.mqh`: resumo dos indicadores em Canvas, somente leitura.
