@@ -53,7 +53,38 @@ Compile `UniEA.mq5` no MetaEditor com a biblioteca padrão do MetaTrader 5 dispo
 ## Transicao do modelo de sinais
 
 As regras prontas de MA, RSI e ADX e a confirmacao conjunta foram removidas.
-Os indicadores continuam calculando buffers. Nenhum sinal de entrada e gerado
-ate implementar o novo modelo; a gestao de posicoes existente permanece.
+Os indicadores fornecem buffers para o novo avaliador `Include/UniSignals.mqh`.
+As cinco condicoes do GeraSet chegam pelos inputs InpSignal1 a InpSignal5.
 Os inputs de inclinacao MA, niveis RSI e limiar ADX foram retirados.
 Os campos binarios legados permanecem apenas para compatibilidade.
+
+## Grade Sinal integrada
+
+O exportador mapeia os quatro indicadores (MA, RSI e ADX), seus parametros e
+intervalos, a finalidade Entrada/Saida e cinco condicoes. RSI e ADX agora tem
+parametros independentes por slot. Reexporte presets antigos com esses tipos.
+Normal/Inverter e resolvido pelo Flask para o lado final. Os payloads dos
+inputs de condicao sao gerados pela grade; nao exigem edicao manual.
+
+O motor agrupa por finalidade e lado, com E antes de Ou. Vela atual e lida a
+cada tick; grupos somente de velas fechadas sao avaliados uma vez por barra.
+Grupos mistos sao avaliados por tick usando tambem os dados fechados.
+Os buffers incluem barras 0 a 4, cobrindo a antepenultima e seu cruzamento.
+Toque usa a tolerancia configurada ou a passagem entre lados em ticks
+consecutivos; nao usa maxima/minima da vela como substituto do preco escolhido.
+Um resultado intrabar persistente so dispara novamente depois de ficar falso.
+
+Saida Compra fecha vendas; Saida Venda fecha compras. Saidas sao priorizadas,
+nao abrem reversao e cancelam pendentes do lado a encerrar. Somente ativo/Magic
+do EA sao afetados. Saidas continuam durante pausa de entradas e fora da janela.
+Falhas/fechamentos parciais sao retomados; resultado incerto bloqueia nova
+solicitacao de fechamento ate reconciliacao no terminal. Nao reabre no tick
+em que uma saida e tratada. Compra e venda simultaneas de entrada nao negociam.
+Ao ativar, Vela atual pode disparar no proximo tick; grupos somente de velas
+fechadas aguardam uma nova vela.
+
+Para testar: recompile UniEA, atualize o Flask com Ctrl+F5 e exporte novo .set.
+Carregue no Testador e use ticks reais para conferir Toque/Vela atual.
+Ative InpTesterAutoStart manualmente para permitir entradas no teste.
+Gestao e demais regras ainda nao sao exportadas: confira seus inputs no Uni.
+Tests/SignalGridTests.mq5 usa leituras simuladas e nao envia ordens.

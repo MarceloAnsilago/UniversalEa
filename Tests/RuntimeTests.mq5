@@ -12,7 +12,7 @@ void OnStart()
    config.setup=initial.setup; config.rules=initial.rules; config.management=initial.management;
    for(int i=0;i<4;i++) config.indicators[i]=initial.indicators[i];
    string error;
-   Check(!UniValidateConfiguration(config,error),"No indicators cannot be activated");
+   Check(UniValidateConfiguration(config,error),"Price-only conditions allow no indicators");
    config.indicators[0].type=GUI_INDICATOR_MA;
    Check(UniValidateConfiguration(config,error),"Complete draft valid");
    config.rules.stop_multiplier=0; config.rules.stop_loss=0;

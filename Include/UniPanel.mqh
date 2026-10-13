@@ -32,7 +32,7 @@ private:
    string Row(const IndicatorConfig &c,const int i)
      {
       if(c.type==GUI_INDICATOR_NONE) return "Selecione o tipo nos inputs do EA.";
-      if(i==0) return "Dados do indicador; sem regra de sinal";
+      if(i==0) return "Fonte de dados para a grade Sinal";
       if(c.type==GUI_INDICATOR_RSI)
         {
          if(i==1) return "Período: "+IntegerToString(c.rsiPeriod);

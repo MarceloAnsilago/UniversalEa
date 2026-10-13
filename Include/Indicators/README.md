@@ -79,7 +79,7 @@ Referencia: https://www.mql5.com/en/docs/trading/positiongetticket
 
 getBuffers le a quantidade exigida por cada indicador ativo, usando
 MyIndicatorData. GetIndicatorValue consulta indicador 0..3, buffer e barra.
-MA, RSI e ADX solicitam tres valores, incluindo a barra atual.
+MA, RSI e ADX solicitam cinco valores (barras 0 a 4).
 A barra 0 corresponde a atual; 1 e 2 sao fechadas. MA e RSI usam buffer 0;
 ADX usa 0 (ADX), 1 (+DI) e 2 (-DI). A leitura de MA respeita o deslocamento do
 handle, sem compensacao adicional de shift ao chamar CopyBuffer.
@@ -91,6 +91,7 @@ recuperacao com fonte simulada. Compilar nao equivale a executar os testes.
 
 Modelo de sinais pronto removido. MA, RSI e ADX continuam fornecendo buffers,
 sem regras de compra/venda e sem combinacao automatica entre indicadores.
-MyUnEA.checkBuy/checkSell retornam false ate a implementacao do novo modelo.
+MyUnEA.checkBuy/checkSell permanecem neutros; CUniSignals avalia as condicoes
+da grade sobre os buffers, separado das classes dos indicadores.
 Campos legados de inclinacao, niveis RSI e limiar ADX sao mantidos no formato
 binario para compatibilidade; nao sao inputs de sinais nem afetam os handles.

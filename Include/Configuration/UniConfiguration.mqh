@@ -7,19 +7,15 @@
 bool UniValidateConfiguration(GuiAppliedConfiguration &config,string &error)
   {
    if(!config.setup.Validate(error) || !config.rules.Validate(error) || !config.management.Validate(error)) return false;
-   int active=0; bool rsi=false,adx=false;
+   int active=0;
    for(int i=0;i<4;i++)
      {
       IndicatorConfig c=config.indicators[i];
-      if((c.type==GUI_INDICATOR_RSI && rsi) || (c.type==GUI_INDICATOR_ADX && adx))
-        { error="RSI e ADX não podem aparecer em mais de um indicador."; return false; }
-      if(c.type==GUI_INDICATOR_RSI) rsi=true;
-      if(c.type==GUI_INDICATOR_ADX) adx=true;
       MyIndicator *probe=MyIndicatorFactory::Create(c,error);
       if(error!="") return false;
       if(probe!=NULL) { active++; delete probe; }
      }
-   if(active==0) { error="Selecione pelo menos um indicador antes de aplicar ao motor."; return false; }
+   // Price-only conditions do not require an indicator handle.
    if(config.rules.take_mode==0 && config.rules.take_multiplier>0 &&
       config.rules.stop_loss==0 && config.rules.stop_multiplier==0)
      { error="Take Profit em vezes o stop exige um Stop Loss maior que zero."; return false; }

@@ -76,15 +76,31 @@ input bool InpTesterAutoStart=false; // Aplicar inputs e ativar automaticamente 
 // RSI, ADX e futuros tipos usam um grupo compartilhado quando repetidos nos inputs.
 input group "▪▪▪▪▪ Indicador 1 ▪▪▪▪▪"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator1Type=GUI_INDICATOR_NONE; // Tipo do Indicador 1; Não usar = desativado
+input ENUM_UNI_YES_NO InpIndicator1Exit=UNI_NO; // Usar como saida: Sim; entrada: Nao
+input int InpIndicator1RsiPeriod=14; // RSI: periodo
+input ENUM_UNI_APPLIED_PRICE InpIndicator1RsiPrice=UNI_PRICE_CLOSE; // RSI: preco aplicado
+input int InpIndicator1AdxPeriod=14; // ADX: periodo
 
 input group "▪▪▪▪▪ Indicador 2 ▪▪▪▪▪"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator2Type=GUI_INDICATOR_NONE; // Tipo do Indicador 2; Não usar = desativado
+input ENUM_UNI_YES_NO InpIndicator2Exit=UNI_NO; // Usar como saida: Sim; entrada: Nao
+input int InpIndicator2RsiPeriod=14; // RSI: periodo
+input ENUM_UNI_APPLIED_PRICE InpIndicator2RsiPrice=UNI_PRICE_CLOSE; // RSI: preco aplicado
+input int InpIndicator2AdxPeriod=14; // ADX: periodo
 
 input group "▪▪▪▪▪ Indicador 3 ▪▪▪▪▪"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator3Type=GUI_INDICATOR_NONE; // Tipo do Indicador 3; Não usar = desativado
+input ENUM_UNI_YES_NO InpIndicator3Exit=UNI_NO; // Usar como saida: Sim; entrada: Nao
+input int InpIndicator3RsiPeriod=14; // RSI: periodo
+input ENUM_UNI_APPLIED_PRICE InpIndicator3RsiPrice=UNI_PRICE_CLOSE; // RSI: preco aplicado
+input int InpIndicator3AdxPeriod=14; // ADX: periodo
 
 input group "▪▪▪▪▪ Indicador 4 ▪▪▪▪▪"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator4Type=GUI_INDICATOR_NONE; // Tipo do Indicador 4; Não usar = desativado
+input ENUM_UNI_YES_NO InpIndicator4Exit=UNI_NO; // Usar como saida: Sim; entrada: Nao
+input int InpIndicator4RsiPeriod=14; // RSI: periodo
+input ENUM_UNI_APPLIED_PRICE InpIndicator4RsiPrice=UNI_PRICE_CLOSE; // RSI: preco aplicado
+input int InpIndicator4AdxPeriod=14; // ADX: periodo
 
 input group "Média Móvel — Parâmetros por indicador"
 // Use os campos do indicador que selecionou Media Movel; os demais ficam inativos.
@@ -116,14 +132,13 @@ input ENUM_UNI_MA_METHOD InpIndicator4MaMethod=UNI_MA_EMA; // Indicador 4 │ M�
 input ENUM_UNI_APPLIED_PRICE InpIndicator4MaPrice=UNI_PRICE_CLOSE; // Indicador 4 │ Preço aplicado
 input int InpIndicator4MaShift=0; // Indicador 4 │ Deslocamento em barras: -100000 a 100000
 
-input group "RSI — Parâmetros compartilhados"
-// Todas as selecoes de RSI nos inputs usam estes mesmos parametros.
-input int InpRsiPeriod=14; // Período: 1 a 100000
-input ENUM_UNI_APPLIED_PRICE InpRsiPrice=UNI_PRICE_CLOSE; // Preço aplicado
-
-input group "ADX — Parâmetros compartilhados"
-// Todas as selecoes de ADX nos inputs usam este mesmo periodo.
-input int InpAdxPeriod=14; // Período: 1 a 100000
+input group "Sinal - condicoes do GeraSet"
+// Payload v1: operador,finalidade,lado,A,candleA,comparacao,DE,candleDE,fixo,distancia,unidade.
+input string InpSignal1=""; // Condicao 1: configurada na grade do GeraSet
+input string InpSignal2=""; // Condicao 2: configurada na grade do GeraSet
+input string InpSignal3=""; // Condicao 3: configurada na grade do GeraSet
+input string InpSignal4=""; // Condicao 4: configurada na grade do GeraSet
+input string InpSignal5=""; // Condicao 5: configurada na grade do GeraSet
 
 CUniPanel panel;
 CUniRuntime runtime;
@@ -155,14 +170,17 @@ void BuildInitialConfiguration(CGuiState &config)
    int shifts[]={InpIndicator1MaShift,InpIndicator2MaShift,InpIndicator3MaShift,InpIndicator4MaShift};
    ENUM_UNI_MA_METHOD methods[]={InpIndicator1MaMethod,InpIndicator2MaMethod,InpIndicator3MaMethod,InpIndicator4MaMethod};
    ENUM_UNI_APPLIED_PRICE prices[]={InpIndicator1MaPrice,InpIndicator2MaPrice,InpIndicator3MaPrice,InpIndicator4MaPrice};
+   int rsiPeriods[]={InpIndicator1RsiPeriod,InpIndicator2RsiPeriod,InpIndicator3RsiPeriod,InpIndicator4RsiPeriod};
+   ENUM_UNI_APPLIED_PRICE rsiPrices[]={InpIndicator1RsiPrice,InpIndicator2RsiPrice,InpIndicator3RsiPrice,InpIndicator4RsiPrice};
+   int adxPeriods[]={InpIndicator1AdxPeriod,InpIndicator2AdxPeriod,InpIndicator3AdxPeriod,InpIndicator4AdxPeriod};
    for(int i=0;i<4;i++)
      {
       config.indicators[i].type=types[i];
       config.indicators[i].maPeriod=periods[i];
       config.indicators[i].maShift=shifts[i]; config.indicators[i].maMethod=(ENUM_MA_METHOD)methods[i];
       config.indicators[i].maPrice=(ENUM_APPLIED_PRICE)prices[i];
-      config.indicators[i].rsiPeriod=InpRsiPeriod; config.indicators[i].rsiPrice=(ENUM_APPLIED_PRICE)InpRsiPrice;
-      config.indicators[i].adxPeriod=InpAdxPeriod;
+      config.indicators[i].rsiPeriod=rsiPeriods[i]; config.indicators[i].rsiPrice=(ENUM_APPLIED_PRICE)rsiPrices[i];
+      config.indicators[i].adxPeriod=adxPeriods[i];
      }
   }
 
@@ -171,7 +189,7 @@ int OnInit()
    CGuiState initial; BuildInitialConfiguration(initial);
    bool tester=(bool)MQLInfoInteger(MQL_TESTER);
    bool activate=tester ? InpTesterAutoStart : InpAutoStart;
-   bool configured=false;
+   bool configured=InpSignal1!="" || InpSignal2!="" || InpSignal3!="" || InpSignal4!="" || InpSignal5!="";
    for(int i=0;i<4;i++)
       if(initial.indicators[i].type!=GUI_INDICATOR_NONE) configured=true;
    string error;
@@ -182,13 +200,17 @@ int OnInit()
       for(int i=0;i<4;i++) config.indicators[i]=initial.indicators[i];
       if(!runtime.Apply(_Symbol,config,error))
         { Print("Configuracao: ",error); runtime.Shutdown(); return INIT_PARAMETERS_INCORRECT; }
+      string signals[]={InpSignal1,InpSignal2,InpSignal3,InpSignal4,InpSignal5};
+      int usages[]={(int)InpIndicator1Exit,(int)InpIndicator2Exit,(int)InpIndicator3Exit,(int)InpIndicator4Exit};
+      if(!runtime.ConfigureSignals(signals,usages,error))
+        { Print("Sinal: ",error); runtime.Shutdown(); return INIT_PARAMETERS_INCORRECT; }
       if(activate && !runtime.Activate(error))
         { Print("Ativacao: ",error); runtime.Shutdown(); return INIT_FAILED; }
      }
    else if(tester && !MQLInfoInteger(MQL_VISUAL_MODE))
      { Print("Selecione ao menos um indicador para testar o motor."); return INIT_PARAMETERS_INCORRECT; }
    string status=!runtime.HasConfiguration() ? "Sem configuracao ativa" :
-                 (runtime.Active() ? "Sem modelo de sinais; entradas indisponiveis" : "Entradas pausadas; gestao habilitada");
+                 (runtime.Active() ? "Entradas habilitadas" : "Entradas pausadas; gestao habilitada");
    if(!tester || MQLInfoInteger(MQL_VISUAL_MODE))
       if(!panel.Create(ChartID(),status,initial))
         { Print("Falha ao criar painel: ",GetLastError()); runtime.Shutdown(); return INIT_FAILED; }

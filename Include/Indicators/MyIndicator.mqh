@@ -18,7 +18,7 @@ public:
    // Informa quantas linhas precisam ser lidas: MA/RSI = 1; ADX = 3.
    int BufferCount() { return m_buffer_count; }
    // Quantidade de valores por buffer, incluindo a barra atual.
-   virtual int RequiredValues() { return 3; }
+   virtual int RequiredValues() { return 5; }
    // Compatibility methods: indicators only supply data, never trading rules.
    virtual bool CheckBuy(const MqlRates &rates[],MyIndicatorValues &values) { return false; }
    virtual bool CheckSell(const MqlRates &rates[],MyIndicatorValues &values) { return false; }

@@ -31,7 +31,7 @@ void OnStart()
       rates[1].close=values.buy ? 100 : 1;
       if(indicator.CheckBuy(rates,values) || indicator.CheckSell(rates,values)) failures++;
      }
-   if(!indicator.Validate() || indicator.BufferCount()!=1 || indicator.RequiredValues()!=3) failures++;
+   if(!indicator.Validate() || indicator.BufferCount()!=1 || indicator.RequiredValues()!=5) failures++;
    MyUnEA engine;
    if(engine.checkBuy() || engine.checkSell()) failures++;
    PrintFormat("[RsiSignalTests] %d failures",failures);

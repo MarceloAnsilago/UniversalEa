@@ -163,6 +163,11 @@
       "path":"MQL5\\Include\\Controls\\Rect.mqh",
       "compile":false,
       "relative_to_project":false
+    },
+    {
+      "path":"Include\\UniSignals.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ]
 }

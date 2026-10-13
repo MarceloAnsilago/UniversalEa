@@ -12,6 +12,8 @@ private:
    datetime m_moving_bar,m_last_service,m_modify_failure;
    ulong m_wait_order;
    bool m_uncertain;
+   bool m_exit_uncertain;
+   ulong m_exit_wait;
 
    bool OwnPosition()
      { return PositionGetString(POSITION_SYMBOL)==m_symbol && PositionGetInteger(POSITION_MAGIC)==m_config.setup.magic; }
@@ -49,6 +51,12 @@ protected:
       PrintFormat("Uni ordem: action=%d type=%d retcode=%u order=%I64u deal=%I64u / %s",
                   request.action,request.type,result.retcode,result.order,result.deal,result.comment);
       if(entry && (result.retcode==TRADE_RETCODE_TIMEOUT || result.retcode==TRADE_RETCODE_CONNECTION)) m_uncertain=true;
+      if(!entry && request.position>0 && request.action==TRADE_ACTION_DEAL)
+        {
+         if(result.retcode==TRADE_RETCODE_TIMEOUT || result.retcode==TRADE_RETCODE_CONNECTION) m_exit_uncertain=true;
+         if(sent && result.retcode==TRADE_RETCODE_PLACED)
+           { m_exit_wait=result.order; if(result.order==0) m_exit_uncertain=true; }
+        }
       if(!sent || (result.retcode!=TRADE_RETCODE_DONE && result.retcode!=TRADE_RETCODE_DONE_PARTIAL &&
                    result.retcode!=TRADE_RETCODE_PLACED && result.retcode!=TRADE_RETCODE_NO_CHANGES))
         { error=StringFormat("Ordem recusada ou não confirmada: %u / %s",result.retcode,result.comment); return false; }
@@ -66,7 +74,7 @@ private:
       request.deviation=20; request.comment="UniEA";
      }
 public:
-   CUniOrders() { m_symbol=""; m_wait_order=0; m_uncertain=false; m_moving_bar=0; m_last_service=0; m_modify_failure=0; }
+   CUniOrders() { m_symbol=""; m_wait_order=0; m_uncertain=false; m_exit_wait=0; m_exit_uncertain=false; m_moving_bar=0; m_last_service=0; m_modify_failure=0; }
    void Configure(const string symbol,GuiAppliedConfiguration &config,const ENUM_TIMEFRAMES period)
      { m_symbol=symbol; m_config=config; m_period=period; m_moving_bar=iTime(symbol,period,0); m_last_service=0; m_modify_failure=0; }
    bool Busy()
@@ -91,6 +99,42 @@ public:
          if(OrderGetString(ORDER_SYMBOL)==m_symbol && (Netting() || OwnOrder())) return true;
         }
       return false;
+     }
+   // Opposite signal closes the position; never opens a reversal.
+   bool ExitSignal(const int signal,bool &done,string &error)
+     {
+      done=false; error="";
+      if(m_exit_uncertain) { error="Saida sem confirmacao. Confira as ordens no terminal."; return false; }
+      if(m_exit_wait>0)
+        {
+         if(OrderSelect(m_exit_wait) || !HistoryOrderSelect(m_exit_wait)) return true;
+         ENUM_ORDER_STATE state=(ENUM_ORDER_STATE)HistoryOrderGetInteger(m_exit_wait,ORDER_STATE);
+         if(state!=ORDER_STATE_FILLED && state!=ORDER_STATE_CANCELED && state!=ORDER_STATE_REJECTED && state!=ORDER_STATE_EXPIRED) return true;
+         m_exit_wait=0;
+        }
+      for(int i=OrdersTotal()-1;i>=0;i--)
+        {
+         ulong ticket=OrderGetTicket(i); if(ticket==0 || !OwnOrder()) continue;
+         ENUM_ORDER_TYPE type=(ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+         bool buy=type==ORDER_TYPE_BUY_LIMIT || type==ORDER_TYPE_BUY_STOP || type==ORDER_TYPE_BUY_STOP_LIMIT;
+         bool sell=type==ORDER_TYPE_SELL_LIMIT || type==ORDER_TYPE_SELL_STOP || type==ORDER_TYPE_SELL_STOP_LIMIT;
+         if((signal==-1 && buy) || (signal==1 && sell))
+           { MqlTradeRequest request; Base(request); request.action=TRADE_ACTION_REMOVE; request.order=ticket; return Send(request,error); }
+        }
+      for(int i=PositionsTotal()-1;i>=0;i--)
+        {
+         ulong ticket=PositionGetTicket(i); if(ticket==0 || !OwnPosition()) continue;
+         int side=PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_BUY ? 1 : -1;
+         if(side!=-signal) continue;
+         MqlTick quote;
+         if(!SymbolInfoTick(m_symbol,quote) || quote.bid<=0 || quote.ask<quote.bid) { error="Cotacao de saida indisponivel."; return false; }
+         MqlTradeRequest request; Base(request);
+         request.action=TRADE_ACTION_DEAL; request.position=ticket; request.volume=PositionGetDouble(POSITION_VOLUME);
+         request.type=signal==1 ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+         request.price=signal==1 ? quote.ask : quote.bid; request.type_filling=Filling();
+         return Send(request,error);
+        }
+      done=true; return true;
      }
    bool Enter(const int side,const datetime signal_bar,string &error)
      {
@@ -155,6 +199,12 @@ public:
    bool Service(const bool active,string &error)
      {
       error=""; if(m_symbol=="") return true;
+      if(m_exit_wait>0 && !OrderSelect(m_exit_wait) && HistoryOrderSelect(m_exit_wait))
+        {
+         ENUM_ORDER_STATE state=(ENUM_ORDER_STATE)HistoryOrderGetInteger(m_exit_wait,ORDER_STATE);
+         if(state==ORDER_STATE_FILLED || state==ORDER_STATE_CANCELED || state==ORDER_STATE_REJECTED || state==ORDER_STATE_EXPIRED) m_exit_wait=0;
+        }
+      if(m_exit_uncertain || m_exit_wait>0) { error="Aguardando confirmacao da saida."; return false; }
       datetime now=TimeCurrent();
       bool window=UniEntryWindow(m_config.setup.entry_start,m_config.setup.entry_end,now);
       bool maintenance=now!=m_last_service; m_last_service=now;
