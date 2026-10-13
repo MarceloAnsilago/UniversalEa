@@ -79,7 +79,7 @@ Referencia: https://www.mql5.com/en/docs/trading/positiongetticket
 
 getBuffers le a quantidade exigida por cada indicador ativo, usando
 MyIndicatorData. GetIndicatorValue consulta indicador 0..3, buffer e barra.
-MA solicita N+1 valores, incluindo a barra atual; RSI e ADX solicitam tres.
+MA, RSI e ADX solicitam tres valores, incluindo a barra atual.
 A barra 0 corresponde a atual; 1 e 2 sao fechadas. MA e RSI usam buffer 0;
 ADX usa 0 (ADX), 1 (+DI) e 2 (-DI). A leitura de MA respeita o deslocamento do
 handle, sem compensacao adicional de shift ao chamar CopyBuffer.
@@ -89,36 +89,8 @@ Os erros seguem o fluxo existente de error/Print, sem alertas repetidos.
 Tests/IndicatorBufferTests.mq5 cobre ordenacao, multiplos buffers, falhas e
 recuperacao com fonte simulada. Compilar nao equivale a executar os testes.
 
-Regras individuais: MyMA confirma compra quando o fechamento da vela 1 esta
-acima da media da vela 1, e venda quando esta abaixo. Igualdade e neutra.
-Exige inclinacao consecutiva nas N velas fechadas e nao exige cruzamento;
-a vela atual nao entra na comparacao. N e configuravel por media, padrao 3,
-com limites de 2 a 100000. Compra exige MA[1]>MA[2]>...>MA[N]; venda exige
-MA[1]<MA[2]<...<MA[N]. Empate em qualquer par nao confirma o sinal.
-MyUnEA.checkBuy/checkSell exigem confirmacao de todos os indicadores ativos
-e respeitam a direcao permitida no setup. Sem indicadores, nao ha sinal.
-Tipos futuros permanecem sem confirmacao ate terem regras proprias.
-OnTick avalia uma vez por nova barra e apenas registra sinais no log.
-Horarios, posicionamento e envio de ordens ainda nao fazem parte dessa decisao.
-Tests/IndicatorSignalTests.mq5 verifica a regra da media com valores simulados.
-
-RSI: compra quando RSI[2] <= nivel inferior e RSI[1] > nivel inferior;
-venda quando RSI[2] >= nivel superior e RSI[1] < nivel superior.
-Os padroes sao 30 e 70, respeitando niveis personalizados. Tocar o nivel na
-ultima vela fechada nao confirma; sair do nivel na vela seguinte confirma.
-Permanecer entre os niveis sem cruzar nao sinaliza. Entrar nessa faixa vindo
-da sobrevenda/sobrecompra pode confirmar o respectivo cruzamento.
-Os inputs RSI definem os limites de sobrevenda e sobrecompra.
-A integracao das edicoes da GUI com a classe continua pendente.
-Tests/RsiSignalTests.mq5 cobre cruzamentos, igualdade e niveis personalizados.
-ADX confirma compra quando +DI[1] > -DI[1] e ADX[1] > minimo; confirma venda
-quando -DI[1] > +DI[1] com a mesma exigencia de forca. Nao exige novo cruzamento.
-DI iguais ou ADX menor/igual ao minimo nao sinalizam. InpAdxMinimum e o campo
-ADX minimo dos inputs sao configuraveis de 0 a 100, padrao 25. Um minimo 20
-substitui 25, sem manter um segundo limite fixo. Periodos, parametros de MA,
-niveis RSI e limiar ADX sao inputs otimizaveis; os padroes sao referencias.
-Sets da GUI usam versao 3. Arquivos v1 recebem ADX minimo 25; arquivos v2
-preservam o minimo existente. Ambas as versoes recebem inclinacao de 3 velas.
-Tests/AdxSignalTests.mq5 cobre direcao, limiar personalizado e valores invalidos.
-
-Os inputs de Media Movel definem a inclinacao em velas para cada indicador.
+Modelo de sinais pronto removido. MA, RSI e ADX continuam fornecendo buffers,
+sem regras de compra/venda e sem combinacao automatica entre indicadores.
+MyUnEA.checkBuy/checkSell retornam false ate a implementacao do novo modelo.
+Campos legados de inclinacao, niveis RSI e limiar ADX sao mantidos no formato
+binario para compatibilidade; nao sao inputs de sinais nem afetam os handles.

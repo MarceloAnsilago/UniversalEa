@@ -28,24 +28,21 @@ private:
       m_canvas.TextOut(x,y,value,ink);
      }
    int Rows(const IndicatorConfig &c)
-     { return c.type==GUI_INDICATOR_MA ? 6 : (c.type==GUI_INDICATOR_RSI ? 5 : (c.type==GUI_INDICATOR_ADX ? 3 : 1)); }
+     { return c.type==GUI_INDICATOR_MA ? 5 : (c.type==GUI_INDICATOR_RSI ? 3 : (c.type==GUI_INDICATOR_ADX ? 2 : 1)); }
    string Row(const IndicatorConfig &c,const int i)
      {
       if(c.type==GUI_INDICATOR_NONE) return "Selecione o tipo nos inputs do EA.";
-      if(i==0) return "Usar como: Entrada";
+      if(i==0) return "Dados do indicador; sem regra de sinal";
       if(c.type==GUI_INDICATOR_RSI)
         {
          if(i==1) return "Período: "+IntegerToString(c.rsiPeriod);
-         if(i==2) return "Sobrevenda: "+DoubleToString(c.rsiLower,2);
-         if(i==3) return "Sobrecompra: "+DoubleToString(c.rsiUpper,2);
          return "Preço aplicado: "+GuiPriceName((int)c.rsiPrice-1);
         }
       if(c.type==GUI_INDICATOR_ADX)
-         return i==1 ? "Período: "+IntegerToString(c.adxPeriod) : "ADX mínimo: "+DoubleToString(c.adxMinimum,2);
+         return "Período: "+IntegerToString(c.adxPeriod);
       if(i==1) return "Período: "+IntegerToString(c.maPeriod);
       if(i==2) return "Método: "+GuiMethodName((int)c.maMethod);
       if(i==3) return "Deslocamento: "+IntegerToString(c.maShift);
-      if(i==4) return "Inclinação: "+IntegerToString(c.maSlopeBars)+" velas";
       return "Preço aplicado: "+GuiPriceName((int)c.maPrice-1);
      }
    void Draw()

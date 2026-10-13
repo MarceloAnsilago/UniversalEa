@@ -49,3 +49,11 @@ Recompile para ver o nome e as descrições atualizados do grupo Horários.
 - `Tests`: regressões de configuração, indicadores, cálculos e requisições simuladas. `RuntimeTests.mq5` verifica o motor sem negociar; `SetupDefaultsTests.mq5` verifica a inicialização padrão.
 
 Compile `UniEA.mq5` no MetaEditor com a biblioteca padrão do MetaTrader 5 disponível. Veja `Tests/ORDER_TESTING.md` para o roteiro de execução no testador.
+
+## Transicao do modelo de sinais
+
+As regras prontas de MA, RSI e ADX e a confirmacao conjunta foram removidas.
+Os indicadores continuam calculando buffers. Nenhum sinal de entrada e gerado
+ate implementar o novo modelo; a gestao de posicoes existente permanece.
+Os inputs de inclinacao MA, niveis RSI e limiar ADX foram retirados.
+Os campos binarios legados permanecem apenas para compatibilidade.

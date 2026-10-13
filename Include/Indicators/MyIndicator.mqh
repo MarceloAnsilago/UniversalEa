@@ -19,9 +19,7 @@ public:
    int BufferCount() { return m_buffer_count; }
    // Quantidade de valores por buffer, incluindo a barra atual.
    virtual int RequiredValues() { return 3; }
-   // Regras individuais: rates[0] e a vela atual, rates[1] a ultima fechada.
-   // Novos indicadores sobrescrevem estes metodos. Sem regra definida,
-   // o tipo nao confirma nenhuma direcao ate implementar a propria regra.
+   // Compatibility methods: indicators only supply data, never trading rules.
    virtual bool CheckBuy(const MqlRates &rates[],MyIndicatorValues &values) { return false; }
    virtual bool CheckSell(const MqlRates &rates[],MyIndicatorValues &values) { return false; }
    // Copia valores de um buffer: barra 0 = atual, barra 1 = ultima fechada.

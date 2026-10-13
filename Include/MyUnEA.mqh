@@ -135,24 +135,10 @@ private:
              (mode==0 || (trigger>0 && distance>0 && step>0));
      }
 
-   //--- Metodos da estrategia: avaliacao dos sinais de entrada e saida.
-   // Todos os indicadores ativos precisam confirmar a direcao solicitada.
-   // Tipos sem regra definida retornam false; nao sao ignorados na combinacao.
+   // Reserved for the new configurable signal model. No built-in entries.
    bool CheckSignal(const bool buy)
      {
-      if(!m_initialized || !m_buffers_ready || ArraySize(m_rates)!=3) return false;
-      if(buy && m_direction==GUI_SETUP_SELL_ONLY) return false;
-      if(!buy && m_direction==GUI_SETUP_BUY_ONLY) return false;
-      int active=0;
-      for(int i=0;i<4;i++)
-        {
-         if(m_indicators[i]==NULL) continue;
-         active++;
-         bool confirmed=buy ? m_indicators[i].CheckBuy(m_rates,m_indicator_data[i]) :
-                              m_indicators[i].CheckSell(m_rates,m_indicator_data[i]);
-         if(!confirmed) return false;
-        }
-      return active>0; // Nenhum indicador selecionado = nenhum sinal.
+      return false;
      }
 
    //--- Metodos de gestao: risco, ordens e posicoes.

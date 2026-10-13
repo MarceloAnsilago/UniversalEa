@@ -41,7 +41,8 @@ void OnStart()
    if(indicator!=NULL) delete indicator;
    config.rsiLower=70;
    indicator=MyIndicatorFactory::Create(config,error);
-   Check(indicator==NULL && error!="","RSI rejeita niveis iguais");
+   Check(indicator!=NULL && error=="","RSI ignora niveis legados do modelo removido");
+   if(indicator!=NULL) delete indicator;
 
    config.type=GUI_INDICATOR_ADX; config.adxPeriod=14;
    indicator=MyIndicatorFactory::Create(config,error);

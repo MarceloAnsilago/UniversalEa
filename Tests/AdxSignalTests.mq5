@@ -1,42 +1,38 @@
 #property strict
 #include "../Include/Indicators/MyADX.mqh"
-class AdxValues : public MyIndicatorValues
+#include "../Include/MyUnEA.mqh"
+
+// Former buy/sell conditions must no longer create signals. No orders sent.
+class FormerSignalValues : public MyIndicatorValues
   {
 public:
-   double adx,plus,minus;
-   bool available;
-   AdxValues() { adx=30; plus=35; minus=15; available=true; }
+   bool buy;
    virtual bool Get(const int buffer,const int bar,double &value)
      {
-      value=EMPTY_VALUE;
-      if(!available || bar!=1 || buffer<0 || buffer>2) return false;
-      value=buffer==0 ? adx : (buffer==1 ? plus : minus); return true;
+      if(buffer==1) value=buy ? 40 : 10;
+      else if(buffer==2) value=buy ? 10 : 40;
+      else value=buy ? (bar==1 ? 40 : 20) : (bar==1 ? 60 : 80);
+      return true;
      }
   };
-int failures=0;
-void Check(const bool ok,const string label)
-  { if(!ok) { failures++; Print("FAIL: ",label); } }
 void OnStart()
   {
-   MyADXConfig config; config.period=14; config.minimum=25;
-   MyADX indicator(config); AdxValues values;
+   MyADXConfig config;
+   ZeroMemory(config);
+   config.period=14; config.minimum=25;
+   MyADX indicator(config);
+   FormerSignalValues values;
    MqlRates rates[]; ArrayResize(rates,3);
-   Check(indicator.CheckBuy(rates,values) && !indicator.CheckSell(rates,values),"Compra forte");
-   values.plus=15; values.minus=35;
-   Check(indicator.CheckSell(rates,values) && !indicator.CheckBuy(rates,values),"Venda forte");
-   values.adx=25;
-   Check(!indicator.CheckBuy(rates,values) && !indicator.CheckSell(rates,values),"Igual ao minimo nao sinaliza");
-   values.adx=19;
-   Check(!indicator.CheckBuy(rates,values) && !indicator.CheckSell(rates,values),"Mercado sem forca");
-   config.minimum=20; MyADX optimized(config); values.adx=22;
-   Check(optimized.CheckSell(rates,values) && !indicator.CheckSell(rates,values),"Limiar configuravel 20 vs 25");
-   values.adx=30; values.plus=values.minus;
-   Check(!indicator.CheckBuy(rates,values) && !indicator.CheckSell(rates,values),"DI iguais sao neutros");
-   values.plus=EMPTY_VALUE;
-   Check(!indicator.CheckBuy(rates,values) && !indicator.CheckSell(rates,values),"Buffer vazio rejeitado");
-   values.available=false;
-   Check(!indicator.CheckBuy(rates,values) && !indicator.CheckSell(rates,values),"Buffer ausente rejeitado");
-   config.minimum=101; MyADX invalid(config);
-   Check(!invalid.Validate(),"Limiar fora da escala rejeitado");
-   PrintFormat("AdxSignalTests: %d falhas",failures);
+   for(int i=0;i<3;i++) ZeroMemory(rates[i]);
+   int failures=0;
+   for(int direction=0;direction<2;direction++)
+     {
+      values.buy=direction==0;
+      rates[1].close=values.buy ? 100 : 1;
+      if(indicator.CheckBuy(rates,values) || indicator.CheckSell(rates,values)) failures++;
+     }
+   if(!indicator.Validate() || indicator.BufferCount()!=3 || indicator.RequiredValues()!=3) failures++;
+   MyUnEA engine;
+   if(engine.checkBuy() || engine.checkSell()) failures++;
+   PrintFormat("[AdxSignalTests] %d failures",failures);
   }
