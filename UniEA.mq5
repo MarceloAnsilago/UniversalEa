@@ -78,6 +78,9 @@ input group "▪▪▪▪▪ Indicador 1 ▪▪▪▪▪"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator1Type=GUI_INDICATOR_NONE; // Tipo do Indicador 1; Não usar = desativado
 input ENUM_UNI_YES_NO InpIndicator1Exit=UNI_NO; // Usar como saida: Sim; entrada: Nao
 input int InpIndicator1RsiPeriod=14; // RSI: periodo
+input double InpIndicator1RsiUpper=70; // RSI: nivel superior
+input double InpIndicator1RsiMiddle=50; // RSI: nivel medio
+input double InpIndicator1RsiLower=30; // RSI: nivel inferior
 input ENUM_UNI_APPLIED_PRICE InpIndicator1RsiPrice=UNI_PRICE_CLOSE; // RSI: preco aplicado
 input int InpIndicator1AdxPeriod=14; // ADX: periodo
 
@@ -85,6 +88,9 @@ input group "▪▪▪▪▪ Indicador 2 ▪▪▪▪▪"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator2Type=GUI_INDICATOR_NONE; // Tipo do Indicador 2; Não usar = desativado
 input ENUM_UNI_YES_NO InpIndicator2Exit=UNI_NO; // Usar como saida: Sim; entrada: Nao
 input int InpIndicator2RsiPeriod=14; // RSI: periodo
+input double InpIndicator2RsiUpper=70; // RSI: nivel superior
+input double InpIndicator2RsiMiddle=50; // RSI: nivel medio
+input double InpIndicator2RsiLower=30; // RSI: nivel inferior
 input ENUM_UNI_APPLIED_PRICE InpIndicator2RsiPrice=UNI_PRICE_CLOSE; // RSI: preco aplicado
 input int InpIndicator2AdxPeriod=14; // ADX: periodo
 
@@ -92,6 +98,9 @@ input group "▪▪▪▪▪ Indicador 3 ▪▪▪▪▪"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator3Type=GUI_INDICATOR_NONE; // Tipo do Indicador 3; Não usar = desativado
 input ENUM_UNI_YES_NO InpIndicator3Exit=UNI_NO; // Usar como saida: Sim; entrada: Nao
 input int InpIndicator3RsiPeriod=14; // RSI: periodo
+input double InpIndicator3RsiUpper=70; // RSI: nivel superior
+input double InpIndicator3RsiMiddle=50; // RSI: nivel medio
+input double InpIndicator3RsiLower=30; // RSI: nivel inferior
 input ENUM_UNI_APPLIED_PRICE InpIndicator3RsiPrice=UNI_PRICE_CLOSE; // RSI: preco aplicado
 input int InpIndicator3AdxPeriod=14; // ADX: periodo
 
@@ -99,6 +108,9 @@ input group "▪▪▪▪▪ Indicador 4 ▪▪▪▪▪"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator4Type=GUI_INDICATOR_NONE; // Tipo do Indicador 4; Não usar = desativado
 input ENUM_UNI_YES_NO InpIndicator4Exit=UNI_NO; // Usar como saida: Sim; entrada: Nao
 input int InpIndicator4RsiPeriod=14; // RSI: periodo
+input double InpIndicator4RsiUpper=70; // RSI: nivel superior
+input double InpIndicator4RsiMiddle=50; // RSI: nivel medio
+input double InpIndicator4RsiLower=30; // RSI: nivel inferior
 input ENUM_UNI_APPLIED_PRICE InpIndicator4RsiPrice=UNI_PRICE_CLOSE; // RSI: preco aplicado
 input int InpIndicator4AdxPeriod=14; // ADX: periodo
 
@@ -204,6 +216,9 @@ int OnInit()
       int usages[]={(int)InpIndicator1Exit,(int)InpIndicator2Exit,(int)InpIndicator3Exit,(int)InpIndicator4Exit};
       if(!runtime.ConfigureSignals(signals,usages,error))
         { Print("Sinal: ",error); runtime.Shutdown(); return INIT_PARAMETERS_INCORRECT; }
+      double levels[]={InpIndicator1RsiUpper,InpIndicator1RsiMiddle,InpIndicator1RsiLower,InpIndicator2RsiUpper,InpIndicator2RsiMiddle,InpIndicator2RsiLower,InpIndicator3RsiUpper,InpIndicator3RsiMiddle,InpIndicator3RsiLower,InpIndicator4RsiUpper,InpIndicator4RsiMiddle,InpIndicator4RsiLower};
+      if(!runtime.ConfigureRsiLevels(levels,error))
+        { Print("RSI: ",error); runtime.Shutdown(); return INIT_PARAMETERS_INCORRECT; }
       if(activate && !runtime.Activate(error))
         { Print("Ativacao: ",error); runtime.Shutdown(); return INIT_FAILED; }
      }

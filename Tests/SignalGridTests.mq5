@@ -11,6 +11,11 @@ protected:
    virtual bool Read(MyUnEA *engine,const int source,const int bar,const double fixed_value,double &value)
      { if(!ready || bar<0 || bar>4) return false; value=source==9 ? fixed_value : samples[source][bar]; return true; }
   };
+class LevelProbe : public CUniSignals
+  {
+public:
+   bool ReadLevel(const int source,const int bar,double &value) { return CUniSignals::Read(NULL,source,bar,0,value); }
+  };
 int failures=0,checks=0;
 void Check(bool ok,string label) { checks++; if(!ok) { failures++; Print("FAIL: ",label); } }
 void OnStart()
@@ -55,5 +60,19 @@ void OnStart()
    Check(UniSignalCompare(6,101,100,99,100,0,true),"Touch detects crossing between ticks");
    Check(UniSignalCompare(7,101,100,99,100,0,true),"Upward crossing");
    Check(UniSignalCompare(8,99,100,101,100,0,true),"Downward crossing");
+   LevelProbe levelsProbe;
+   config.indicators[0].type=GUI_INDICATOR_RSI;
+   rows[0]="1,0,1,10,1,9,22,0,0,0,0"; rows[1]="";
+   Check(levelsProbe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Closed RSI crossing accepts constant level");
+   Check(!levelsProbe.LiveEntry(1),"Constant level does not turn closed signal into tick signal");
+   double levels[12]={75.5,51,25,70,50,30,70,50,30,70,50,30};
+   Check(levelsProbe.ConfigureRsiLevels(levels,config,error),"Configure decimal RSI levels");
+   for(int i=0;i<3;i++) { double value; Check(levelsProbe.ReadLevel(22+i,4,value) && value==levels[i],"Read configured level independent of candle"); }
+   rows[0]="1,0,1,24,0,9,10,1,0,0,0";
+   Check(levelsProbe.Configure(rows,usages,"TEST",PERIOD_M1,config,error) && !levelsProbe.LiveEntry(1),"Constant A accepts closed RSI reference");
+   levels[1]=80;
+   Check(!levelsProbe.ConfigureRsiLevels(levels,config,error),"Reject unordered RSI levels");
+   rows[0]="1,0,1,10,1,9,25,0,0,0,0";
+   Check(!levelsProbe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Reject RSI level from MA slot");
    PrintFormat("[SignalGridTests] %d checks, %d failures",checks,failures);
   }

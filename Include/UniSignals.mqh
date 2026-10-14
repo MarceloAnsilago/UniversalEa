@@ -47,19 +47,23 @@ class CUniSignals
 private:
    UniSignalRule m_rules[5];
    bool m_last[4],m_previous[5];
-   double m_a[5],m_b[5];
+   double m_a[5],m_b[5],m_levels[12];
+   bool Constant(const int source) { return source==9 || (source>=22 && source<=33); }
    datetime m_bar[4];
    string m_symbol;
    ENUM_TIMEFRAMES m_period;
    int Scale(const int source,GuiAppliedConfiguration &config)
      {
       if(source==9) return -1;
+      if(source>=22) return 1;
       if(source<10) return 0;
       return config.indicators[(source-10)/3].type==GUI_INDICATOR_MA ? 0 : 1;
      }
    bool SourceValid(const int source,GuiAppliedConfiguration &config,const int usage,const int &usages[])
      {
       if(source>=0 && source<=9) return true;
+      if(source>=22 && source<=33)
+        { int slot=(source-22)/3; return config.indicators[slot].type==GUI_INDICATOR_RSI && usages[slot]==usage; }
       if(source<10 || source>21) return false;
       int slot=(source-10)/3,buffer=(source-10)%3;
       return config.indicators[slot].type!=GUI_INDICATOR_NONE && usages[slot]==usage &&
@@ -69,6 +73,7 @@ protected:
    virtual bool Read(MyUnEA *engine,const int source,const int bar,const double fixed_value,double &value)
      {
       if(source==9) { value=fixed_value; return true; }
+      if(source>=22 && source<=33) { value=m_levels[source-22]; return true; }
       if(source>=10) return engine.GetIndicatorValue((source-10)/3,(source-10)%3,bar,value);
       MqlRates rates[];
       if(CopyRates(m_symbol,m_period,bar,1,rates)!=1) return false;
@@ -104,13 +109,26 @@ public:
      {
       for(int i=0;i<5;i++)
          if(m_rules[i].op!=0 && m_rules[i].usage==0 && m_rules[i].side==side &&
-            (m_rules[i].bar==0 || (m_rules[i].reference!=9 && m_rules[i].reference_bar==0))) return true;
+            ((!Constant(m_rules[i].source) && m_rules[i].bar==0) || (!Constant(m_rules[i].reference) && m_rules[i].reference_bar==0))) return true;
       return false;
      }
    void Reset()
      {
       for(int i=0;i<5;i++) { ZeroMemory(m_rules[i]); m_previous[i]=false; m_a[i]=0; m_b[i]=0; }
-      for(int i=0;i<4;i++) { m_last[i]=false; m_bar[i]=0; }
+      for(int i=0;i<4;i++) { m_last[i]=false; m_bar[i]=0; m_levels[i*3]=70; m_levels[i*3+1]=50; m_levels[i*3+2]=30; }
+     }
+   bool ConfigureRsiLevels(const double &levels[],GuiAppliedConfiguration &config,string &error)
+     {
+      if(ArraySize(levels)!=12) { error="Quantidade de niveis RSI invalida."; return false; }
+      for(int i=0;i<4;i++)
+        {
+         if(config.indicators[i].type!=GUI_INDICATOR_RSI) continue;
+         double upper=levels[i*3],middle=levels[i*3+1],lower=levels[i*3+2];
+         if(!MathIsValidNumber(upper) || !MathIsValidNumber(middle) || !MathIsValidNumber(lower) ||
+            lower<0 || upper>100 || !(lower<middle && middle<upper))
+           { error="RSI: use 0 <= inferior < medio < superior <= 100."; return false; }
+        }
+      ArrayCopy(m_levels,levels); return true;
      }
    bool Configure(const string &payload[],const int &usages[],const string symbol,const ENUM_TIMEFRAMES period,
                   GuiAppliedConfiguration &config,string &error)
@@ -135,7 +153,7 @@ public:
             r.bar<0 || r.bar>3 || r.reference_bar<0 || r.reference_bar>3 || r.comparison<0 || r.comparison>10 ||
             r.distance<0 || r.unit<0 || r.unit>2 || (r.unit==0 && r.distance!=0) ||
             !SourceValid(r.source,config,r.usage,usages) || !SourceValid(r.reference,config,r.usage,usages) ||
-            (r.comparison>=9 && (r.bar==0 || (r.reference!=9 && r.reference_bar==0))))
+            (r.comparison>=9 && ((!Constant(r.source) && r.bar==0) || (!Constant(r.reference) && r.reference_bar==0))))
            { error="Condicao ou buffer invalido; confira o GeraSet."; return false; }
          int group=r.usage*2+(r.side==1 ? 0 : 1);
          int a_scale=Scale(r.source,config),b_scale=Scale(r.reference,config);
@@ -159,7 +177,7 @@ public:
          UniSignalRule r=m_rules[i]; if(r.op==0) continue;
          int group=r.usage*2+(r.side==1 ? 0 : 1);
          used[group]=true;
-         bool tick=r.bar==0 || (r.reference!=9 && r.reference_bar==0);
+         bool tick=(!Constant(r.source) && r.bar==0) || (!Constant(r.reference) && r.reference_bar==0);
          live[group]=live[group] || tick;
          double a,b,pa=0,pb=0;
          if(!Read(engine,r.source,r.bar,r.fixed_value,a) || !Read(engine,r.reference,r.reference_bar,r.fixed_value,b))

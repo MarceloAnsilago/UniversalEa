@@ -48,6 +48,8 @@ public:
       m_orders.Configure(symbol,candidate,m_period);
       m_active=false; m_resume_bar=0; m_evaluated_bar=0; m_pending_exits=0; m_signals.Reset(); m_revision++; error=""; return true;
      }
+   bool ConfigureRsiLevels(const double &levels[],string &error)
+     { return m_signals.ConfigureRsiLevels(levels,m_applied,error); }
    bool ConfigureSignals(const string &payload[],const int &usages[],string &error)
      { return m_signals.Configure(payload,usages,m_symbol,m_period,m_applied,error); }
    bool Activate(string &error)
