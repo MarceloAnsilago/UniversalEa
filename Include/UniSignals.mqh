@@ -135,6 +135,14 @@ public:
      {
       Reset(); error=""; m_symbol=symbol; m_period=period;
       if(ArraySize(payload)!=5 || ArraySize(usages)!=4) { error="Quantidade de sinais invalida."; return false; }
+      for(int i=0;i<4;i++)
+        {
+         if(usages[i]<0 || usages[i]>1) { error="Finalidade do indicador invalida."; return false; }
+         if(config.indicators[i].type==GUI_INDICATOR_NONE || config.indicators[i].type==GUI_INDICATOR_MA) continue;
+         for(int j=0;j<i;j++)
+            if(config.indicators[i].type==config.indicators[j].type && usages[i]==usages[j])
+              { error=StringFormat("Indicadores %d e %d: este tipo permite apenas uma entrada e uma saida.",j+1,i+1); return false; }
+        }
       bool groups[4]={false,false,false,false};
       for(int i=0;i<5;i++)
         {

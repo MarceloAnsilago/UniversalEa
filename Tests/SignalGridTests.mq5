@@ -74,5 +74,19 @@ void OnStart()
    Check(!levelsProbe.ConfigureRsiLevels(levels,config,error),"Reject unordered RSI levels");
    rows[0]="1,0,1,10,1,9,25,0,0,0,0";
    Check(!levelsProbe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Reject RSI level from MA slot");
+   for(int i=0;i<5;i++) rows[i]="";
+   for(int i=0;i<4;i++) { config.indicators[i].type=GUI_INDICATOR_MA; usages[i]=0; }
+   Check(probe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Four MA entries allowed");
+   for(int kind=1;kind<=2;kind++)
+     {
+      config.indicators[0].type=kind==1 ? GUI_INDICATOR_RSI : GUI_INDICATOR_ADX;
+      config.indicators[1].type=config.indicators[0].type;
+      usages[0]=0; usages[1]=0;
+      Check(!probe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Duplicate entries rejected even without signals");
+      usages[1]=1;
+      Check(probe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"One entry and one exit allowed");
+      usages[0]=1;
+      Check(!probe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Duplicate exits rejected");
+     }
    PrintFormat("[SignalGridTests] %d checks, %d failures",checks,failures);
   }
