@@ -71,48 +71,42 @@ input group "Execucao"
 input bool InpAutoStart=false; // Ativar novas entradas fora do testador; false mantem gestao e pausa entradas
 input bool InpTesterAutoStart=false; // Aplicar inputs e ativar automaticamente SOMENTE no testador
 
-// Selecione o tipo em cada indicador; configure seus parametros no grupo do indicador.
-// Apenas a Media Movel possui parametros independentes por indicador.
-// RSI, ADX e futuros tipos usam um grupo compartilhado quando repetidos nos inputs.
-input group "▪▪▪▪▪ Indicador 1 ▪▪▪▪▪"
-input ENUM_GUI_INDICATOR_TYPE InpIndicator1Type=GUI_INDICATOR_NONE; // Tipo do Indicador 1; Não usar = desativado
-input ENUM_UNI_YES_NO InpIndicator1Exit=UNI_NO; // Usar como saida: Sim; entrada: Nao
-input int InpIndicator1RsiPeriod=14; // RSI: periodo
-input double InpIndicator1RsiUpper=70; // RSI: nivel superior
-input double InpIndicator1RsiMiddle=50; // RSI: nivel medio
-input double InpIndicator1RsiLower=30; // RSI: nivel inferior
-input ENUM_UNI_APPLIED_PRICE InpIndicator1RsiPrice=UNI_PRICE_CLOSE; // RSI: preco aplicado
-input int InpIndicator1AdxPeriod=14; // ADX: periodo
+// Slots selecionam tipo e finalidade; parametros ficam nos grupos abaixo.
+input group "Slot 1"
+input ENUM_GUI_INDICATOR_TYPE InpIndicator1Type=GUI_INDICATOR_NONE; // Indicador do slot 1
+input ENUM_UNI_YES_NO InpIndicator1Exit=UNI_NO; // Finalidade: Nao = entrada; Sim = saida
 
-input group "▪▪▪▪▪ Indicador 2 ▪▪▪▪▪"
-input ENUM_GUI_INDICATOR_TYPE InpIndicator2Type=GUI_INDICATOR_NONE; // Tipo do Indicador 2; Não usar = desativado
-input ENUM_UNI_YES_NO InpIndicator2Exit=UNI_NO; // Usar como saida: Sim; entrada: Nao
-input int InpIndicator2RsiPeriod=14; // RSI: periodo
-input double InpIndicator2RsiUpper=70; // RSI: nivel superior
-input double InpIndicator2RsiMiddle=50; // RSI: nivel medio
-input double InpIndicator2RsiLower=30; // RSI: nivel inferior
-input ENUM_UNI_APPLIED_PRICE InpIndicator2RsiPrice=UNI_PRICE_CLOSE; // RSI: preco aplicado
-input int InpIndicator2AdxPeriod=14; // ADX: periodo
+input group "Slot 2"
+input ENUM_GUI_INDICATOR_TYPE InpIndicator2Type=GUI_INDICATOR_NONE; // Indicador do slot 2
+input ENUM_UNI_YES_NO InpIndicator2Exit=UNI_NO; // Finalidade: Nao = entrada; Sim = saida
 
-input group "▪▪▪▪▪ Indicador 3 ▪▪▪▪▪"
-input ENUM_GUI_INDICATOR_TYPE InpIndicator3Type=GUI_INDICATOR_NONE; // Tipo do Indicador 3; Não usar = desativado
-input ENUM_UNI_YES_NO InpIndicator3Exit=UNI_NO; // Usar como saida: Sim; entrada: Nao
-input int InpIndicator3RsiPeriod=14; // RSI: periodo
-input double InpIndicator3RsiUpper=70; // RSI: nivel superior
-input double InpIndicator3RsiMiddle=50; // RSI: nivel medio
-input double InpIndicator3RsiLower=30; // RSI: nivel inferior
-input ENUM_UNI_APPLIED_PRICE InpIndicator3RsiPrice=UNI_PRICE_CLOSE; // RSI: preco aplicado
-input int InpIndicator3AdxPeriod=14; // ADX: periodo
+input group "Slot 3"
+input ENUM_GUI_INDICATOR_TYPE InpIndicator3Type=GUI_INDICATOR_NONE; // Indicador do slot 3
+input ENUM_UNI_YES_NO InpIndicator3Exit=UNI_NO; // Finalidade: Nao = entrada; Sim = saida
 
-input group "▪▪▪▪▪ Indicador 4 ▪▪▪▪▪"
-input ENUM_GUI_INDICATOR_TYPE InpIndicator4Type=GUI_INDICATOR_NONE; // Tipo do Indicador 4; Não usar = desativado
-input ENUM_UNI_YES_NO InpIndicator4Exit=UNI_NO; // Usar como saida: Sim; entrada: Nao
-input int InpIndicator4RsiPeriod=14; // RSI: periodo
-input double InpIndicator4RsiUpper=70; // RSI: nivel superior
-input double InpIndicator4RsiMiddle=50; // RSI: nivel medio
-input double InpIndicator4RsiLower=30; // RSI: nivel inferior
-input ENUM_UNI_APPLIED_PRICE InpIndicator4RsiPrice=UNI_PRICE_CLOSE; // RSI: preco aplicado
-input int InpIndicator4AdxPeriod=14; // ADX: periodo
+input group "Slot 4"
+input ENUM_GUI_INDICATOR_TYPE InpIndicator4Type=GUI_INDICATOR_NONE; // Indicador do slot 4
+input ENUM_UNI_YES_NO InpIndicator4Exit=UNI_NO; // Finalidade: Nao = entrada; Sim = saida
+
+input group "RSI - Entrada"
+input int InpRsiEntryPeriod=14; // Periodo
+input ENUM_UNI_APPLIED_PRICE InpRsiEntryPrice=UNI_PRICE_CLOSE; // Preco aplicado
+input double InpRsiEntryUpper=70; // Nivel superior
+input double InpRsiEntryMiddle=50; // Nivel medio
+input double InpRsiEntryLower=30; // Nivel inferior
+
+input group "RSI - Saida"
+input int InpRsiExitPeriod=14; // Periodo
+input ENUM_UNI_APPLIED_PRICE InpRsiExitPrice=UNI_PRICE_CLOSE; // Preco aplicado
+input double InpRsiExitUpper=70; // Nivel superior
+input double InpRsiExitMiddle=50; // Nivel medio
+input double InpRsiExitLower=30; // Nivel inferior
+
+input group "ADX - Entrada"
+input int InpAdxEntryPeriod=14; // Periodo
+
+input group "ADX - Saida"
+input int InpAdxExitPeriod=14; // Periodo
 
 input group "Média Móvel — Parâmetros por indicador"
 // Use os campos do indicador que selecionou Media Movel; os demais ficam inativos.
@@ -182,17 +176,19 @@ void BuildInitialConfiguration(CGuiState &config)
    int shifts[]={InpIndicator1MaShift,InpIndicator2MaShift,InpIndicator3MaShift,InpIndicator4MaShift};
    ENUM_UNI_MA_METHOD methods[]={InpIndicator1MaMethod,InpIndicator2MaMethod,InpIndicator3MaMethod,InpIndicator4MaMethod};
    ENUM_UNI_APPLIED_PRICE prices[]={InpIndicator1MaPrice,InpIndicator2MaPrice,InpIndicator3MaPrice,InpIndicator4MaPrice};
-   int rsiPeriods[]={InpIndicator1RsiPeriod,InpIndicator2RsiPeriod,InpIndicator3RsiPeriod,InpIndicator4RsiPeriod};
-   ENUM_UNI_APPLIED_PRICE rsiPrices[]={InpIndicator1RsiPrice,InpIndicator2RsiPrice,InpIndicator3RsiPrice,InpIndicator4RsiPrice};
-   int adxPeriods[]={InpIndicator1AdxPeriod,InpIndicator2AdxPeriod,InpIndicator3AdxPeriod,InpIndicator4AdxPeriod};
+   ENUM_UNI_YES_NO exits[]={InpIndicator1Exit,InpIndicator2Exit,InpIndicator3Exit,InpIndicator4Exit};
    for(int i=0;i<4;i++)
      {
       config.indicators[i].type=types[i];
       config.indicators[i].maPeriod=periods[i];
       config.indicators[i].maShift=shifts[i]; config.indicators[i].maMethod=(ENUM_MA_METHOD)methods[i];
       config.indicators[i].maPrice=(ENUM_APPLIED_PRICE)prices[i];
-      config.indicators[i].rsiPeriod=rsiPeriods[i]; config.indicators[i].rsiPrice=(ENUM_APPLIED_PRICE)rsiPrices[i];
-      config.indicators[i].adxPeriod=adxPeriods[i];
+      bool exit=exits[i]==UNI_YES;
+      config.indicators[i].rsiPeriod=exit ? InpRsiExitPeriod : InpRsiEntryPeriod;
+      config.indicators[i].rsiPrice=(ENUM_APPLIED_PRICE)(exit ? InpRsiExitPrice : InpRsiEntryPrice);
+      config.indicators[i].rsiLower=exit ? InpRsiExitLower : InpRsiEntryLower;
+      config.indicators[i].rsiUpper=exit ? InpRsiExitUpper : InpRsiEntryUpper;
+      config.indicators[i].adxPeriod=exit ? InpAdxExitPeriod : InpAdxEntryPeriod;
      }
   }
 
@@ -216,7 +212,13 @@ int OnInit()
       int usages[]={(int)InpIndicator1Exit,(int)InpIndicator2Exit,(int)InpIndicator3Exit,(int)InpIndicator4Exit};
       if(!runtime.ConfigureSignals(signals,usages,error))
         { Print("Sinal: ",error); runtime.Shutdown(); return INIT_PARAMETERS_INCORRECT; }
-      double levels[]={InpIndicator1RsiUpper,InpIndicator1RsiMiddle,InpIndicator1RsiLower,InpIndicator2RsiUpper,InpIndicator2RsiMiddle,InpIndicator2RsiLower,InpIndicator3RsiUpper,InpIndicator3RsiMiddle,InpIndicator3RsiLower,InpIndicator4RsiUpper,InpIndicator4RsiMiddle,InpIndicator4RsiLower};
+      double levels[12];
+      for(int i=0;i<4;i++)
+        {
+         levels[i*3]=usages[i]==1 ? InpRsiExitUpper : InpRsiEntryUpper;
+         levels[i*3+1]=usages[i]==1 ? InpRsiExitMiddle : InpRsiEntryMiddle;
+         levels[i*3+2]=usages[i]==1 ? InpRsiExitLower : InpRsiEntryLower;
+        }
       if(!runtime.ConfigureRsiLevels(levels,error))
         { Print("RSI: ",error); runtime.Shutdown(); return INIT_PARAMETERS_INCORRECT; }
       if(activate && !runtime.Activate(error))
