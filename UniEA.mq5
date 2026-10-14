@@ -37,8 +37,12 @@ input int InpEntryStart=0;         // Início entradas (minutos): 0 = 00:00; pas
 input int InpEntryEnd=1435;        // Encerramento entradas (minutos): 1435 = 23:55; passo 5
 // Encerramento das entradas usa InpEntryEnd. Posições seguem a modalidade.
 
-input group "Regras de entrada e saida"
+input group "Ordem"
 input ENUM_GUI_ORDER_MODE InpOrderMode=GUI_ORDER_MARKET;           // Tipo de ordem: a mercado ou pendente
+input ENUM_UNI_PENDING_REFERENCE InpPendingReference=UNI_PENDING_HIGH; // Pendente: posicionar em
+input int InpPendingCandle=1; // Pendente: vela 1 = ultima fechada; 1 a 100000
+
+input group "Regras de entrada e saida"
 input ENUM_GUI_CANDLE_FILTER InpCandleFilter=GUI_CANDLE_DISABLED;   // Filtro: desativado, tamanho de candles ou pavios
 input ENUM_GUI_TARGET_UNIT InpTargetUnit=GUI_TARGET_POINTS;        // Unidade do stop loss e take profit
 input double InpStopLoss=0.0;                                      // Stop loss na unidade selecionada; 0 desativa
@@ -47,8 +51,6 @@ input double InpStopCandleMultiplier=1.0;                          // Stop: mult
 input int InpStopCandle=1;                                        // Stop: candle fechado 1 a 3
 input bool InpStopBody=false;                                     // Stop: usar corpo em vez de total
 input double InpTakeStopMultiplier=2.0;                           // Take: vezes o stop quando InpTakeProfit = 0
-input int InpPendingReference=3;                                  // Pendente: 0 máxima, 1 mínima, 2 abertura, 3 fechamento
-input int InpPendingCandle=1;                                     // Pendente: candle fechado 1 a 100000
 
 // Valores de gestao usam a unidade do respectivo modo.
 // Percentuais da gestão usam o preço de abertura da posição.

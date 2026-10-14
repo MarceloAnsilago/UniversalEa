@@ -3,6 +3,14 @@
 
 // Opcoes de apresentacao em portugues. Os valores numericos correspondem
 // aos enums nativos; converter explicitamente ao carregar a configuracao.
+enum ENUM_UNI_PENDING_REFERENCE
+  {
+   UNI_PENDING_HIGH=0,  // Maxima
+   UNI_PENDING_LOW=1,   // Minima
+   UNI_PENDING_OPEN=2,  // Abertura
+   UNI_PENDING_CLOSE=3  // Fechamento
+  };
+
 enum ENUM_UNI_MA_METHOD
   {
    UNI_MA_SMA=0,  // Simples
