@@ -90,24 +90,28 @@ input group "Slot 4"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator4Type=GUI_INDICATOR_NONE; // Indicador do slot 4
 input ENUM_UNI_YES_NO InpIndicator4Exit=UNI_NO; // Finalidade: Nao = entrada; Sim = saida
 
-input group "RSI - Entrada"
+input group "RSI"
+// Separadores visuais; nao participam da otimizacao.
+sinput string InpSeparatorRsiEntry="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Entrada ▪▪▪
 input int InpRsiEntryPeriod=14; // Periodo
 input ENUM_UNI_APPLIED_PRICE InpRsiEntryPrice=UNI_PRICE_CLOSE; // Preco aplicado
 input double InpRsiEntryUpper=70; // Nivel superior
 input double InpRsiEntryMiddle=50; // Nivel medio
 input double InpRsiEntryLower=30; // Nivel inferior
 
-input group "RSI - Saida"
+sinput string InpSeparatorRsiExit="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Saída ▪▪▪
 input int InpRsiExitPeriod=14; // Periodo
 input ENUM_UNI_APPLIED_PRICE InpRsiExitPrice=UNI_PRICE_CLOSE; // Preco aplicado
 input double InpRsiExitUpper=70; // Nivel superior
 input double InpRsiExitMiddle=50; // Nivel medio
 input double InpRsiExitLower=30; // Nivel inferior
 
-input group "ADX - Entrada"
+input group "ADX"
+// Separadores visuais; nao participam da otimizacao.
+sinput string InpSeparatorAdxEntry="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Entrada ▪▪▪
 input int InpAdxEntryPeriod=14; // Periodo
 
-input group "ADX - Saida"
+sinput string InpSeparatorAdxExit="▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪"; // ▪▪▪ Saída ▪▪▪
 input int InpAdxExitPeriod=14; // Periodo
 
 input group "Média Móvel — Parâmetros por indicador"

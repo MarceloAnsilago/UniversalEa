@@ -174,5 +174,21 @@
       "compile":false,
       "relative_to_project":true
     }
+  ],
+
+  "resources":
+  [
+    {
+      "type":"indicator",
+      "path":"Indicators\\UniMaPlot.ex5",
+      "name":"",
+      "relative_to_project":true
+    },
+    {
+      "type":"indicator",
+      "path":"Indicators\\UniOscillatorPlot.ex5",
+      "name":"",
+      "relative_to_project":true
+    }
   ]
 }
