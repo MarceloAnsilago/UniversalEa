@@ -3,6 +3,7 @@
 #include "MyUnEA.mqh"
 #include "UniOrders.mqh"
 #include "UniSignals.mqh"
+#include "UniChartIndicators.mqh"
 
 // Análise separada de execução para permitir testes de sinais sem negociar.
 class CUniRuntime
@@ -17,11 +18,12 @@ private:
    int m_revision;
    datetime m_resume_bar,m_evaluated_bar;
    CUniSignals m_signals;
+   CUniChartIndicators m_chart_indicators;
    int m_pending_exits;
 public:
    CUniRuntime() { m_engine=NULL; m_active=false; m_revision=0; m_resume_bar=0; m_evaluated_bar=0; m_pending_exits=0; }
    ~CUniRuntime() { Shutdown(); }
-   void Shutdown() { if(m_engine!=NULL) delete m_engine; m_engine=NULL; m_active=false; }
+   void Shutdown() { m_chart_indicators.Clear(); if(m_engine!=NULL) delete m_engine; m_engine=NULL; m_active=false; }
    bool HasConfiguration() { return m_engine!=NULL; }
    bool Active() { return m_active; }
    int Revision() { return m_revision; }
@@ -48,6 +50,8 @@ public:
       m_orders.Configure(symbol,candidate,m_period);
       m_active=false; m_resume_bar=0; m_evaluated_bar=0; m_pending_exits=0; m_signals.Reset(); m_revision++; error=""; return true;
      }
+   bool ShowIndicators(const long chart,const int &usages[],const double &levels[],string &error)
+     { return m_chart_indicators.Attach(chart,m_applied,usages,levels,error); }
    bool ConfigureRsiLevels(const double &levels[],string &error)
      { return m_signals.ConfigureRsiLevels(levels,m_applied,error); }
    bool ConfigureSignals(const string &payload[],const int &usages[],string &error)

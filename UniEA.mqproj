@@ -168,6 +168,11 @@
       "path":"Include\\UniSignals.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"Include\\UniChartIndicators.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ]
 }

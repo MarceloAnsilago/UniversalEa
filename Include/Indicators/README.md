@@ -95,3 +95,22 @@ MyUnEA.checkBuy/checkSell permanecem neutros; CUniSignals avalia as condicoes
 da grade sobre os buffers, separado das classes dos indicadores.
 Campos legados de inclinacao, niveis RSI e limiar ADX sao mantidos no formato
 binario para compatibilidade; nao sao inputs de sinais nem afetam os handles.
+
+
+## Exibicao dos slots no grafico
+
+UniEA adiciona os slots ativos ao grafico apos validar a configuracao, mesmo
+com as entradas pausadas. MA aparece no grafico principal; RSI/ADX aparecem
+em sub-janelas independentes, com slot e finalidade no nome. RSI mostra os
+tres niveis configurados. Os plots usam os mesmos parametros do motor.
+
+Compile tambem `Indicators/UniMaPlot.mq5` e `Indicators/UniOscillatorPlot.mq5`
+(na pasta do EA); mantenha os respectivos `.ex5` nessa pasta ao distribuir o Uni.
+O teste sem visualizacao nao cria plots. No teste visual, os indicadores
+internos ficam ocultos para evitar duplicacao com os plots explicitamente anexados.
+
+O periodo do grafico deve coincidir com o da estrategia. Caso contrario, o
+Uni registra a orientacao no log e mantem o motor no periodo configurado.
+Os plots possuem nomes exclusivos; a limpeza remove somente os plots do Uni.
+Validacao desta alteracao: compilacao do EA e dos dois plots. A aparencia e o
+ciclo anexar/remover ainda precisam ser verificados no terminal.

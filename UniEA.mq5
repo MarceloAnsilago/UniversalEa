@@ -194,6 +194,7 @@ void BuildInitialConfiguration(CGuiState &config)
 
 int OnInit()
   {
+   TesterHideIndicators(true); // Display only the named slot plots explicitly attached below.
    CGuiState initial; BuildInitialConfiguration(initial);
    bool tester=(bool)MQLInfoInteger(MQL_TESTER);
    bool activate=tester ? InpTesterAutoStart : InpAutoStart;
@@ -221,6 +222,7 @@ int OnInit()
         }
       if(!runtime.ConfigureRsiLevels(levels,error))
         { Print("RSI: ",error); runtime.Shutdown(); return INIT_PARAMETERS_INCORRECT; }
+      if(!runtime.ShowIndicators(ChartID(),usages,levels,error)) Print("Indicadores no grafico: ",error);
       if(activate && !runtime.Activate(error))
         { Print("Ativacao: ",error); runtime.Shutdown(); return INIT_FAILED; }
      }
