@@ -1,4 +1,6 @@
 #property strict
+#resource "Indicators\\UniMaPlot.ex5"
+#resource "Indicators\\UniOscillatorPlot.ex5"
 #property version "1.10"
 #property description "EA com painel padrao, ordens, SL/TP e gestao de posicoes."
 #include "Include/UniPanel.mqh"

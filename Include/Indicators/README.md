@@ -105,7 +105,9 @@ em sub-janelas independentes, com slot e finalidade no nome. RSI mostra os
 tres niveis configurados. Os plots usam os mesmos parametros do motor.
 
 Compile tambem `Indicators/UniMaPlot.mq5` e `Indicators/UniOscillatorPlot.mq5`
-(na pasta do EA); mantenha os respectivos `.ex5` nessa pasta ao distribuir o Uni.
+(na pasta do EA) antes de compilar UniEA. Os dois `.ex5` sao incorporados como
+recursos ao UniEA.ex5; a distribuicao e o carregamento nao dependem de arquivos
+de indicadores externos.
 O teste sem visualizacao nao cria plots. No teste visual, os indicadores
 internos ficam ocultos para evitar duplicacao com os plots explicitamente anexados.
 

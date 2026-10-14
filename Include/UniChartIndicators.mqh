@@ -41,10 +41,10 @@ public:
          m_names[i]=StringFormat("%s | Slot %d %s %s",prefix,i+1,type,usages[i]==1 ? "Saida" : "Entrada");
          ResetLastError();
          if(config.indicators[i].type==GUI_INDICATOR_MA)
-            m_handles[i]=iCustom(_Symbol,period,"Indicators\\UniMaPlot",m_names[i],config.indicators[i].maPeriod,
+            m_handles[i]=iCustom(_Symbol,period,"::Indicators\\UniMaPlot.ex5",m_names[i],config.indicators[i].maPeriod,
                                 config.indicators[i].maShift,config.indicators[i].maMethod,config.indicators[i].maPrice,colors[i]);
          else
-            m_handles[i]=iCustom(_Symbol,period,"Indicators\\UniOscillatorPlot",m_names[i],type=="RSI",
+            m_handles[i]=iCustom(_Symbol,period,"::Indicators\\UniOscillatorPlot.ex5",m_names[i],type=="RSI",
                                 type=="RSI" ? config.indicators[i].rsiPeriod : config.indicators[i].adxPeriod,
                                 config.indicators[i].rsiPrice,levels[i*3],levels[i*3+1],levels[i*3+2]);
          int window=type=="MA" ? 0 : (int)ChartGetInteger(chart,CHART_WINDOWS_TOTAL);
