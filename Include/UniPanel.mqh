@@ -19,6 +19,14 @@ private:
    IndicatorConfig m_indicators[4];
    int m_scroll,m_total;
    bool m_ready;
+   bool m_dragging,m_chart_scroll,m_mouse_events;
+   int m_drag_offset;
+   int ThumbHeight()
+     { int track=m_canvas.Height()-140; return (int)MathMax(24,MathMin(track,track*(double)track/MathMax(track,m_total))); }
+   int ThumbTop()
+     { int track=m_canvas.Height()-140; return 98+(int)((track-ThumbHeight())*(double)m_scroll/MathMax(1,m_total-track)); }
+   void ReleaseScroll()
+     { if(m_dragging) ChartSetInteger(m_chart,CHART_MOUSE_SCROLL,m_chart_scroll); m_dragging=false; }
    void Box(const int x,const int y,const int w,const int h,const int r,const uint ink)
      {
       m_canvas.FillRectangle(x+r,y,x+w-r-1,y+h-1,ink);
@@ -128,10 +136,15 @@ private:
       m_canvas.LineHorizontal(16,w-17,h-42,0xFFE7E9EC);
       Text(22,h-28,"Anterior",13,m_scroll>0 ? 0xFF009F89 : 0xFFAAB2BB);
       Text(w-91,h-28,"Próximo",13,m_scroll<m_total-viewport ? 0xFF009F89 : 0xFFAAB2BB);
+      if(m_total>viewport)
+        {
+         Box(w-13,98,8,viewport,3,0xFFE7E9EC);
+         Box(w-13,ThumbTop(),8,ThumbHeight(),3,m_dragging ? 0xFF007D6C : 0xFF00A58D);
+        }
       m_canvas.Update();
      }
 public:
-   CUniPanel() { m_chart=0; m_scroll=0; m_total=0; m_ready=false; m_updated=0; }
+   CUniPanel() { m_chart=0; m_scroll=0; m_total=0; m_ready=false; m_updated=0; m_dragging=false; m_mouse_events=false; }
    ~CUniPanel() { Destroy(); }
    bool Create(const long chart,const string status,const CGuiState &config)
      {
@@ -145,6 +158,8 @@ public:
       ObjectSetInteger(chart,m_name,OBJPROP_SELECTABLE,false);
       ObjectSetInteger(chart,m_name,OBJPROP_HIDDEN,true);
       ObjectSetInteger(chart,m_name,OBJPROP_ZORDER,10);
+      m_mouse_events=(bool)ChartGetInteger(chart,CHART_EVENT_MOUSE_MOVE);
+      ChartSetInteger(chart,CHART_EVENT_MOUSE_MOVE,true);
       m_ready=true;
       Draw();
       return true;
@@ -219,6 +234,27 @@ public:
    void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
      {
       if(!m_ready) return;
+      if(id==CHARTEVENT_MOUSE_MOVE)
+        {
+         int x=(int)lparam-12,y=(int)dparam-20;
+         bool pressed=((int)StringToInteger(sparam)&1)!=0;
+         if(!pressed && m_dragging) { ReleaseScroll(); Draw(); }
+         if(pressed && !m_dragging && x>=m_canvas.Width()-16 && x<m_canvas.Width() &&
+            y>=98 && y<m_canvas.Height()-42 && m_total>m_canvas.Height()-140)
+           {
+            m_chart_scroll=(bool)ChartGetInteger(m_chart,CHART_MOUSE_SCROLL);
+            ChartSetInteger(m_chart,CHART_MOUSE_SCROLL,false);
+            int top=ThumbTop();
+            m_drag_offset=y>=top && y<top+ThumbHeight() ? y-top : ThumbHeight()/2;
+            m_dragging=true;
+           }
+         if(m_dragging)
+           {
+            int track=m_canvas.Height()-140,travel=track-ThumbHeight();
+            m_scroll=(int)(MathMax(0,MathMin(travel,y-98-m_drag_offset))*(double)(m_total-track)/MathMax(1,travel));
+            Draw();
+           }
+        }
       if(id==CHARTEVENT_CHART_CHANGE)
         {
          int h=(int)MathMax(220,MathMin(820,ChartGetInteger(m_chart,CHART_HEIGHT_IN_PIXELS)-40));
@@ -235,6 +271,10 @@ public:
         }
      }
    void Destroy()
-     { m_ready=false; m_canvas.Destroy(); }
+     {
+      ReleaseScroll();
+      if(m_ready) ChartSetInteger(m_chart,CHART_EVENT_MOUSE_MOVE,m_mouse_events);
+      m_ready=false; m_canvas.Destroy();
+     }
   };
 #endif
