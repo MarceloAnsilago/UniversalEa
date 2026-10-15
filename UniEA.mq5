@@ -1,4 +1,4 @@
-#property strict
+﻿#property strict
 #resource "Indicators\\UniMaPlot.ex5"
 #resource "Indicators\\UniOscillatorPlot.ex5"
 #property version "1.10"
@@ -243,6 +243,7 @@ int OnInit()
         { Print("Falha ao criar painel: ",GetLastError()); runtime.Shutdown(); return INIT_FAILED; }
    if(!EventSetTimer(1))
      { Print("Falha ao iniciar timer: ",GetLastError()); panel.Destroy(); runtime.Shutdown(); return INIT_FAILED; }
+   panel.Refresh(runtime.Active(),runtime.HasConfiguration());
    Print("UniEA: ",status,". Configuracao pelos inputs.");
    return INIT_SUCCEEDED;
   }
@@ -257,13 +258,14 @@ void ReportExecutionError(const string error)
    if(error!="") Print("Execucao: ",error);
   }
 void OnTimer()
-  { string error; runtime.Service(error); ReportExecutionError(error); }
+  { string error; runtime.Service(error); ReportExecutionError(error); panel.Refresh(runtime.Active(),runtime.HasConfiguration(),error); }
 
 void OnTick()
   {
    string error;
    int signal=runtime.Process(error);
    ReportExecutionError(error);
+   panel.Refresh(runtime.Active(),runtime.HasConfiguration(),error);
    if(signal==1) Print("Sinal de compra / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
    if(signal==-1) Print("Sinal de venda / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
   }
