@@ -58,17 +58,40 @@ private:
      {
       int w=m_canvas.Width(),h=m_canvas.Height();
       int viewport=h-140;
-      m_total=ArraySize(m_overview)*28+18;
+      m_total=ArraySize(m_overview)>0 ? ArraySize(m_overview)*36+4*(64+18) : 0;
       for(int i=0;i<4;i++) m_total+=100+Rows(m_indicators[i])*44+18;
       m_scroll=(int)MathMax(0,MathMin(m_scroll,m_total-viewport));
       m_canvas.Erase(0xFFFDFDFD);
       int y=98-m_scroll;
-      for(int row=0;row<ArraySize(m_overview);row++)
+      int starts[]={0,9,16,18};
+      string titles[]={"Setup e operação","Posições e resultados","Alvos configurados","Monitor de execução"};
+      for(int group=0;group<4 && ArraySize(m_overview)>0;group++)
         {
-         if(y>=98 && y+24<h-42) Text(20,y+4,m_overview[row],13);
-         y+=28;
+         int first=starts[group],last=group<3 ? starts[group+1] : ArraySize(m_overview);
+         int ch=64+(last-first)*36;
+         if(y+ch>=98 && y<h-42)
+           {
+            Box(17,y+3,w-32,ch,4,0xFFF0F0F0);
+            Box(15,y,w-32,ch,4,0xFFD8D8D8);
+            Box(16,y+1,w-34,ch-2,3,0xFFFFFEFC);
+            Text(34,y+22,titles[group],15,0xFF009F89);
+            m_canvas.LineHorizontal(34,w-37,y+49,0xFFE7E9EC);
+            for(int row=first;row<last;row++)
+              {
+               int ry=y+62+(row-first)*36;
+               uint ink=0xFF16324F;
+               string line=m_overview[row];
+               if(row==0) ink=StringFind(line,"Fora")==0 ? 0xFFB7791F : 0xFF009F89;
+               if(row==11 || row==12 || row==13 || row==14)
+                  ink=StringFind(line,": -")>=0 ? 0xFFC44444 : 0xFF009F89;
+               if(StringFind(line,"Erro:")==0 || StringFind(line,"Bloqueado")>=0 || StringFind(line,"Desconectado")>=0)
+                  ink=0xFFC44444;
+               Text(34,ry,line,13,ink);
+               if(row<last-1) m_canvas.LineHorizontal(34,w-37,ry+26,0xFFE7E9EC);
+              }
+           }
+         y+=ch+18;
         }
-      y+=18;
       for(int i=0;i<4;i++)
         {
          IndicatorConfig c=m_indicators[i];
