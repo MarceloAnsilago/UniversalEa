@@ -99,7 +99,7 @@ private:
       // Fixed header and footer also clip scrolled card content.
       m_canvas.FillRectangle(0,0,w-1,97,0xFFFDFDFD);
       Text(16,12,"UniEA",13,0xFF009F89);
-      Text(16,34,"Opera??o e resultados",20);
+      Text(16,34,"Operação e resultados",20);
       Text(16,66,m_status,12,0xFF718096);
       m_canvas.FillRectangle(0,h-42,w-1,h-1,0xFFFDFDFD);
       m_canvas.LineHorizontal(16,w-17,h-42,0xFFE7E9EC);
@@ -161,31 +161,36 @@ public:
             if(net>=0) positive+=net; else negative+=net;
            }
       string currency=AccountInfoString(ACCOUNT_CURRENCY);
-      m_status=!configured ? "Sem configura??o" : !active ? "Entradas pausadas" :
-               !window ? "Fora do hor?rio de entrada" : "Dentro do hor?rio de entrada";
+      bool permitted=MQLInfoInteger(MQL_TRADE_ALLOWED) && TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) &&
+                     AccountInfoInteger(ACCOUNT_TRADE_ALLOWED) && AccountInfoInteger(ACCOUNT_TRADE_EXPERT);
+      m_status=!configured ? "Sem configuração" : !active ? "Entradas pausadas" :
+               !window ? "Fora do horário de operação" : error!="" ? "Erro na execução" :
+               !permitted ? "Negociação bloqueada" : positions>0 ? "Gerenciando posição" :
+               orders>0 ? "Aguardando ordem pendente" : "Aguardando sinal";
+      Add(window ? "Dentro do horário de operação" : "Fora do horário de operação");
       Add("EA: UniEA | Setup: "+m_config.setup.name);
       Add("Magic: "+IntegerToString(m_config.setup.magic));
       ENUM_TIMEFRAMES period=m_config.setup.timeframe==PERIOD_CURRENT ? (ENUM_TIMEFRAMES)_Period : m_config.setup.timeframe;
       Add("Ativo: "+_Symbol+" | "+EnumToString(period));
       Add("Servidor: "+TimeToString(now,TIME_DATE|TIME_SECONDS));
-      Add("Entradas: "+GuiSetupTimeLabel(start)+" at? "+GuiSetupTimeLabel(end));
+      Add("Entradas: "+GuiSetupTimeLabel(start)+" até "+GuiSetupTimeLabel(end));
       Add("Modo: "+(m_config.setup.trade_mode==0 ? "Day trade" : "Swing trade"));
-      Add("Dire??o: "+(m_config.setup.direction==0 ? "Compra e venda" : m_config.setup.direction==1 ? "Compra" : "Venda"));
+      Add("Direção: "+(m_config.setup.direction==0 ? "Compra e venda" : m_config.setup.direction==1 ? "Compra" : "Venda"));
       Add("Lote: "+DoubleToString(m_config.setup.lot,4)+" | "+(m_config.rules.order_mode==GUI_ORDER_PENDING ? "Pendente" : "A mercado"));
-      Add("Posi??es: "+IntegerToString(positions)+" | Pendentes: "+IntegerToString(orders));
+      Add("Posições: "+IntegerToString(positions)+" | Pendentes: "+IntegerToString(orders));
       Add("Volume aberto: "+DoubleToString(volume,4));
       Add("Em aberto: "+DoubleToString(floating,2)+" "+currency);
-      Add(history ? "Ganhos hoje: "+DoubleToString(positive,2)+" "+currency : "Hist?rico do dia indispon?vel");
+      Add(history ? "Ganhos hoje: "+DoubleToString(positive,2)+" "+currency : "Histórico do dia indisponível");
       Add("Perdas/custos hoje: "+DoubleToString(negative,2)+" "+currency);
-      Add("L?quido hoje: "+DoubleToString(positive+negative,2)+" "+currency);
+      Add("Líquido hoje: "+DoubleToString(positive+negative,2)+" "+currency);
       Add("Resultados: somente este ativo e Magic");
       Add("Stop: "+m_config.rules.StopSummary());
       Add("Take: "+m_config.rules.TakeSummary());
-      Add("Conex?o: "+(TerminalInfoInteger(TERMINAL_CONNECTED) ? "OK" : "Desconectado"));
+      Add("Conexão: "+(TerminalInfoInteger(TERMINAL_CONNECTED) ? "OK" : "Desconectado"));
       Add("AutoTrading: "+(MQLInfoInteger(MQL_TRADE_ALLOWED) && TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) && AccountInfoInteger(ACCOUNT_TRADE_ALLOWED) && AccountInfoInteger(ACCOUNT_TRADE_EXPERT) ? "Permitido" : "Bloqueado"));
       if(error!="") Add("Erro: "+error);
-      else if(positions>0 || orders>0) Add("Nova entrada bloqueada por exposi??o");
-      else Add("Sem posi??o ou pendente deste setup");
+      else if(positions>0 || orders>0) Add("Nova entrada bloqueada por exposição");
+      else Add("Sem posição ou pendente deste setup");
       Draw();
      }
    void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
