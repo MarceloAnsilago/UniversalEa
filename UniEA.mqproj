@@ -173,6 +173,11 @@
       "path":"Include\\UniChartIndicators.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"Include\\UniSignalProfiles.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ],
 

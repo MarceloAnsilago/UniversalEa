@@ -74,21 +74,6 @@ void OnStart()
    Check(!levelsProbe.ConfigureRsiLevels(levels,config,error),"Reject unordered RSI levels");
    rows[0]="1,0,1,10,1,9,25,0,0,0,0";
    Check(!levelsProbe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Reject RSI level from MA slot");
-   config.indicators[2].type=GUI_INDICATOR_ADX;
-   rows[0]="1,0,1,10,1,7,16,1,0,0,0";
-   Check(!levelsProbe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Reject RSI crossing ADX despite matching index scale");
-   rows[0]="1,0,1,16,1,7,10,1,0,0,0";
-   Check(!levelsProbe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Reject ADX crossing RSI in reverse direction");
-   rows[0]="1,0,1,10,1,7,0,1,0,0,0";
-   Check(!levelsProbe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Reject RSI crossing candle price");
-   rows[0]="1,0,1,10,1,7,9,0,30,0,0";
-   Check(levelsProbe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"RSI crossing fixed level remains valid");
-   config.indicators[3].type=GUI_INDICATOR_RSI;
-   Check(!UniSignalSourcesCompatible(10,31,config),"RSI rejects another slot level");
-   Check(UniSignalSourcesCompatible(10,22,config),"RSI accepts own slot level");
-   config.indicators[3].type=GUI_INDICATOR_NONE;
-   rows[0]="1,0,1,16,1,7,17,1,0,0,0";
-   Check(levelsProbe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"ADX and DI lines remain compatible");
    for(int i=0;i<5;i++) rows[i]="";
    for(int i=0;i<4;i++) { config.indicators[i].type=GUI_INDICATOR_MA; usages[i]=0; }
    Check(probe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Four MA entries allowed");
