@@ -1,6 +1,7 @@
 #ifndef UNI_SIGNALS_MQH
 #define UNI_SIGNALS_MQH
 #include "MyUnEA.mqh"
+#include "UniSignalProfiles.mqh"
 
 struct UniSignalRule
   {
@@ -163,6 +164,8 @@ public:
             !SourceValid(r.source,config,r.usage,usages) || !SourceValid(r.reference,config,r.usage,usages) ||
             (r.comparison>=9 && ((!Constant(r.source) && r.bar==0) || (!Constant(r.reference) && r.reference_bar==0))))
            { error="Condicao ou buffer invalido; confira o GeraSet."; return false; }
+         if(!UniSignalSourcesCompatible(r.source,r.reference,config))
+           { error="Fontes incompativeis com o tipo de indicador ou slot do sinal."; return false; }
          int group=r.usage*2+(r.side==1 ? 0 : 1);
          int a_scale=Scale(r.source,config),b_scale=Scale(r.reference,config);
          if((b_scale>=0 && a_scale!=b_scale) || (r.unit==1 && r.distance>0 && (a_scale==1 || b_scale==1)) ||
