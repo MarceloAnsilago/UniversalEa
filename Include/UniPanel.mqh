@@ -13,6 +13,8 @@ private:
    CGuiState m_config;
    string m_overview[];
    datetime m_updated;
+   ulong m_visual_updated;
+   bool m_visual_refreshed;
    string m_error;
    void Add(const string value)
      { int n=ArraySize(m_overview); ArrayResize(m_overview,n+1); m_overview[n]=value; }
@@ -144,12 +146,12 @@ private:
       m_canvas.Update();
      }
 public:
-   CUniPanel() { m_chart=0; m_scroll=0; m_total=0; m_ready=false; m_updated=0; m_dragging=false; m_mouse_events=false; }
+   CUniPanel() { m_chart=0; m_scroll=0; m_total=0; m_ready=false; m_updated=0; m_visual_updated=0; m_visual_refreshed=false; m_dragging=false; m_mouse_events=false; }
    ~CUniPanel() { Destroy(); }
    bool Create(const long chart,const string status,const CGuiState &config)
      {
       Destroy();
-      m_chart=chart; m_status=status; m_scroll=0; m_config=config; m_updated=0;
+      m_chart=chart; m_status=status; m_scroll=0; m_config=config; m_updated=0; m_visual_updated=0; m_visual_refreshed=false;
       for(int i=0;i<4;i++) m_indicators[i]=config.indicators[i];
       m_name="UniEA.Panel."+IntegerToString(chart)+"."+IntegerToString((long)GetMicrosecondCount());
       int height=(int)MathMax(220,MathMin(820,ChartGetInteger(chart,CHART_HEIGHT_IN_PIXELS)-40));
@@ -168,7 +170,12 @@ public:
      {
       if(!m_ready) return;
       datetime now=TimeCurrent();
+      // Simulation time can advance hours per real second. Throttle the
+      // expensive history scan and canvas redraw by elapsed real time.
+      ulong visual_now=GetTickCount64();
+      if(m_visual_refreshed && visual_now-m_visual_updated<250 && error==m_error) return;
       if(now==m_updated && error==m_error) return;
+      m_visual_updated=visual_now; m_visual_refreshed=true;
       m_updated=now; m_error=error;
       ArrayResize(m_overview,0);
       MqlDateTime date; TimeToStruct(now,date);

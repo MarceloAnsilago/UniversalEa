@@ -241,7 +241,10 @@ int OnInit()
    if(!tester || MQLInfoInteger(MQL_VISUAL_MODE))
       if(!panel.Create(ChartID(),status,initial))
         { Print("Falha ao criar painel: ",GetLastError()); runtime.Shutdown(); return INIT_FAILED; }
-   if(!EventSetTimer(1))
+   // Tester timers fire for every simulated second, even in Open Prices
+   // mode. Process() already services orders on generated ticks; reserve
+   // the timer for live maintenance between quotes.
+   if(!tester && !EventSetTimer(1))
      { Print("Falha ao iniciar timer: ",GetLastError()); panel.Destroy(); runtime.Shutdown(); return INIT_FAILED; }
    panel.Refresh(runtime.Active(),runtime.HasConfiguration());
    Print("UniEA: ",status,". Configuracao pelos inputs.");
