@@ -71,7 +71,7 @@ private:
       m_scroll=(int)MathMax(0,MathMin(m_scroll,m_total-viewport));
       m_canvas.Erase(0xFFFDFDFD);
       int y=98-m_scroll;
-      int starts[]={0,9,16,18};
+      int starts[]={0,9,19,21};
       string titles[]={"Setup e operação","Posições e resultados","Alvos configurados","Monitor de execução"};
       for(int group=0;group<4 && ArraySize(m_overview)>0;group++)
         {
@@ -90,7 +90,7 @@ private:
                uint ink=0xFF16324F;
                string line=m_overview[row];
                if(row==0) ink=StringFind(line,"Fora")==0 ? 0xFFB7791F : 0xFF009F89;
-               if(row==11 || row==12 || row==13 || row==14)
+               if(row>=11 && row<=17)
                   ink=StringFind(line,": -")>=0 ? 0xFFC44444 : 0xFF009F89;
                if(StringFind(line,"Erro:")==0 || StringFind(line,"Bloqueado")>=0 || StringFind(line,"Desconectado")>=0)
                   ink=0xFFC44444;
@@ -175,7 +175,7 @@ public:
       int minute=date.hour*60+date.min;
       int start=m_config.setup.entry_start,end=m_config.setup.entry_end;
       bool window=start<end ? minute>=start && minute<end : minute>=start || minute<end;
-      int positions=0,orders=0; double volume=0,floating=0,positive=0,negative=0;
+      int positions=0,orders=0; double volume=0,floating=0,positive=0,negative=0,total_positive=0,total_negative=0;
       for(int i=PositionsTotal()-1;i>=0;i--)
         {
          if(PositionGetTicket(i)==0 || PositionGetString(POSITION_SYMBOL)!=_Symbol ||
@@ -187,7 +187,8 @@ public:
          if(OrderGetTicket(i)>0 && OrderGetString(ORDER_SYMBOL)==_Symbol &&
             OrderGetInteger(ORDER_MAGIC)==m_config.setup.magic) orders++;
       date.hour=0; date.min=0; date.sec=0;
-      bool history=HistorySelect(StructToTime(date),now);
+      datetime day_start=StructToTime(date);
+      bool history=HistorySelect(0,now);
       if(history)
          for(int i=0;i<HistoryDealsTotal();i++)
            {
@@ -196,7 +197,9 @@ public:
                HistoryDealGetInteger(deal,DEAL_MAGIC)!=m_config.setup.magic) continue;
             double net=HistoryDealGetDouble(deal,DEAL_PROFIT)+HistoryDealGetDouble(deal,DEAL_SWAP)+
                        HistoryDealGetDouble(deal,DEAL_COMMISSION)+HistoryDealGetDouble(deal,DEAL_FEE);
-            if(net>=0) positive+=net; else negative+=net;
+            if(net>=0) total_positive+=net; else total_negative+=net;
+            if((datetime)HistoryDealGetInteger(deal,DEAL_TIME)>=day_start)
+              { if(net>=0) positive+=net; else negative+=net; }
            }
       string currency=AccountInfoString(ACCOUNT_CURRENCY);
       bool permitted=MQLInfoInteger(MQL_TRADE_ALLOWED) && TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) &&
@@ -221,6 +224,9 @@ public:
       Add(history ? "Ganhos hoje: "+DoubleToString(positive,2)+" "+currency : "Histórico do dia indisponível");
       Add("Perdas/custos hoje: "+DoubleToString(negative,2)+" "+currency);
       Add("Líquido hoje: "+DoubleToString(positive+negative,2)+" "+currency);
+      Add(history ? "Ganhos totais: "+DoubleToString(total_positive,2)+" "+currency : "Histórico total indisponível");
+      Add(history ? "Perdas/custos totais: "+DoubleToString(total_negative,2)+" "+currency : "Perdas/custos totais: indisponível");
+      Add(history ? "Líquido total: "+DoubleToString(total_positive+total_negative,2)+" "+currency : "Líquido total: indisponível");
       Add("Resultados: somente este ativo e Magic");
       Add("Stop: "+m_config.rules.StopSummary());
       Add("Take: "+m_config.rules.TakeSummary());
