@@ -159,7 +159,7 @@ input string InpSignal5=""; // Condicao 5: configurada na grade do GeraSet
 
 input group "Marcadores de preco"
 sinput bool InpShowPriceMarkers=true; // Mostrar etiquetas de entrada, stop e take
-sinput bool InpMarkerShowProfit=true; // Mostrar lucro/prejuizo bruto estimado nos niveis
+sinput bool InpMarkerShowProfit=true; // Mostrar resultado bruto atual na entrada e estimativas nos niveis
 sinput color InpMarkerEntryColor=C'37,99,235'; // Cor da entrada
 sinput color InpMarkerStopColor=C'220,55,65'; // Cor do stop atual
 sinput color InpMarkerTakeColor=C'0,145,110'; // Cor do take profit

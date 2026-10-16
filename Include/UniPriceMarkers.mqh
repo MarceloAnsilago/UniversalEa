@@ -24,10 +24,10 @@ struct UniPriceMarker
    color background,foreground;
   };
 
-string UniMarkerMoney(const double profit,const string currency)
+string UniMarkerMoney(const double profit,const string currency,const bool estimated=true)
   {
    double value=NormalizeDouble(profit,2);
-   return "Est. "+(value>0 ? "+" : "")+DoubleToString(value==0 ? 0 : value,2)+" "+currency;
+   return (estimated ? "Est. " : "")+(value>0 ? "+" : "")+DoubleToString(value==0 ? 0 : value,2)+" "+currency;
   }
 
 string UniMarkerProfitEstimate(const string symbol,const int side,const double volume,const double entry,const double exit_price)
@@ -226,9 +226,10 @@ private:
       if(price<=0) return;
       m_view.Set(key,text,price,ink,m_text,m_show_profit ? UniMarkerProfitEstimate(m_symbol,side,volume,entry,price) : "");
      }
-   void Levels(const string key,const string entry_text,const double entry,const double sl,const double tp,const color entry_color,const int side,const double volume)
+   void Levels(const string key,const string entry_text,const double entry,const double sl,const double tp,const color entry_color,const int side,const double volume,const string entry_detail="")
      {
-      Level(key+".entry",entry_text,entry,entry_color,side,volume,entry);
+      if(entry_detail!="") m_view.Set(key+".entry",entry_text,entry,entry_color,m_text,entry_detail);
+      else Level(key+".entry",entry_text,entry,entry_color,side,volume,entry);
       Level(key+".sl","STOP",sl,m_stop,side,volume,entry);
       Level(key+".tp","TAKE",tp,m_take,side,volume,entry);
      }
@@ -260,7 +261,9 @@ public:
          int side=PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_BUY ? 1 : -1;
          double volume=PositionGetDouble(POSITION_VOLUME);
          Levels(key,PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_BUY ? "COMPRA" : "VENDA",
-                PositionGetDouble(POSITION_PRICE_OPEN),PositionGetDouble(POSITION_SL),PositionGetDouble(POSITION_TP),m_entry,side,volume);
+                PositionGetDouble(POSITION_PRICE_OPEN),PositionGetDouble(POSITION_SL),PositionGetDouble(POSITION_TP),m_entry,side,volume,
+                // Floating gross P/L in deposit currency; excludes swap and commissions.
+                m_show_profit ? UniMarkerMoney(PositionGetDouble(POSITION_PROFIT),AccountInfoString(ACCOUNT_CURRENCY),false) : "");
          double activation=UniBreakevenMarkerPrice(side,PositionGetDouble(POSITION_PRICE_OPEN),
                                                   m_be_mode,m_be_trigger,SymbolInfoDouble(m_symbol,SYMBOL_POINT));
          if(!UniBreakevenProtected(side,PositionGetDouble(POSITION_PRICE_OPEN),m_be_mode,m_be_offset,
