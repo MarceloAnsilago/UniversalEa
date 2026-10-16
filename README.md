@@ -45,6 +45,13 @@ prévia com níveis próximos, sem enviar ordens.
 
 ## Configuração e ativação
 
+`InpStopMode=1` seleciona **Distância fixa**: usa somente `InpStopLoss`, sem
+somar nem consultar o candle. Zero desliga o SL nesse modo. A unidade vem de
+`InpTargetUnit`. `InpStopMode=0` mantém **Distância + candle**, padrão que
+preserva presets antigos. O take em vezes o stop usa a distância efetiva do SL
+após ajuste à grade do ativo e exige um stop habilitado. O GeraSet exporta o
+novo modo e os intervalos de distância; recompile e reexporte o `.set`.
+
 O card Alvos do GeraSet agora exporta os parâmetros de SL/TP e seus intervalos.
 `InpTakeMode=1` seleciona distância fixa (zero desliga o take), `0` seleciona
 vezes o stop e `-1` preserva a inferência de presets antigos: distância positiva

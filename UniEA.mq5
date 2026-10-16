@@ -46,7 +46,8 @@ input int InpPendingCandle=1; // Pendente: vela 1 = ultima fechada; 1 a 100000
 input group "Regras de entrada e saida"
 input ENUM_GUI_CANDLE_FILTER InpCandleFilter=GUI_CANDLE_DISABLED;   // Filtro: desativado, tamanho de candles ou pavios
 input ENUM_GUI_TARGET_UNIT InpTargetUnit=GUI_TARGET_POINTS;        // Unidade do stop loss e take profit
-input double InpStopLoss=0.0;                                      // Stop loss na unidade selecionada; 0 desativa
+input ENUM_UNI_STOP_MODE InpStopMode=UNI_STOP_DISTANCE_CANDLE; // Modo do stop loss
+input double InpStopLoss=0.0;                                      // Distancia do stop; no modo fixo, 0 desativa
 input ENUM_UNI_TAKE_MODE InpTakeMode=UNI_TAKE_AUTO; // Modo do take; automatico preserva presets antigos
 input double InpTakeProfit=0.0;                                    // Take profit na unidade selecionada; 0 desativa
 input double InpStopCandleMultiplier=1.0;                          // Stop: multiplicador do candle
@@ -181,8 +182,10 @@ void BuildInitialConfiguration(CGuiState &config)
    config.setup.close_enabled=false; config.setup.close_time=config.setup.entry_end;
    config.rules.order_mode=InpOrderMode; config.rules.candle_filter=InpCandleFilter;
    config.rules.target_unit=InpTargetUnit; config.rules.stop_loss=InpStopLoss; config.rules.take_profit=InpTakeProfit;
-   config.rules.stop_multiplier=InpStopCandleMultiplier; config.rules.stop_bar=InpStopCandle;
-   config.rules.stop_measure=InpStopBody ? 1 : 0; config.rules.take_multiplier=InpTakeStopMultiplier;
+   config.rules.stop_multiplier=UniResolveStopMultiplier(InpStopMode,InpStopCandleMultiplier);
+   config.rules.stop_bar=InpStopMode==UNI_STOP_FIXED ? 1 : InpStopCandle;
+   config.rules.stop_measure=InpStopMode==UNI_STOP_FIXED ? 0 : (InpStopBody ? 1 : 0);
+   config.rules.take_multiplier=InpTakeStopMultiplier;
    config.rules.pending_reference=InpPendingReference; config.rules.pending_bar=InpPendingCandle;
    // Presets antigos inferem o modo; novos presets declaram inclusive take fixo zero.
    config.rules.take_mode=UniResolveTakeMode(InpTakeMode,InpTakeProfit);

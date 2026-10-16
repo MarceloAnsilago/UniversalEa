@@ -22,6 +22,7 @@ void SetupCheck(const bool ok,const string label)
 void OnStart()
   {
    CGuiState initial; BuildInitialConfiguration(initial);
+   SetupCheck(initial.rules.stop_multiplier==UniResolveStopMultiplier(InpStopMode,InpStopCandleMultiplier),"Stop mode resolves before runtime configuration");
    SetupCheck(initial.setup.timeframe==PERIOD_CURRENT,"Current timeframe preserved");
    SetupCheck(initial.setup.magic==InpMagic && initial.setup.lot==InpLot,"Identity and volume reach configuration");
    SetupCheck(!InpAutoStart && !InpTesterAutoStart,"Entries disabled by default");

@@ -10,6 +10,17 @@ void OnStart()
    CGuiRulesState rules; MqlRates candle; ZeroMemory(candle);
    candle.time=D'2026.09.25 09:00'; candle.open=98; candle.close=102; candle.high=104; candle.low=96;
    string error; double sl,tp;
+   Check(UniResolveStopMultiplier(UNI_STOP_DISTANCE_CANDLE,1.5)==1.5,"Legacy stop preserves candle multiplier");
+   Check(UniResolveStopMultiplier(UNI_STOP_FIXED,10)==0,"Fixed stop ignores saved candle multiplier");
+   rules.stop_multiplier=UniResolveStopMultiplier(UNI_STOP_FIXED,10); rules.stop_loss=80;
+   MqlRates empty; ZeroMemory(empty);
+   Check(UniOrderTargets(rules,1,1.1,empty,0.00001,0.00001,5,sl,tp,error) && Near(sl,1.0992) && Near(tp,1.1016),"Fixed 80 point buy stop without candle, take uses effective stop");
+   Check(UniOrderTargets(rules,-1,1.1,empty,0.00001,0.00001,5,sl,tp,error) && Near(sl,1.1008) && Near(tp,1.0984),"Fixed 80 point sell stop without candle");
+   rules.target_unit=GUI_TARGET_PERCENT; rules.stop_loss=2;
+   Check(UniOrderTargets(rules,1,200,empty,0.01,0.01,2,sl,tp,error) && Near(sl,196),"Fixed percent stop uses entry");
+   rules.target_unit=GUI_TARGET_POINTS; rules.stop_loss=0; rules.take_mode=1;
+   Check(UniOrderTargets(rules,1,100,empty,1,0.5,2,sl,tp,error) && sl==0,"Fixed zero disables stop regardless of stored candle multiplier");
+   rules.take_mode=0;
    Check(UniResolveTakeMode(UNI_TAKE_AUTO,0)==0 && UniResolveTakeMode(UNI_TAKE_AUTO,100)==1,"Legacy inputs infer take mode");
    Check(UniResolveTakeMode(UNI_TAKE_FIXED,0)==1,"Explicit fixed zero preserves disabled take mode");
    Check(UniResolveTakeMode(UNI_TAKE_STOP,100)==0,"Explicit multiple ignores stored fixed distance");

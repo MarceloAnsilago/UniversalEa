@@ -13,6 +13,15 @@ enum ENUM_UNI_TAKE_MODE
 int UniResolveTakeMode(const ENUM_UNI_TAKE_MODE mode,const double distance)
   { return mode==UNI_TAKE_AUTO ? (distance>0 ? 1 : 0) : (int)mode; }
 
+enum ENUM_UNI_STOP_MODE
+  {
+   UNI_STOP_DISTANCE_CANDLE=0, // Distancia + candle
+   UNI_STOP_FIXED=1           // Distancia fixa; zero desativa
+  };
+
+double UniResolveStopMultiplier(const ENUM_UNI_STOP_MODE mode,const double multiplier)
+  { return mode==UNI_STOP_FIXED ? 0 : (mode==UNI_STOP_DISTANCE_CANDLE ? multiplier : -1); }
+
 enum ENUM_UNI_PENDING_REFERENCE
   {
    UNI_PENDING_HIGH=0,  // Maxima
