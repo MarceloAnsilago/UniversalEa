@@ -19,10 +19,25 @@ bool UniBreakevenProtected(const int side,const double entry,const int mode,cons
 
 struct UniPriceMarker
   {
-   string key,text;
+   string key,text,detail;
    double price;
    color background,foreground;
   };
+
+string UniMarkerMoney(const double profit,const string currency)
+  {
+   double value=NormalizeDouble(profit,2);
+   return "Est. "+(value>0 ? "+" : "")+DoubleToString(value==0 ? 0 : value,2)+" "+currency;
+  }
+
+string UniMarkerProfitEstimate(const string symbol,const int side,const double volume,const double entry,const double exit_price)
+  {
+   if((side!=1 && side!=-1) || volume<=0 || entry<=0 || exit_price<=0) return "";
+   double profit=0;
+   if(!OrderCalcProfit(side==1 ? ORDER_TYPE_BUY : ORDER_TYPE_SELL,symbol,volume,entry,exit_price,profit) || !MathIsValidNumber(profit))
+      return "Est. indisponivel";
+   return UniMarkerMoney(profit,AccountInfoString(ACCOUNT_CURRENCY));
+  }
 
 // Generic presentation only: callers own the meaning and lifetime of each level.
 // BeginFrame / Set / Render rebuilds a frame; Set also updates an existing key.
@@ -76,7 +91,7 @@ public:
    void Destroy() { ClearLines(); m_canvas.Destroy(); m_ready=false; m_signature=""; ArrayResize(m_levels,0); }
    void BeginFrame() { ArrayResize(m_levels,0); }
    int Count() { return ArraySize(m_levels); }
-   bool Set(const string key,const string text,const double price,const color background,const color foreground=clrWhite)
+   bool Set(const string key,const string text,const double price,const color background,const color foreground=clrWhite,const string detail="")
      {
       if(key=="" || !MathIsValidNumber(price) || price<=0) return false;
       int index=-1,n=ArraySize(m_levels);
@@ -84,6 +99,7 @@ public:
       if(index<0) { index=n; if(ArrayResize(m_levels,n+1)!=n+1) return false; }
       m_levels[index].key=key; m_levels[index].text=text; m_levels[index].price=price;
       m_levels[index].background=background; m_levels[index].foreground=foreground;
+      m_levels[index].detail=detail;
       return true;
      }
    bool Remove(const string key)
@@ -127,7 +143,9 @@ public:
       for(int i=1;i<n;i++)
          for(int j=i;j>0 && anchor[j]<anchor[j-1];j--)
            { int a=anchor[j]; anchor[j]=anchor[j-1]; anchor[j-1]=a; a=order[j]; order[j]=order[j-1]; order[j-1]=a; }
-      int badge=m_font+8,gap=badge+3,half=badge/2;
+      bool details=false;
+      for(int i=0;i<n;i++) if(m_levels[order[i]].detail!="") details=true;
+      int badge=m_font+8+(details ? m_font : 0),gap=badge+3,half=badge/2;
       // If the viewport cannot hold every badge, retain exact anchors and compact the spacing.
       if(n>1) gap=(int)MathMin(gap,(height-badge-4)/(n-1));
       for(int i=0;i<n;i++) center[i]=(int)MathMax(half+2,MathMax(anchor[i],i>0 ? center[i-1]+gap : 0));
@@ -140,7 +158,7 @@ public:
       for(int i=0;i<n;i++)
         {
          UniPriceMarker level=m_levels[order[i]];
-         signature+="|"+level.key+":"+level.text+":"+DoubleToString(level.price,m_digits)+":"+
+         signature+="|"+level.key+":"+level.text+":"+level.detail+":"+DoubleToString(level.price,m_digits)+":"+
                     IntegerToString(anchor[i])+":"+IntegerToString(center[i])+":"+
                     IntegerToString((long)level.background)+":"+IntegerToString((long)level.foreground);
         }
@@ -152,14 +170,23 @@ public:
          UniPriceMarker level=m_levels[order[i]];
          uint bg=ColorToARGB(level.background),fg=ColorToARGB(level.foreground);
          int cy=center[i],top=cy-half;
+         m_canvas.FontSet("Segoe UI",m_font);
          string price=DoubleToString(level.price,m_digits),label=level.text;
          int price_width=m_canvas.TextWidth(price);
          while(StringLen(label)>0 && m_canvas.TextWidth(label)>width-26-price_width)
             label=StringSubstr(label,0,StringLen(label)-1);
          m_canvas.FillRectangle(7,top,width-1,top+badge,bg);
          m_canvas.Line(0,anchor[i],7,cy,bg);
-         m_canvas.TextOut(13,cy-m_canvas.TextHeight(price)/2,label,fg);
-         m_canvas.TextOut(width-6-price_width,cy-m_canvas.TextHeight(price)/2,price,fg);
+         int text_y=details ? top+3 : cy-m_canvas.TextHeight(price)/2;
+         m_canvas.TextOut(13,text_y,label,fg);
+         m_canvas.TextOut(width-6-price_width,text_y,price,fg);
+         if(level.detail!="")
+           {
+            int size=(int)MathMax(9,m_font-1);
+            m_canvas.FontSet("Segoe UI",size);
+            while(size>8 && m_canvas.TextWidth(level.detail)>width-20) m_canvas.FontSet("Segoe UI",--size);
+            m_canvas.TextOut(width-6-m_canvas.TextWidth(level.detail),top+m_font+5,level.detail,fg);
+           }
         }
       m_canvas.Update(); m_signature=signature; return true;
      }
@@ -177,16 +204,23 @@ private:
    color m_breakeven;
    int m_be_mode;
    double m_be_trigger,m_be_offset;
+   bool m_show_profit;
    ulong m_updated;
    bool m_refreshed;
-   void Levels(const string key,const string entry_text,const double entry,const double sl,const double tp,const color entry_color)
+   void Level(const string key,const string text,const double price,const color ink,const int side,const double volume,const double entry)
      {
-      m_view.Set(key+".entry",entry_text,entry,entry_color,m_text);
-      m_view.Set(key+".sl","STOP",sl,m_stop,m_text);
-      m_view.Set(key+".tp","TAKE",tp,m_take,m_text);
+      if(price<=0) return;
+      m_view.Set(key,text,price,ink,m_text,m_show_profit ? UniMarkerProfitEstimate(m_symbol,side,volume,entry,price) : "");
+     }
+   void Levels(const string key,const string entry_text,const double entry,const double sl,const double tp,const color entry_color,const int side,const double volume)
+     {
+      Level(key+".entry",entry_text,entry,entry_color,side,volume,entry);
+      Level(key+".sl","STOP",sl,m_stop,side,volume,entry);
+      Level(key+".tp","TAKE",tp,m_take,side,volume,entry);
      }
 public:
-   CUniTradeMarkers() { m_enabled=false; m_refreshed=false; m_updated=0; m_be_mode=0; m_be_trigger=0; m_be_offset=0; m_breakeven=clrDarkOrchid; }
+   CUniTradeMarkers() { m_enabled=false; m_refreshed=false; m_updated=0; m_be_mode=0; m_be_trigger=0; m_be_offset=0; m_breakeven=clrDarkOrchid; m_show_profit=true; }
+   void ShowProfit(const bool enabled) { m_show_profit=enabled; m_refreshed=false; }
    void ConfigureBreakeven(const int mode,const double trigger,const color ink,const double offset=0)
      { m_be_mode=mode; m_be_trigger=trigger; m_be_offset=offset; m_breakeven=ink; m_refreshed=false; }
    void Configure(const long chart,const string symbol,const long magic,const bool enabled,
@@ -208,22 +242,25 @@ public:
          ulong ticket=PositionGetTicket(i);
          if(ticket==0 || PositionGetString(POSITION_SYMBOL)!=m_symbol || PositionGetInteger(POSITION_MAGIC)!=m_magic) continue;
          string key="P"+IntegerToString((long)ticket);
-         Levels(key,PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_BUY ? "COMPRA" : "VENDA",
-                PositionGetDouble(POSITION_PRICE_OPEN),PositionGetDouble(POSITION_SL),PositionGetDouble(POSITION_TP),m_entry);
          int side=PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_BUY ? 1 : -1;
+         double volume=PositionGetDouble(POSITION_VOLUME);
+         Levels(key,PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_BUY ? "COMPRA" : "VENDA",
+                PositionGetDouble(POSITION_PRICE_OPEN),PositionGetDouble(POSITION_SL),PositionGetDouble(POSITION_TP),m_entry,side,volume);
          double activation=UniBreakevenMarkerPrice(side,PositionGetDouble(POSITION_PRICE_OPEN),
                                                   m_be_mode,m_be_trigger,SymbolInfoDouble(m_symbol,SYMBOL_POINT));
          if(!UniBreakevenProtected(side,PositionGetDouble(POSITION_PRICE_OPEN),m_be_mode,m_be_offset,
                                   PositionGetDouble(POSITION_SL),SymbolInfoDouble(m_symbol,SYMBOL_POINT),
                                   SymbolInfoDouble(m_symbol,SYMBOL_TRADE_TICK_SIZE),(int)SymbolInfoInteger(m_symbol,SYMBOL_DIGITS)))
-            m_view.Set(key+".be","BE ATIVAR",activation,m_breakeven,m_text);
+            Level(key+".be","BE ATIVAR",activation,m_breakeven,side,volume,PositionGetDouble(POSITION_PRICE_OPEN));
         }
       for(int i=0;i<OrdersTotal();i++)
         {
          ulong ticket=OrderGetTicket(i);
          if(ticket==0 || OrderGetString(ORDER_SYMBOL)!=m_symbol || OrderGetInteger(ORDER_MAGIC)!=m_magic) continue;
+         ENUM_ORDER_TYPE type=(ENUM_ORDER_TYPE)OrderGetInteger(ORDER_TYPE);
+         int side=(type==ORDER_TYPE_BUY_LIMIT || type==ORDER_TYPE_BUY_STOP || type==ORDER_TYPE_BUY_STOP_LIMIT || type==ORDER_TYPE_BUY) ? 1 : -1;
          Levels("O"+IntegerToString((long)ticket),"PENDENTE",OrderGetDouble(ORDER_PRICE_OPEN),
-                OrderGetDouble(ORDER_SL),OrderGetDouble(ORDER_TP),m_pending);
+                OrderGetDouble(ORDER_SL),OrderGetDouble(ORDER_TP),m_pending,side,OrderGetDouble(ORDER_VOLUME_CURRENT));
         }
       m_view.Render();
      }

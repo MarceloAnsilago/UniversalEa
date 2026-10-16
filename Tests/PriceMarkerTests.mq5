@@ -6,6 +6,17 @@ void Check(const bool ok,const string text)
 void OnStart()
   {
    CUniPriceMarkers markers;
+   Check(UniMarkerMoney(12.5,"USD")=="Est. +12.50 USD" && UniMarkerMoney(-8,"BRL")=="Est. -8.00 BRL","Profit estimates show sign and account currency");
+   Check(UniMarkerMoney(-0.001,"USD")=="Est. 0.00 USD","Avoid negative zero after rounding");
+   Check(UniMarkerProfitEstimate(_Symbol,1,0,1.1,1.2)=="" && UniMarkerProfitEstimate(_Symbol,0,1,1.1,1.2)=="","Reject incomplete estimate inputs");
+   Check(UniMarkerProfitEstimate("__missing_symbol__",1,1,1.1,1.2)=="Est. indisponivel","Failed valuation never displays misleading zero");
+   double estimated=0;
+   if(OrderCalcProfit(ORDER_TYPE_BUY,_Symbol,0.01,1.1,1.1008,estimated))
+     {
+      Check(UniMarkerProfitEstimate(_Symbol,1,0.01,1.1,1.1008)==UniMarkerMoney(estimated,AccountInfoString(ACCOUNT_CURRENCY)),"Buy estimate uses broker calculation");
+      Check(UniMarkerProfitEstimate(_Symbol,-1,0.01,1.1,1.1008)==UniMarkerMoney(-estimated,AccountInfoString(ACCOUNT_CURRENCY)),"Sell estimate has opposite sign");
+     }
+   else Check(UniMarkerProfitEstimate(_Symbol,1,0.01,1.1,1.1008)=="Est. indisponivel","Unavailable account conversion is explicit");
    Check(!UniBreakevenProtected(1,100,1,2,99,1,0.5,2) && !UniBreakevenProtected(1,100,1,2,0,1,0.5,2),"Keep BE until stop protection is confirmed");
    Check(!UniBreakevenProtected(1,100,1,2,100,1,0.5,2) && UniBreakevenProtected(1,100,1,2,102,1,0.5,2),"Buy protection includes configured offset");
    Check(UniBreakevenProtected(-1,100,1,2,98,1,0.5,2) && !UniBreakevenProtected(-1,100,1,2,99,1,0.5,2),"Sell protection checks opposite direction");
@@ -24,8 +35,8 @@ void OnStart()
    Check(!markers.Set("bad","Invalid",0,clrRed) && markers.Count()==0,"Reject zero price");
    Check(markers.Set("entry","COMPRA",middle,clrRoyalBlue),"Add entry");
    Check(markers.Set("entry","COMPRA",middle+range*0.02,clrRoyalBlue) && markers.Count()==1,"Update key without duplicate");
-   markers.Set("stop","STOP",middle-range*0.2,clrCrimson);
-   markers.Set("take","TAKE",middle+range*0.2,clrSeaGreen);
+   markers.Set("stop","STOP",middle-range*0.2,clrCrimson,clrWhite,"Est. -8.00 USD");
+   markers.Set("take","TAKE",middle+range*0.2,clrSeaGreen,clrWhite,"Est. +16.00 USD");
    markers.Set("trailing","TRAILING",middle-range*0.195,clrDarkOrchid);
    markers.Set("grid","GRID 1",middle+range*0.205,clrDarkOrange);
    Check(markers.Count()==5 && markers.Render(),"Render reusable marker types and nearby levels");
