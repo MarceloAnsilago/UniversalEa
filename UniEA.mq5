@@ -162,6 +162,7 @@ sinput color InpMarkerEntryColor=C'37,99,235'; // Cor da entrada
 sinput color InpMarkerStopColor=C'220,55,65'; // Cor do stop atual
 sinput color InpMarkerTakeColor=C'0,145,110'; // Cor do take profit
 sinput color InpMarkerPendingColor=C'180,110,10'; // Cor da entrada pendente
+sinput color InpMarkerBreakevenColor=C'147,51,234'; // Cor do nivel de ativacao do breakeven
 sinput color InpMarkerTextColor=clrWhite; // Cor do texto das etiquetas
 sinput int InpMarkerFontSize=13; // Tamanho da fonte: 10 a 20
 
@@ -263,6 +264,7 @@ int OnInit()
      {
       price_markers.Configure(ChartID(),_Symbol,InpMagic,InpShowPriceMarkers,InpMarkerEntryColor,
                               InpMarkerStopColor,InpMarkerTakeColor,InpMarkerPendingColor,InpMarkerTextColor,InpMarkerFontSize);
+      price_markers.ConfigureBreakeven(initial.management.mode[0],initial.management.values[0],InpMarkerBreakevenColor);
       price_markers.Refresh(true);
      }
    Print("UniEA: ",status,". Configuracao pelos inputs.");

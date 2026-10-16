@@ -6,6 +6,12 @@ Expert Advisor MQL5 com configuração pelos inputs, motor de indicadores, execu
 
 ### Etiquetas de preço
 
+Quando o breakeven está habilitado, **BE ATIVAR** marca seu nível de ativação
+para cada posição aberta do setup. Usa a entrada efetiva, o lado da operação
+e a distância em pontos ou percentual configurada; permanece como referência
+até o fechamento. A cor é ajustável em `InpMarkerBreakevenColor`. A etiqueta
+STOP continua indicando o SL efetivo após a proteção ser aplicada.
+
 O grupo **Marcadores de preco** dos inputs permite ativar as etiquetas e
 alterar cores de entrada, stop, take, pendente e texto, além da fonte.
 Um Canvas transparente mostra nome e preço à direita do gráfico principal.

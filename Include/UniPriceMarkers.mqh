@@ -2,6 +2,12 @@
 #define UNI_PRICE_MARKERS_MQH
 #include <Canvas/Canvas.mqh>
 
+double UniBreakevenMarkerPrice(const int side,const double entry,const int mode,const double trigger,const double point)
+  {
+   if((side!=1 && side!=-1) || entry<=0 || trigger<=0 || point<=0 || (mode!=1 && mode!=2)) return 0;
+   return entry+side*trigger*(mode==2 ? entry/100.0 : point);
+  }
+
 struct UniPriceMarker
   {
    string key,text;
@@ -130,6 +136,9 @@ private:
    long m_magic;
    bool m_enabled;
    color m_entry,m_stop,m_take,m_pending,m_text;
+   color m_breakeven;
+   int m_be_mode;
+   double m_be_trigger;
    ulong m_updated;
    bool m_refreshed;
    void Levels(const string key,const string entry_text,const double entry,const double sl,const double tp,const color entry_color)
@@ -139,7 +148,9 @@ private:
       m_view.Set(key+".tp","TAKE",tp,m_take,m_text);
      }
 public:
-   CUniTradeMarkers() { m_enabled=false; m_refreshed=false; m_updated=0; }
+   CUniTradeMarkers() { m_enabled=false; m_refreshed=false; m_updated=0; m_be_mode=0; m_be_trigger=0; m_breakeven=clrDarkOrchid; }
+   void ConfigureBreakeven(const int mode,const double trigger,const color ink)
+     { m_be_mode=mode; m_be_trigger=trigger; m_breakeven=ink; m_refreshed=false; }
    void Configure(const long chart,const string symbol,const long magic,const bool enabled,
                   const color entry,const color stop,const color take,const color pending,const color text,const int font)
      {
@@ -161,6 +172,10 @@ public:
          string key="P"+IntegerToString((long)ticket);
          Levels(key,PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_BUY ? "COMPRA" : "VENDA",
                 PositionGetDouble(POSITION_PRICE_OPEN),PositionGetDouble(POSITION_SL),PositionGetDouble(POSITION_TP),m_entry);
+         int side=PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_BUY ? 1 : -1;
+         double activation=UniBreakevenMarkerPrice(side,PositionGetDouble(POSITION_PRICE_OPEN),
+                                                  m_be_mode,m_be_trigger,SymbolInfoDouble(m_symbol,SYMBOL_POINT));
+         m_view.Set(key+".be","BE ATIVAR",activation,m_breakeven,m_text);
         }
       for(int i=0;i<OrdersTotal();i++)
         {

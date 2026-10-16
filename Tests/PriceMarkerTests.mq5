@@ -6,6 +6,11 @@ void Check(const bool ok,const string text)
 void OnStart()
   {
    CUniPriceMarkers markers;
+   Check(MathAbs(UniBreakevenMarkerPrice(1,1.1,1,40,0.00001)-1.1004)<1e-9,"Buy BE trigger in points");
+   Check(MathAbs(UniBreakevenMarkerPrice(-1,1.1,1,40,0.00001)-1.0996)<1e-9,"Sell BE trigger in points");
+   Check(MathAbs(UniBreakevenMarkerPrice(1,200,2,2,0.01)-204)<1e-9 &&
+         MathAbs(UniBreakevenMarkerPrice(-1,200,2,2,0.01)-196)<1e-9,"BE percent uses opening price for both sides");
+   Check(UniBreakevenMarkerPrice(1,100,0,40,0.01)==0 && UniBreakevenMarkerPrice(1,100,1,0,0.01)==0,"Disabled BE has no marker");
    markers.Configure(ChartID(),(int)SymbolInfoInteger(_Symbol,SYMBOL_DIGITS));
    int before=ObjectsTotal(ChartID());
    double low=ChartGetDouble(ChartID(),CHART_PRICE_MIN,0),high=ChartGetDouble(ChartID(),CHART_PRICE_MAX,0);
