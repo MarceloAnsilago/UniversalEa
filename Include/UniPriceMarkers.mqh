@@ -69,7 +69,8 @@ private:
             m_line_count=(int)MathMax(m_line_count,i+1);
             ObjectSetInteger(m_chart,name,OBJPROP_SELECTABLE,false);
             ObjectSetInteger(m_chart,name,OBJPROP_HIDDEN,true);
-            ObjectSetInteger(m_chart,name,OBJPROP_BACK,false);
+            // Price lines stay below opaque Canvas badges, even when created after them.
+            ObjectSetInteger(m_chart,name,OBJPROP_BACK,true);
             ObjectSetInteger(m_chart,name,OBJPROP_STYLE,STYLE_SOLID);
             ObjectSetInteger(m_chart,name,OBJPROP_WIDTH,2);
             ObjectSetString(m_chart,name,OBJPROP_TOOLTIP,"\n");
