@@ -97,12 +97,12 @@ public:
      {
       int chart_width=(int)ChartGetInteger(m_chart,CHART_WIDTH_IN_PIXELS,0);
       int height=(int)ChartGetInteger(m_chart,CHART_HEIGHT_IN_PIXELS,0);
-      int width=(int)MathMin(254,chart_width-410);
+      int width=(int)MathMin(176,chart_width-410);
       if(width<150 || height<60 || Count()==0)
         { ClearLines(); if(m_ready) { m_canvas.Destroy(); m_ready=false; m_signature=""; } return true; }
       if(!SyncLines()) return false;
-      // Keep clear of the native price scale and the left setup panel.
-      int x=chart_width-width-66;
+      // Compact badges end at the native price scale; no trailing arrow/gap.
+      int x=chart_width-width-54;
       if(!m_ready || m_width!=width || m_height!=height)
         {
          m_canvas.Destroy(); m_ready=false;
@@ -127,7 +127,7 @@ public:
       for(int i=1;i<n;i++)
          for(int j=i;j>0 && anchor[j]<anchor[j-1];j--)
            { int a=anchor[j]; anchor[j]=anchor[j-1]; anchor[j-1]=a; a=order[j]; order[j]=order[j-1]; order[j-1]=a; }
-      int badge=m_font+14,gap=badge+4,half=badge/2;
+      int badge=m_font+8,gap=badge+3,half=badge/2;
       // If the viewport cannot hold every badge, retain exact anchors and compact the spacing.
       if(n>1) gap=(int)MathMin(gap,(height-badge-4)/(n-1));
       for(int i=0;i<n;i++) center[i]=(int)MathMax(half+2,MathMax(anchor[i],i>0 ? center[i-1]+gap : 0));
@@ -154,14 +154,12 @@ public:
          int cy=center[i],top=cy-half;
          string price=DoubleToString(level.price,m_digits),label=level.text;
          int price_width=m_canvas.TextWidth(price);
-         while(StringLen(label)>0 && m_canvas.TextWidth(label)>width-52-price_width)
+         while(StringLen(label)>0 && m_canvas.TextWidth(label)>width-26-price_width)
             label=StringSubstr(label,0,StringLen(label)-1);
-         m_canvas.FillRectangle(2,top,width-23,top+badge,bg);
-         m_canvas.FillTriangle(width-23,cy-5,width-17,cy,width-23,cy+5,bg);
-         m_canvas.Line(width-17,cy,width-7,anchor[i],bg);
-         m_canvas.LineHorizontal(width-7,width-1,anchor[i],bg);
-         m_canvas.TextOut(10,cy-m_canvas.TextHeight(price)/2,label,fg);
-         m_canvas.TextOut(width-31-price_width,cy-m_canvas.TextHeight(price)/2,price,fg);
+         m_canvas.FillRectangle(7,top,width-1,top+badge,bg);
+         m_canvas.Line(0,anchor[i],7,cy,bg);
+         m_canvas.TextOut(13,cy-m_canvas.TextHeight(price)/2,label,fg);
+         m_canvas.TextOut(width-6-price_width,cy-m_canvas.TextHeight(price)/2,price,fg);
         }
       m_canvas.Update(); m_signature=signature; return true;
      }

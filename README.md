@@ -6,6 +6,10 @@ Expert Advisor MQL5 com configuração pelos inputs, motor de indicadores, execu
 
 ### Etiquetas de preço
 
+As tarjas usam largura compacta de 176 pixels e altura reduzida, junto à
+escala de preços à direita. Conectores de níveis próximos ficam à esquerda
+da tarja, liberando espaço para os candles.
+
 Cada tarja tem uma linha horizontal contínua de 2 pixels no preço exato,
 usando a mesma cor de fundo da etiqueta. A linha acompanha alterações de preço
 e cor e é removida junto com seu marcador. As linhas pontilhadas nativas do
