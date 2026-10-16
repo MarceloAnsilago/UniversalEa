@@ -117,13 +117,16 @@ public:
       if(width<150 || height<60 || Count()==0)
         { ClearLines(); if(m_ready) { m_canvas.Destroy(); m_ready=false; m_signature=""; } return true; }
       if(!SyncLines()) return false;
-      // Compact badges end at the native price scale; no trailing arrow/gap.
-      int x=chart_width-width-54;
+      // Anchor to the chart's right edge instead of reserving a guessed scale width.
+      int x=0;
       if(!m_ready || m_width!=width || m_height!=height)
         {
          m_canvas.Destroy(); m_ready=false;
          if(!m_canvas.CreateBitmapLabel(m_chart,0,m_name,x,0,width,height,COLOR_FORMAT_ARGB_NORMALIZE)) return false;
          m_width=width; m_height=height; m_signature=""; m_ready=true;
+         ObjectSetInteger(m_chart,m_name,OBJPROP_CORNER,CORNER_RIGHT_UPPER);
+         ObjectSetInteger(m_chart,m_name,OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);
+         ObjectSetInteger(m_chart,m_name,OBJPROP_XDISTANCE,0);
          ObjectSetInteger(m_chart,m_name,OBJPROP_SELECTABLE,false);
          ObjectSetInteger(m_chart,m_name,OBJPROP_HIDDEN,true);
          ObjectSetInteger(m_chart,m_name,OBJPROP_BACK,false);
@@ -143,9 +146,7 @@ public:
       for(int i=1;i<n;i++)
          for(int j=i;j>0 && anchor[j]<anchor[j-1];j--)
            { int a=anchor[j]; anchor[j]=anchor[j-1]; anchor[j-1]=a; a=order[j]; order[j]=order[j-1]; order[j-1]=a; }
-      bool details=false;
-      for(int i=0;i<n;i++) if(m_levels[order[i]].detail!="") details=true;
-      int badge=m_font+8+(details ? m_font : 0),gap=badge+3,half=badge/2;
+      int badge=m_font+8,gap=badge+3,half=badge/2;
       // If the viewport cannot hold every badge, retain exact anchors and compact the spacing.
       if(n>1) gap=(int)MathMin(gap,(height-badge-4)/(n-1));
       for(int i=0;i<n;i++) center[i]=(int)MathMax(half+2,MathMax(anchor[i],i>0 ? center[i-1]+gap : 0));
@@ -171,22 +172,20 @@ public:
          uint bg=ColorToARGB(level.background),fg=ColorToARGB(level.foreground);
          int cy=center[i],top=cy-half;
          m_canvas.FontSet("Segoe UI",m_font);
-         string price=DoubleToString(level.price,m_digits),label=level.text;
-         int price_width=m_canvas.TextWidth(price);
-         while(StringLen(label)>0 && m_canvas.TextWidth(label)>width-26-price_width)
+         string label=level.text,profit=level.detail;
+         // The exact price is already shown by the horizontal line on the native scale.
+         if(StringFind(profit,"Est. ")==0) profit=StringSubstr(profit,5);
+         int size=m_font;
+         while(size>8 && m_canvas.TextWidth(label+"  "+profit)>width-26)
+            m_canvas.FontSet("Segoe UI",--size);
+         int profit_width=m_canvas.TextWidth(profit);
+         while(StringLen(label)>0 && m_canvas.TextWidth(label)>width-26-profit_width)
             label=StringSubstr(label,0,StringLen(label)-1);
          m_canvas.FillRectangle(7,top,width-1,top+badge,bg);
          m_canvas.Line(0,anchor[i],7,cy,bg);
-         int text_y=details ? top+3 : cy-m_canvas.TextHeight(price)/2;
+         int text_y=cy-m_canvas.TextHeight(label)/2;
          m_canvas.TextOut(13,text_y,label,fg);
-         m_canvas.TextOut(width-6-price_width,text_y,price,fg);
-         if(level.detail!="")
-           {
-            int size=(int)MathMax(9,m_font-1);
-            m_canvas.FontSet("Segoe UI",size);
-            while(size>8 && m_canvas.TextWidth(level.detail)>width-20) m_canvas.FontSet("Segoe UI",--size);
-            m_canvas.TextOut(width-6-m_canvas.TextWidth(level.detail),top+m_font+5,level.detail,fg);
-           }
+         if(profit!="") m_canvas.TextOut(width-6-profit_width,text_y,profit,fg);
         }
       m_canvas.Update(); m_signature=signature; return true;
      }

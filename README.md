@@ -6,17 +6,19 @@ Expert Advisor MQL5 com configuração pelos inputs, motor de indicadores, execu
 
 ### Etiquetas de preço
 
-`InpMarkerShowProfit` acrescenta uma segunda linha compacta com lucro/prejuízo
+`InpMarkerShowProfit` mostra ao lado do nome o lucro/prejuízo
 bruto estimado na moeda da conta, calculado por `OrderCalcProfit` com entrada,
 lado e volume atual da posição ou volume restante da pendente. Cada estimativa
 representa o resultado caso a saída ocorra no preço da tarja; na entrada é zero,
 e no BE ATIVAR representa o resultado no gatilho, não no novo stop protegido.
 Comissões, swap e diferenças de execução não entram na estimativa. Se a
-conversão não estiver disponível, aparece **Est. indisponivel**, sem assumir zero.
-Desative o input para voltar às tarjas de uma linha.
+conversão não estiver disponível, aparece **indisponivel**, sem assumir zero.
+Desative o input para ocultar o resultado estimado.
 
-As tarjas usam largura compacta de 176 pixels e altura reduzida, junto à
-escala de preços à direita. Conectores de níveis próximos ficam à esquerda
+As tarjas usam largura compacta de 176 pixels e uma única linha, ancoradas
+na borda direita do gráfico junto à escala, sem margem fixa. O preço aparece
+somente na escala lateral; a tarja mostra nome e resultado estimado.
+Conectores de níveis próximos ficam à esquerda
 da tarja, liberando espaço para os candles.
 
 Cada tarja tem uma linha horizontal contínua de 2 pixels no preço exato,
