@@ -6,6 +6,7 @@
 #include "Include/UniPanel.mqh"
 #include "Include/UniRuntime.mqh"
 #include "Include/Configuration/UniInputOptions.mqh"
+#include "Include/UniPriceMarkers.mqh"
 
 
 // Modos de gestao da configuracao.
@@ -155,7 +156,17 @@ input string InpSignal3=""; // Condicao 3: configurada na grade do GeraSet
 input string InpSignal4=""; // Condicao 4: configurada na grade do GeraSet
 input string InpSignal5=""; // Condicao 5: configurada na grade do GeraSet
 
+input group "Marcadores de preco"
+sinput bool InpShowPriceMarkers=true; // Mostrar etiquetas de entrada, stop e take
+sinput color InpMarkerEntryColor=C'37,99,235'; // Cor da entrada
+sinput color InpMarkerStopColor=C'220,55,65'; // Cor do stop atual
+sinput color InpMarkerTakeColor=C'0,145,110'; // Cor do take profit
+sinput color InpMarkerPendingColor=C'180,110,10'; // Cor da entrada pendente
+sinput color InpMarkerTextColor=clrWhite; // Cor do texto das etiquetas
+sinput int InpMarkerFontSize=13; // Tamanho da fonte: 10 a 20
+
 CUniPanel panel;
+CUniTradeMarkers price_markers;
 CUniRuntime runtime;
 
 
@@ -248,11 +259,17 @@ int OnInit()
    if(!tester && !EventSetTimer(1))
      { Print("Falha ao iniciar timer: ",GetLastError()); panel.Destroy(); runtime.Shutdown(); return INIT_FAILED; }
    panel.Refresh(runtime.Active(),runtime.HasConfiguration());
+   if(!tester || MQLInfoInteger(MQL_VISUAL_MODE))
+     {
+      price_markers.Configure(ChartID(),_Symbol,InpMagic,InpShowPriceMarkers,InpMarkerEntryColor,
+                              InpMarkerStopColor,InpMarkerTakeColor,InpMarkerPendingColor,InpMarkerTextColor,InpMarkerFontSize);
+      price_markers.Refresh(true);
+     }
    Print("UniEA: ",status,". Configuracao pelos inputs.");
    return INIT_SUCCEEDED;
   }
 void OnDeinit(const int reason)
-  { EventKillTimer(); runtime.Shutdown(); panel.Destroy(); }
+  { EventKillTimer(); price_markers.Destroy(); runtime.Shutdown(); panel.Destroy(); }
 
 void ReportExecutionError(const string error)
   {
@@ -262,7 +279,7 @@ void ReportExecutionError(const string error)
    if(error!="") Print("Execucao: ",error);
   }
 void OnTimer()
-  { string error; runtime.Service(error); ReportExecutionError(error); panel.Refresh(runtime.Active(),runtime.HasConfiguration(),error); }
+  { string error; runtime.Service(error); ReportExecutionError(error); panel.Refresh(runtime.Active(),runtime.HasConfiguration(),error); price_markers.Refresh(); }
 
 void OnTick()
   {
@@ -270,9 +287,16 @@ void OnTick()
    int signal=runtime.Process(error);
    ReportExecutionError(error);
    panel.Refresh(runtime.Active(),runtime.HasConfiguration(),error);
+   price_markers.Refresh();
    if(signal==1) Print("Sinal de compra / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
    if(signal==-1) Print("Sinal de venda / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
   }
 
 void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
-  { panel.OnChartEvent(id,lparam,dparam,sparam); }
+  {
+   panel.OnChartEvent(id,lparam,dparam,sparam);
+   if(id==CHARTEVENT_CHART_CHANGE) price_markers.Refresh(true);
+  }
+
+void OnTradeTransaction(const MqlTradeTransaction &transaction,const MqlTradeRequest &request,const MqlTradeResult &result)
+  { price_markers.Refresh(true); }

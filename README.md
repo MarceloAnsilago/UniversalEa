@@ -4,6 +4,30 @@ Expert Advisor MQL5 com configuração pelos inputs, motor de indicadores, execu
 
 ## Painel Canvas
 
+### Etiquetas de preço
+
+O grupo **Marcadores de preco** dos inputs permite ativar as etiquetas e
+alterar cores de entrada, stop, take, pendente e texto, além da fonte.
+Um Canvas transparente mostra nome e preço à direita do gráfico principal.
+Níveis próximos têm etiquetas separadas com conectores para o preço exato.
+Níveis fora da escala ficam ocultos; gráficos muito estreitos ocultam as
+etiquetas para preservar o espaço do painel. As linhas nativas do MT5 continuam.
+
+`CUniTradeMarkers` acompanha posições e ordens do símbolo/Magic do EA.
+STOP representa o SL atual, incluindo ajustes de breakeven, trailing e stop
+móvel; não é uma projeção de um ajuste futuro. Sem SL/TP, a respectiva etiqueta
+não aparece. Encerramento, cancelamento e remoção do EA limpam seus marcadores.
+Testes sem visualização não criam Canvas.
+
+`Include/UniPriceMarkers.mqh` contém o componente genérico `CUniPriceMarkers`,
+independente da execução de ordens. Para futuros níveis de grid, trailing ou
+outros módulos, use uma instância própria com `Configure`, `BeginFrame`,
+`Set(chave, texto, preço, corFundo, corTexto)` e `Render`. A mesma chave atualiza
+o nível; `Remove` apaga uma chave, e `Destroy` libera apenas o Canvas da instância.
+O componente reutiliza um único Canvas e evita redesenhar quadros idênticos.
+`Tests/PriceMarkerTests.mq5` valida atualização, remoção, limpeza e gera uma
+prévia com níveis próximos, sem enviar ordens.
+
 `Include/UniPanel.mqh` desenha um resumo em Canvas com cartões claros, bordas suaves, identificação do indicador, selo Ativo/Inativo e parâmetros dos quatro slots. Anterior/Próximo permitem percorrer os cartões; a altura acompanha o gráfico. O selo identifica indicadores configurados; o estado das entradas aparece no cabeçalho. A configuração continua pelos inputs. Ao remover o EA, o objeto e o recurso do Canvas são liberados.
 
 ## Configuração e ativação
