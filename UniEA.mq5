@@ -46,11 +46,12 @@ input group "Regras de entrada e saida"
 input ENUM_GUI_CANDLE_FILTER InpCandleFilter=GUI_CANDLE_DISABLED;   // Filtro: desativado, tamanho de candles ou pavios
 input ENUM_GUI_TARGET_UNIT InpTargetUnit=GUI_TARGET_POINTS;        // Unidade do stop loss e take profit
 input double InpStopLoss=0.0;                                      // Stop loss na unidade selecionada; 0 desativa
+input ENUM_UNI_TAKE_MODE InpTakeMode=UNI_TAKE_AUTO; // Modo do take; automatico preserva presets antigos
 input double InpTakeProfit=0.0;                                    // Take profit na unidade selecionada; 0 desativa
 input double InpStopCandleMultiplier=1.0;                          // Stop: multiplicador do candle
 input int InpStopCandle=1;                                        // Stop: candle fechado 1 a 3
 input bool InpStopBody=false;                                     // Stop: usar corpo em vez de total
-input double InpTakeStopMultiplier=2.0;                           // Take: vezes o stop quando InpTakeProfit = 0
+input double InpTakeStopMultiplier=2.0;                           // Take: multiplicador usado no modo vezes o stop
 
 // Valores de gestao usam a unidade do respectivo modo.
 // Percentuais da gestão usam o preço de abertura da posição.
@@ -171,8 +172,8 @@ void BuildInitialConfiguration(CGuiState &config)
    config.rules.stop_multiplier=InpStopCandleMultiplier; config.rules.stop_bar=InpStopCandle;
    config.rules.stop_measure=InpStopBody ? 1 : 0; config.rules.take_multiplier=InpTakeStopMultiplier;
    config.rules.pending_reference=InpPendingReference; config.rules.pending_bar=InpPendingCandle;
-   // Distancia de take fornecida nos inputs seleciona o modo fixo.
-   if(InpTakeProfit>0) config.rules.take_mode=1;
+   // Presets antigos inferem o modo; novos presets declaram inclusive take fixo zero.
+   config.rules.take_mode=UniResolveTakeMode(InpTakeMode,InpTakeProfit);
    config.management.Choose(0,(int)InpBreakevenMode);
    config.management.Choose(1,(int)InpTrailingMode);
    config.management.Choose(2,(int)InpMovingStopMode);

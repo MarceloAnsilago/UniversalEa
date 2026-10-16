@@ -3,6 +3,16 @@
 
 // Opcoes de apresentacao em portugues. Os valores numericos correspondem
 // aos enums nativos; converter explicitamente ao carregar a configuracao.
+enum ENUM_UNI_TAKE_MODE
+  {
+   UNI_TAKE_AUTO=-1, // Automatico (presets antigos)
+   UNI_TAKE_STOP=0,  // Vezes o stop
+   UNI_TAKE_FIXED=1  // Distancia fixa; zero desativa
+  };
+
+int UniResolveTakeMode(const ENUM_UNI_TAKE_MODE mode,const double distance)
+  { return mode==UNI_TAKE_AUTO ? (distance>0 ? 1 : 0) : (int)mode; }
+
 enum ENUM_UNI_PENDING_REFERENCE
   {
    UNI_PENDING_HIGH=0,  // Maxima

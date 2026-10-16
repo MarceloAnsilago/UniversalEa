@@ -8,6 +8,13 @@ Expert Advisor MQL5 com configuração pelos inputs, motor de indicadores, execu
 
 ## Configuração e ativação
 
+O card Alvos do GeraSet agora exporta os parâmetros de SL/TP e seus intervalos.
+`InpTakeMode=1` seleciona distância fixa (zero desliga o take), `0` seleciona
+vezes o stop e `-1` preserva a inferência de presets antigos: distância positiva
+seleciona fixo, zero seleciona múltiplo. Recompile e reexporte o `.set`.
+Pontos são multiplicados pelo `SYMBOL_POINT`; percentuais usam o preço solicitado
+da entrada. O TP é arredondado para fora na grade de ticks do ativo.
+
 - Ajuste os parâmetros nas propriedades do EA. Com pelo menos um indicador selecionado, os inputs são validados e aplicados ao motor na inicialização.
 - `InpAutoStart=false` é o padrão fora do testador: entradas pausadas, gestão das posições do símbolo/Magic configurado habilitada. Defina `true` para habilitar novas entradas.
 - No testador, a ativação é controlada exclusivamente por `InpTesterAutoStart`; `InpAutoStart` não interfere nos testes.

@@ -1,5 +1,6 @@
 #property strict
 #include "../Include/UniOrderMath.mqh"
+#include "../Include/Configuration/UniInputOptions.mqh"
 int checks=0,failures=0;
 void Check(const bool ok,const string label)
   { checks++; if(!ok) { failures++; Print("FAIL: ",label); } }
@@ -9,6 +10,9 @@ void OnStart()
    CGuiRulesState rules; MqlRates candle; ZeroMemory(candle);
    candle.time=D'2026.09.25 09:00'; candle.open=98; candle.close=102; candle.high=104; candle.low=96;
    string error; double sl,tp;
+   Check(UniResolveTakeMode(UNI_TAKE_AUTO,0)==0 && UniResolveTakeMode(UNI_TAKE_AUTO,100)==1,"Legacy inputs infer take mode");
+   Check(UniResolveTakeMode(UNI_TAKE_FIXED,0)==1,"Explicit fixed zero preserves disabled take mode");
+   Check(UniResolveTakeMode(UNI_TAKE_STOP,100)==0,"Explicit multiple ignores stored fixed distance");
    rules.stop_loss=2; rules.stop_multiplier=1; rules.take_multiplier=2;
    Check(UniOrderTargets(rules,1,100,candle,1,0.5,2,sl,tp,error) && Near(sl,90) && Near(tp,120),"Buy: fixed plus candle stop, take multiple");
    Check(UniOrderTargets(rules,-1,100,candle,1,0.5,2,sl,tp,error) && Near(sl,110) && Near(tp,80),"Sell: symmetric targets");
@@ -16,8 +20,16 @@ void OnStart()
    Check(UniOrderTargets(rules,1,100,candle,1,0.5,2,sl,tp,error) && Near(sl,94) && Near(tp,112),"Body stop");
    rules.take_mode=1; rules.take_profit=3;
    Check(UniOrderTargets(rules,1,100,candle,1,0.5,2,sl,tp,error) && Near(tp,103),"Fixed take excludes multiple");
+   Check(UniOrderTargets(rules,-1,100,candle,1,0.5,2,sl,tp,error) && Near(tp,97),"Sell fixed take excludes multiple");
+   rules.take_profit=0;
+   Check(UniOrderTargets(rules,1,100,candle,1,0.5,2,sl,tp,error) && tp==0,"Fixed zero disables take despite positive multiple");
+   rules.take_profit=15; rules.stop_multiplier=0; rules.stop_loss=0;
+   Check(UniOrderTargets(rules,1,100,candle,0.01,0.05,2,sl,tp,error) && sl==0 && Near(tp,100.15),"Fixed points use symbol point without requiring stop");
+   rules.take_profit=12;
+   Check(UniOrderTargets(rules,-1,100,candle,0.01,0.05,2,sl,tp,error) && Near(tp,99.85),"Fixed sell rounds outward to tick grid");
    rules.target_unit=GUI_TARGET_PERCENT; rules.stop_multiplier=0; rules.stop_loss=1; rules.take_profit=2;
    Check(UniOrderTargets(rules,1,200,candle,0.01,0.01,2,sl,tp,error) && Near(sl,198) && Near(tp,204),"Percent uses entry");
+   Check(UniOrderTargets(rules,-1,200,candle,0.01,0.01,2,sl,tp,error) && Near(sl,202) && Near(tp,196),"Sell fixed percent uses entry");
    rules.stop_loss=0; rules.take_profit=0;
    Check(UniOrderTargets(rules,1,100,candle,1,0.5,2,sl,tp,error) && sl==0 && tp==0,"Disabled targets");
    rules.take_mode=0; rules.take_multiplier=2;
