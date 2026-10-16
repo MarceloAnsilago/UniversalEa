@@ -13,8 +13,10 @@ MT5 permanecem, com a linha colorida desenhada por cima.
 
 Quando o breakeven está habilitado, **BE ATIVAR** marca seu nível de ativação
 para cada posição aberta do setup. Usa a entrada efetiva, o lado da operação
-e a distância em pontos ou percentual configurada; permanece como referência
-até o fechamento. A cor é ajustável em `InpMarkerBreakevenColor`. A etiqueta
+e a distância em pontos ou percentual configurada. A etiqueta e sua linha somem
+quando o SL confirmado atinge a proteção configurada do breakeven ou a supera,
+inclusive por trailing. Tocar o gatilho sem conseguir ajustar o stop mantém o
+marcador visível. A cor é ajustável em `InpMarkerBreakevenColor`. A etiqueta
 STOP continua indicando o SL efetivo após a proteção ser aplicada.
 
 O grupo **Marcadores de preco** dos inputs permite ativar as etiquetas e

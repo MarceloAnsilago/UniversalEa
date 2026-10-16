@@ -1,11 +1,20 @@
 #ifndef UNI_PRICE_MARKERS_MQH
 #define UNI_PRICE_MARKERS_MQH
 #include <Canvas/Canvas.mqh>
+#include "UniOrderMath.mqh"
 
 double UniBreakevenMarkerPrice(const int side,const double entry,const int mode,const double trigger,const double point)
   {
    if((side!=1 && side!=-1) || entry<=0 || trigger<=0 || point<=0 || (mode!=1 && mode!=2)) return 0;
    return entry+side*trigger*(mode==2 ? entry/100.0 : point);
+  }
+
+bool UniBreakevenProtected(const int side,const double entry,const int mode,const double offset,
+                          const double sl,const double point,const double tick,const int digits)
+  {
+   if((side!=1 && side!=-1) || entry<=0 || sl<=0 || point<=0 || tick<=0 || (mode!=1 && mode!=2)) return false;
+   double target=UniPriceGrid(entry+side*UniDistance(offset,mode==2,entry,point),tick,digits,-side);
+   return target>0 && side*(sl-target)>=-tick*1e-8;
   }
 
 struct UniPriceMarker
@@ -169,7 +178,7 @@ private:
    color m_entry,m_stop,m_take,m_pending,m_text;
    color m_breakeven;
    int m_be_mode;
-   double m_be_trigger;
+   double m_be_trigger,m_be_offset;
    ulong m_updated;
    bool m_refreshed;
    void Levels(const string key,const string entry_text,const double entry,const double sl,const double tp,const color entry_color)
@@ -179,9 +188,9 @@ private:
       m_view.Set(key+".tp","TAKE",tp,m_take,m_text);
      }
 public:
-   CUniTradeMarkers() { m_enabled=false; m_refreshed=false; m_updated=0; m_be_mode=0; m_be_trigger=0; m_breakeven=clrDarkOrchid; }
-   void ConfigureBreakeven(const int mode,const double trigger,const color ink)
-     { m_be_mode=mode; m_be_trigger=trigger; m_breakeven=ink; m_refreshed=false; }
+   CUniTradeMarkers() { m_enabled=false; m_refreshed=false; m_updated=0; m_be_mode=0; m_be_trigger=0; m_be_offset=0; m_breakeven=clrDarkOrchid; }
+   void ConfigureBreakeven(const int mode,const double trigger,const color ink,const double offset=0)
+     { m_be_mode=mode; m_be_trigger=trigger; m_be_offset=offset; m_breakeven=ink; m_refreshed=false; }
    void Configure(const long chart,const string symbol,const long magic,const bool enabled,
                   const color entry,const color stop,const color take,const color pending,const color text,const int font)
      {
@@ -206,7 +215,10 @@ public:
          int side=PositionGetInteger(POSITION_TYPE)==POSITION_TYPE_BUY ? 1 : -1;
          double activation=UniBreakevenMarkerPrice(side,PositionGetDouble(POSITION_PRICE_OPEN),
                                                   m_be_mode,m_be_trigger,SymbolInfoDouble(m_symbol,SYMBOL_POINT));
-         m_view.Set(key+".be","BE ATIVAR",activation,m_breakeven,m_text);
+         if(!UniBreakevenProtected(side,PositionGetDouble(POSITION_PRICE_OPEN),m_be_mode,m_be_offset,
+                                  PositionGetDouble(POSITION_SL),SymbolInfoDouble(m_symbol,SYMBOL_POINT),
+                                  SymbolInfoDouble(m_symbol,SYMBOL_TRADE_TICK_SIZE),(int)SymbolInfoInteger(m_symbol,SYMBOL_DIGITS)))
+            m_view.Set(key+".be","BE ATIVAR",activation,m_breakeven,m_text);
         }
       for(int i=0;i<OrdersTotal();i++)
         {

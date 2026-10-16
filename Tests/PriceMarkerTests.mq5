@@ -6,6 +6,12 @@ void Check(const bool ok,const string text)
 void OnStart()
   {
    CUniPriceMarkers markers;
+   Check(!UniBreakevenProtected(1,100,1,2,99,1,0.5,2) && !UniBreakevenProtected(1,100,1,2,0,1,0.5,2),"Keep BE until stop protection is confirmed");
+   Check(!UniBreakevenProtected(1,100,1,2,100,1,0.5,2) && UniBreakevenProtected(1,100,1,2,102,1,0.5,2),"Buy protection includes configured offset");
+   Check(UniBreakevenProtected(-1,100,1,2,98,1,0.5,2) && !UniBreakevenProtected(-1,100,1,2,99,1,0.5,2),"Sell protection checks opposite direction");
+   Check(UniBreakevenProtected(1,200,2,1,202,0.01,0.01,2) && UniBreakevenProtected(-1,200,2,1,198,0.01,0.01,2),"Percent protection uses opening price");
+   Check(UniBreakevenProtected(1,100,1,0.2,100,1,0.5,2) && UniBreakevenProtected(-1,100,1,0.2,100,1,0.5,2),"Protection follows trading tick rounding");
+   Check(UniBreakevenProtected(1,100,1,2,105,1,0.5,2),"More protective trailing also hides BE");
    Check(MathAbs(UniBreakevenMarkerPrice(1,1.1,1,40,0.00001)-1.1004)<1e-9,"Buy BE trigger in points");
    Check(MathAbs(UniBreakevenMarkerPrice(-1,1.1,1,40,0.00001)-1.0996)<1e-9,"Sell BE trigger in points");
    Check(MathAbs(UniBreakevenMarkerPrice(1,200,2,2,0.01)-204)<1e-9 &&

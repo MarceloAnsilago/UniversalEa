@@ -264,7 +264,7 @@ int OnInit()
      {
       price_markers.Configure(ChartID(),_Symbol,InpMagic,InpShowPriceMarkers,InpMarkerEntryColor,
                               InpMarkerStopColor,InpMarkerTakeColor,InpMarkerPendingColor,InpMarkerTextColor,InpMarkerFontSize);
-      price_markers.ConfigureBreakeven(initial.management.mode[0],initial.management.values[0],InpMarkerBreakevenColor);
+      price_markers.ConfigureBreakeven(initial.management.mode[0],initial.management.values[0],InpMarkerBreakevenColor,initial.management.values[1]);
       price_markers.Refresh(true);
      }
    Print("UniEA: ",status,". Configuracao pelos inputs.");
