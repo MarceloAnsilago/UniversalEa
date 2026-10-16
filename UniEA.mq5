@@ -166,6 +166,8 @@ sinput color InpMarkerTakeColor=C'0,145,110'; // Cor do take profit
 sinput color InpMarkerPendingColor=C'180,110,10'; // Cor da entrada pendente
 sinput color InpMarkerBreakevenColor=C'147,51,234'; // Cor do nivel de ativacao do breakeven
 sinput color InpMarkerTextColor=clrWhite; // Cor do texto das etiquetas
+sinput color InpMarkerProfitColor=C'0,145,110'; // Cor do bloco de lucro estimado
+sinput color InpMarkerLossColor=C'220,55,65'; // Cor do bloco de prejuizo estimado
 sinput int InpMarkerFontSize=13; // Tamanho da fonte: 10 a 20
 
 CUniPanel panel;
@@ -270,6 +272,7 @@ int OnInit()
                               InpMarkerStopColor,InpMarkerTakeColor,InpMarkerPendingColor,InpMarkerTextColor,InpMarkerFontSize);
       price_markers.ConfigureBreakeven(initial.management.mode[0],initial.management.values[0],InpMarkerBreakevenColor,initial.management.values[1]);
       price_markers.ShowProfit(InpMarkerShowProfit);
+      price_markers.ResultColors(InpMarkerProfitColor,InpMarkerLossColor);
       price_markers.Refresh(true);
      }
    Print("UniEA: ",status,". Configuracao pelos inputs.");

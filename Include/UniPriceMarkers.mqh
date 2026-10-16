@@ -51,6 +51,7 @@ private:
    int m_width,m_height,m_x,m_digits,m_font;
    bool m_ready;
    int m_line_count;
+   color m_profit_color,m_loss_color;
    string LineName(const int index) { return m_name+".L"+IntegerToString(index); }
    void ClearLines(const int keep=0)
      {
@@ -81,7 +82,7 @@ private:
       ClearLines(Count()); return true;
      }
 public:
-   CUniPriceMarkers() { m_chart=0; m_ready=false; m_width=0; m_height=0; m_x=0; m_digits=5; m_font=13; m_line_count=0; }
+   CUniPriceMarkers() { m_chart=0; m_ready=false; m_width=0; m_height=0; m_x=0; m_digits=5; m_font=13; m_line_count=0; m_profit_color=C'0,145,110'; m_loss_color=C'220,55,65'; }
    ~CUniPriceMarkers() { Destroy(); }
    void Configure(const long chart,const int digits,const int font=13)
      {
@@ -90,6 +91,8 @@ public:
      }
    void Destroy() { ClearLines(); m_canvas.Destroy(); m_ready=false; m_signature=""; ArrayResize(m_levels,0); }
    void BeginFrame() { ArrayResize(m_levels,0); }
+   void ResultColors(const color profit,const color loss)
+     { m_profit_color=profit; m_loss_color=loss; m_signature=""; }
    int Count() { return ArraySize(m_levels); }
    bool Set(const string key,const string text,const double price,const color background,const color foreground=clrWhite,const string detail="")
      {
@@ -146,7 +149,7 @@ public:
       for(int i=1;i<n;i++)
          for(int j=i;j>0 && anchor[j]<anchor[j-1];j--)
            { int a=anchor[j]; anchor[j]=anchor[j-1]; anchor[j-1]=a; a=order[j]; order[j]=order[j-1]; order[j-1]=a; }
-      int badge=m_font+8,gap=badge+3,half=badge/2;
+      int badge=m_font+5,gap=badge+3,half=badge/2;
       // If the viewport cannot hold every badge, retain exact anchors and compact the spacing.
       if(n>1) gap=(int)MathMin(gap,(height-badge-4)/(n-1));
       for(int i=0;i<n;i++) center[i]=(int)MathMax(half+2,MathMax(anchor[i],i>0 ? center[i-1]+gap : 0));
@@ -181,7 +184,18 @@ public:
          int profit_width=m_canvas.TextWidth(profit);
          while(StringLen(label)>0 && m_canvas.TextWidth(label)>width-26-profit_width)
             label=StringSubstr(label,0,StringLen(label)-1);
-         m_canvas.FillRectangle(7,top,width-1,top+badge,bg);
+         // Slim terminal-style strip: level accent, dark operation block, signed result block.
+         m_canvas.FillRectangle(7,top,width-1,top+badge,0xFF334155);
+         m_canvas.FillRectangle(8,top+1,width-2,top+badge-1,0xFF17212F);
+         m_canvas.FillRectangle(7,top,10,top+badge,bg);
+         if(profit!="")
+           {
+            uint result_bg=StringFind(profit,"+")==0 ? ColorToARGB(m_profit_color) :
+                           (StringFind(profit,"-")==0 ? ColorToARGB(m_loss_color) : 0xFF475569);
+            int result_x=width-profit_width-12;
+            m_canvas.FillRectangle(result_x,top+1,width-2,top+badge-1,result_bg);
+            m_canvas.LineVertical(result_x,top+1,top+badge-1,0xFF64748B);
+           }
          m_canvas.Line(0,anchor[i],7,cy,bg);
          int text_y=cy-m_canvas.TextHeight(label)/2;
          m_canvas.TextOut(13,text_y,label,fg);
@@ -220,6 +234,7 @@ private:
 public:
    CUniTradeMarkers() { m_enabled=false; m_refreshed=false; m_updated=0; m_be_mode=0; m_be_trigger=0; m_be_offset=0; m_breakeven=clrDarkOrchid; m_show_profit=true; }
    void ShowProfit(const bool enabled) { m_show_profit=enabled; m_refreshed=false; }
+   void ResultColors(const color profit,const color loss) { m_view.ResultColors(profit,loss); }
    void ConfigureBreakeven(const int mode,const double trigger,const color ink,const double offset=0)
      { m_be_mode=mode; m_be_trigger=trigger; m_be_offset=offset; m_breakeven=ink; m_refreshed=false; }
    void Configure(const long chart,const string symbol,const long magic,const bool enabled,

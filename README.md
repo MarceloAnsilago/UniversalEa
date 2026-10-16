@@ -6,6 +6,12 @@ Expert Advisor MQL5 com configuração pelos inputs, motor de indicadores, execu
 
 ### Etiquetas de preço
 
+O estilo usa uma faixa fina com borda discreta: a cor do nível aparece no
+acento esquerdo, o nome fica em um bloco escuro e o resultado em um bloco
+separado, verde para lucro, vermelho para prejuízo e cinza para zero ou valor
+indisponível. `InpMarkerProfitColor` e `InpMarkerLossColor` ajustam essas cores.
+O preço continua somente na escala lateral, com as tarjas ancoradas à direita.
+
 `InpMarkerShowProfit` mostra ao lado do nome o lucro/prejuízo
 bruto estimado na moeda da conta, calculado por `OrderCalcProfit` com entrada,
 lado e volume atual da posição ou volume restante da pendente. Cada estimativa
@@ -22,7 +28,7 @@ Conectores de níveis próximos ficam à esquerda
 da tarja, liberando espaço para os candles.
 
 Cada tarja tem uma linha horizontal contínua de 2 pixels no preço exato,
-usando a mesma cor de fundo da etiqueta. A linha acompanha alterações de preço
+usando a mesma cor do acento da etiqueta. A linha acompanha alterações de preço
 e cor e é removida junto com seu marcador. As linhas pontilhadas nativas do
 MT5 permanecem, com a linha colorida desenhada por cima.
 
