@@ -23,16 +23,27 @@ void OnStart()
    markers.Set("trailing","TRAILING",middle-range*0.195,clrDarkOrchid);
    markers.Set("grid","GRID 1",middle+range*0.205,clrDarkOrange);
    Check(markers.Count()==5 && markers.Render(),"Render reusable marker types and nearby levels");
-   Check(ObjectsTotal(ChartID())==before+1,"One Canvas for all markers");
-   Check(markers.Render() && ObjectsTotal(ChartID())==before+1,"Unchanged render reuses Canvas");
+   Check(ObjectsTotal(ChartID())==before+6,"One Canvas and one line per marker");
+   Check(markers.Render() && ObjectsTotal(ChartID())==before+6,"Unchanged render reuses Canvas and lines");
+   int lines=0;
+   for(int i=0;i<ObjectsTotal(ChartID());i++)
+     {
+      string name=ObjectName(ChartID(),i);
+      if(StringFind(name,"UniEA.PriceMarkers.")!=0 || (ENUM_OBJECT)ObjectGetInteger(ChartID(),name,OBJPROP_TYPE)!=OBJ_HLINE) continue;
+      lines++;
+      Check(ObjectGetInteger(ChartID(),name,OBJPROP_STYLE)==STYLE_SOLID && ObjectGetInteger(ChartID(),name,OBJPROP_WIDTH)==2,
+            "Solid colored overlay line");
+     }
+   Check(lines==5,"All five marker levels have horizontal lines");
    ChartRedraw(); Sleep(300);
    Check(ChartScreenShot(ChartID(),"price-markers-preview.png",(int)ChartGetInteger(ChartID(),CHART_WIDTH_IN_PIXELS),
                          (int)ChartGetInteger(ChartID(),CHART_HEIGHT_IN_PIXELS),ALIGN_RIGHT),"Save visual preview");
    Check(markers.Remove("grid") && !markers.Remove("missing") && markers.Count()==4,"Remove by key");
+   Check(markers.Render() && ObjectsTotal(ChartID())==before+5,"Removed marker also removes its line");
    markers.BeginFrame();
    Check(markers.Count()==0 && markers.Render() && ObjectsTotal(ChartID())==before,"Empty frame removes Canvas");
    markers.Set("again","TAKE",middle,clrSeaGreen);
-   Check(markers.Render() && ObjectsTotal(ChartID())==before+1,"Recreate after empty frame");
+   Check(markers.Render() && ObjectsTotal(ChartID())==before+2,"Recreate after empty frame");
    markers.Destroy(); markers.Destroy();
    Check(ObjectsTotal(ChartID())==before,"Destroy is repeatable and removes only owned object");
    PrintFormat("[PriceMarkerTests] %d checks, %d failures",checks,failures);

@@ -26,15 +26,45 @@ private:
    string m_name,m_signature;
    int m_width,m_height,m_x,m_digits,m_font;
    bool m_ready;
+   int m_line_count;
+   string LineName(const int index) { return m_name+".L"+IntegerToString(index); }
+   void ClearLines(const int keep=0)
+     {
+      for(int i=keep;i<m_line_count;i++) ObjectDelete(m_chart,LineName(i));
+      m_line_count=keep;
+     }
+   bool SyncLines()
+     {
+      for(int i=0;i<Count();i++)
+        {
+         string name=LineName(i);
+         if(ObjectFind(m_chart,name)<0)
+           {
+            if(!ObjectCreate(m_chart,name,OBJ_HLINE,0,0,m_levels[i].price)) return false;
+            m_line_count=(int)MathMax(m_line_count,i+1);
+            ObjectSetInteger(m_chart,name,OBJPROP_SELECTABLE,false);
+            ObjectSetInteger(m_chart,name,OBJPROP_HIDDEN,true);
+            ObjectSetInteger(m_chart,name,OBJPROP_BACK,false);
+            ObjectSetInteger(m_chart,name,OBJPROP_STYLE,STYLE_SOLID);
+            ObjectSetInteger(m_chart,name,OBJPROP_WIDTH,2);
+            ObjectSetString(m_chart,name,OBJPROP_TOOLTIP,"\n");
+           }
+         if(ObjectGetDouble(m_chart,name,OBJPROP_PRICE)!=m_levels[i].price)
+            ObjectSetDouble(m_chart,name,OBJPROP_PRICE,m_levels[i].price);
+         if((color)ObjectGetInteger(m_chart,name,OBJPROP_COLOR)!=m_levels[i].background)
+            ObjectSetInteger(m_chart,name,OBJPROP_COLOR,m_levels[i].background);
+        }
+      ClearLines(Count()); return true;
+     }
 public:
-   CUniPriceMarkers() { m_chart=0; m_ready=false; m_width=0; m_height=0; m_x=0; m_digits=5; m_font=13; }
+   CUniPriceMarkers() { m_chart=0; m_ready=false; m_width=0; m_height=0; m_x=0; m_digits=5; m_font=13; m_line_count=0; }
    ~CUniPriceMarkers() { Destroy(); }
    void Configure(const long chart,const int digits,const int font=13)
      {
       Destroy(); m_chart=chart; m_digits=digits; m_font=(int)MathMax(10,MathMin(20,font));
       m_name="UniEA.PriceMarkers."+IntegerToString(chart)+"."+IntegerToString((long)GetMicrosecondCount());
      }
-   void Destroy() { m_canvas.Destroy(); m_ready=false; m_signature=""; ArrayResize(m_levels,0); }
+   void Destroy() { ClearLines(); m_canvas.Destroy(); m_ready=false; m_signature=""; ArrayResize(m_levels,0); }
    void BeginFrame() { ArrayResize(m_levels,0); }
    int Count() { return ArraySize(m_levels); }
    bool Set(const string key,const string text,const double price,const color background,const color foreground=clrWhite)
@@ -60,7 +90,8 @@ public:
       int height=(int)ChartGetInteger(m_chart,CHART_HEIGHT_IN_PIXELS,0);
       int width=(int)MathMin(254,chart_width-410);
       if(width<150 || height<60 || Count()==0)
-        { if(m_ready) { m_canvas.Destroy(); m_ready=false; m_signature=""; } return true; }
+        { ClearLines(); if(m_ready) { m_canvas.Destroy(); m_ready=false; m_signature=""; } return true; }
+      if(!SyncLines()) return false;
       // Keep clear of the native price scale and the left setup panel.
       int x=chart_width-width-66;
       if(!m_ready || m_width!=width || m_height!=height)

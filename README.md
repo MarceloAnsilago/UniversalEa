@@ -6,6 +6,11 @@ Expert Advisor MQL5 com configuração pelos inputs, motor de indicadores, execu
 
 ### Etiquetas de preço
 
+Cada tarja tem uma linha horizontal contínua de 2 pixels no preço exato,
+usando a mesma cor de fundo da etiqueta. A linha acompanha alterações de preço
+e cor e é removida junto com seu marcador. As linhas pontilhadas nativas do
+MT5 permanecem, com a linha colorida desenhada por cima.
+
 Quando o breakeven está habilitado, **BE ATIVAR** marca seu nível de ativação
 para cada posição aberta do setup. Usa a entrada efetiva, o lado da operação
 e a distância em pontos ou percentual configurada; permanece como referência
