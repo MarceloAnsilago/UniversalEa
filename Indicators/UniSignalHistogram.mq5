@@ -12,6 +12,8 @@ input int HistoryBars=300;
 input string SnapshotFile="";
 double values[],colors[];
 long revision=-1;
+ulong last_read=0;
+bool read_started=false;
 int OnInit()
   {
    SetIndexBuffer(0,values,INDICATOR_DATA); SetIndexBuffer(1,colors,INDICATOR_COLOR_INDEX);
@@ -20,12 +22,18 @@ int OnInit()
    PlotIndexSetString(0,PLOT_LABEL,"Compra / Venda / Neutro");
    PlotIndexSetDouble(0,PLOT_EMPTY_VALUE,EMPTY_VALUE);
    IndicatorSetInteger(INDICATOR_HEIGHT,65);
-   EventSetTimer(1); return INIT_SUCCEEDED;
+   // Tester timers fire for every simulated second, even between sparse ticks.
+   // OnCalculate handles visual tester updates without generating timer events.
+   if(!MQLInfoInteger(MQL_TESTER)) EventSetTimer(1);
+   return INIT_SUCCEEDED;
   }
 void OnDeinit(const int reason) { EventKillTimer(); }
 bool ReadSnapshot()
   {
    if(ArraySize(values)==0 || SnapshotFile=="") return false;
+   ulong real_now=GetTickCount64();
+   if(read_started && real_now-last_read<250) return false;
+   read_started=true; last_read=real_now;
    int file=FileOpen(SnapshotFile,FILE_BIN|FILE_READ|FILE_SHARE_READ|FILE_SHARE_WRITE);
    if(file==INVALID_HANDLE) return false;
    long next=FileReadLong(file);
@@ -44,7 +52,7 @@ bool ReadSnapshot()
 void OnTimer() { if(ReadSnapshot()) ChartRedraw(); }
 int OnCalculate(const int total,const int calculated,const datetime &time[],const double &open[],const double &high[],const double &low[],const double &close[],const long &tv[],const long &vol[],const int &spread[])
   {
-   if(calculated==0) { ArrayInitialize(values,EMPTY_VALUE); revision=-1; }
+   if(calculated==0) { ArrayInitialize(values,EMPTY_VALUE); revision=-1; read_started=false; }
    else if(total>calculated) for(int i=0;i<MathMin(total-calculated,total);i++) values[i]=EMPTY_VALUE;
    ReadSnapshot();
    for(int i=HistoryBars;i<MathMin(total,HistoryBars+MathMax(1,total-calculated));i++) values[i]=EMPTY_VALUE;

@@ -2,20 +2,28 @@
 #define UNI_SIGNAL_HISTOGRAM_MQH
 #include "UniSignals.mqh"
 // EA-owned bounded binary snapshots: shared with the display, never with order logic.
+struct UniHistogramSample
+  {
+   datetime time;
+   int states[4];
+  };
 class CUniSignalHistogram
   {
 private:
    long m_chart;
    int m_handles[4],m_last[4],m_files[4],m_bars,m_cursor;
    long m_revision;
+   UniHistogramSample m_samples[];
+   bool m_dirty[4],m_published;
+   ulong m_publish_time,m_history_retry;
    int m_history_attempts;
-   datetime m_retry,m_started;
+   datetime m_started;
    string m_paths[4];
    string m_names[4];
    datetime m_time;
    bool m_initial;
 public:
-   CUniSignalHistogram() { m_chart=0; m_history_attempts=0; m_retry=0; m_started=0; m_cursor=0; m_revision=0; m_time=0; m_initial=true; m_bars=300; for(int i=0;i<4;i++) { m_handles[i]=INVALID_HANDLE; m_files[i]=INVALID_HANDLE; m_paths[i]=""; m_names[i]=""; m_last[i]=99; } }
+   CUniSignalHistogram() { m_chart=0; m_published=false; m_publish_time=0; m_history_retry=0; m_history_attempts=0; m_started=0; m_cursor=0; m_revision=0; m_time=0; m_initial=true; m_bars=300; for(int i=0;i<4;i++) { m_dirty[i]=false; m_handles[i]=INVALID_HANDLE; m_files[i]=INVALID_HANDLE; m_paths[i]=""; m_names[i]=""; m_last[i]=99; } }
    ~CUniSignalHistogram() { Clear(); }
    void Clear()
      {
@@ -30,13 +38,18 @@ public:
          m_files[i]=INVALID_HANDLE; m_paths[i]="";
          m_handles[i]=INVALID_HANDLE; m_names[i]=""; m_last[i]=99;
         }
-      m_time=0; m_initial=true; m_cursor=0; m_revision=0; m_history_attempts=0; m_retry=0; m_started=0;
+      ArrayFree(m_samples); m_published=false; m_publish_time=0; m_history_retry=0;
+      for(int i=0;i<4;i++) m_dirty[i]=false;
+      m_time=0; m_initial=true; m_cursor=0; m_revision=0; m_history_attempts=0; m_started=0;
      }
    bool Attach(const long chart,GuiAppliedConfiguration &config,const bool enabled,const int bars,string &error,const string plot_path="::Indicators\\UniSignalHistogram.ex5")
      {
       Clear(); m_chart=chart; m_bars=bars; error="";
       if(!enabled || (MQLInfoInteger(MQL_TESTER) && !MQLInfoInteger(MQL_VISUAL_MODE))) return true;
       if(bars<1 || bars>5000) { error="Histogramas: use entre 1 e 5000 candles."; return false; }
+      ArrayResize(m_samples,bars);
+      for(int b=0;b<bars;b++)
+        { m_samples[b].time=0; for(int i=0;i<4;i++) m_samples[b].states[i]=2; }
       ENUM_TIMEFRAMES period=config.setup.timeframe==PERIOD_CURRENT ? (ENUM_TIMEFRAMES)_Period : config.setup.timeframe;
       if(ChartPeriod(chart)!=period) { error="Histogramas: use o periodo da estrategia no grafico."; return false; }
       for(int i=0;i<4;i++)
@@ -59,11 +72,11 @@ public:
       bool any=false; for(int i=0;i<4;i++) if(m_handles[i]!=INVALID_HANDLE) any=true;
       if(!any) return;
       datetime now=iTime(symbol,period,0); if(now==0) return;
-      bool history=m_initial || (m_history_attempts<3 && TimeCurrent()>m_retry);
+      ulong real_now=GetTickCount64();
+      bool history=m_initial || (m_history_attempts<3 && real_now-m_history_retry>=1000);
       if(m_initial) m_started=now;
-      if(history) { m_history_attempts++; m_retry=TimeCurrent(); }
+      if(history) { m_history_attempts++; m_history_retry=real_now; }
       if(!m_initial && now!=m_time) m_cursor=(m_cursor+m_bars-1)%m_bars;
-      m_revision++;
       for(int slot=0;slot<4;slot++)
         {
          if(m_handles[slot]==INVALID_HANDLE) continue;
@@ -74,18 +87,29 @@ public:
               {
                datetime time=iTime(symbol,period,b); if(time>=m_started) continue;
                int state=signals.VisualState(engine,slot,b,SymbolInfoDouble(symbol,SYMBOL_POINT));
-               FileSeek(m_files[slot],8+((m_cursor+b)%m_bars)*12,SEEK_SET);
-               FileWriteLong(m_files[slot],(long)time); FileWriteInteger(m_files[slot],state);
+               int index=(m_cursor+b)%m_bars;
+               m_samples[index].time=time; m_samples[index].states[slot]=state;
               }
          if(history || current!=m_last[slot] || now!=m_time)
            {
-            FileSeek(m_files[slot],8+m_cursor*12,SEEK_SET);
-            FileWriteLong(m_files[slot],(long)now); FileWriteInteger(m_files[slot],current);
-            FileSeek(m_files[slot],0,SEEK_SET); FileWriteLong(m_files[slot],m_revision); FileFlush(m_files[slot]);
-            m_last[slot]=current;
+            m_samples[m_cursor].time=now; m_samples[m_cursor].states[slot]=current;
+            m_dirty[slot]=true; m_last[slot]=current;
            }
         }
       m_time=now; m_initial=false;
+      // Capture every tick above; publish only four times per REAL second.
+      // Throttling capture instead would lose candles in accelerated tests.
+      if(m_published && real_now-m_publish_time<250) return;
+      m_published=true; m_publish_time=real_now; m_revision++;
+      for(int slot=0;slot<4;slot++)
+        {
+         if(m_files[slot]==INVALID_HANDLE || !m_dirty[slot]) continue;
+         FileSeek(m_files[slot],8,SEEK_SET);
+         for(int b=0;b<m_bars;b++)
+           { FileWriteLong(m_files[slot],(long)m_samples[b].time); FileWriteInteger(m_files[slot],m_samples[b].states[slot]); }
+         FileSeek(m_files[slot],0,SEEK_SET); FileWriteLong(m_files[slot],m_revision);
+         FileFlush(m_files[slot]); m_dirty[slot]=false;
+        }
      }
   };
 #endif

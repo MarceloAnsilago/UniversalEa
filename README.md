@@ -215,3 +215,14 @@ A mesma seção do GeraSet possui **Exibir painel do UNI**, exportado como
 do painel; a execução da estratégia, os histogramas e as etiquetas de preço
 continuam controlados pelas respectivas configurações. As duas checkboxes ficam
 salvas na aba Configurações; a escolha anterior do histograma é migrada.
+
+
+Desempenho do histograma no tester: o indicador não registra timer em testes,
+para evitar eventos a cada segundo simulado. A captura de estados continua a cada
+tick em um buffer circular limitado a `InpHistogramasBarras`; publicações em
+arquivo e leituras visuais são limitadas a intervalos de 250 ms de tempo real.
+Isso preserva os candles capturados mesmo quando a simulação avança várias
+barras entre duas atualizações visuais. As tentativas iniciais de histórico também
+usam tempo real. O timer permanece apenas fora do tester, para atualização entre
+cotações. O teste HistogramPanelTests verifica a limitação de publicações com
+5.000 mudanças de estado consecutivas.
