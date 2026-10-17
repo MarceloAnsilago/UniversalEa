@@ -46,7 +46,7 @@ class CUniSignals
   {
 private:
    UniSignalRule m_rules[5];
-   bool m_last[4],m_previous[5];
+   bool m_last[4],m_previous[5],m_visual_ready,m_result[5],m_history;
    double m_a[5],m_b[5],m_levels[12];
    bool Constant(const int source) { return source==9 || (source>=22 && source<=33); }
    datetime m_bar[4];
@@ -74,7 +74,7 @@ protected:
      {
       if(source==9) { value=fixed_value; return true; }
       if(source>=22 && source<=33) { value=m_levels[source-22]; return true; }
-      if(source>=10) return engine.GetIndicatorValue((source-10)/3,(source-10)%3,bar,value);
+      if(source>=10) return m_history ? engine.GetIndicatorHistoryValue((source-10)/3,(source-10)%3,bar,value) : engine.GetIndicatorValue((source-10)/3,(source-10)%3,bar,value);
       MqlRates rates[];
       if(CopyRates(m_symbol,m_period,bar,1,rates)!=1) return false;
       if(source==0) value=rates[0].close;
@@ -103,8 +103,32 @@ protected:
         }
       return value!=EMPTY_VALUE && MathIsValidNumber(value);
      }
+   bool RuleValue(MyUnEA *engine,UniSignalRule &r,const int index,const int offset,const double point,
+                  bool &result,double &a,double &b,string &error)
+     {
+      double pa=0,pb=0;
+      bool tick=(!Constant(r.source) && r.bar==0) || (!Constant(r.reference) && r.reference_bar==0);
+      if(!Read(engine,r.source,r.bar+(Constant(r.source) ? 0 : offset),r.fixed_value,a) ||
+         !Read(engine,r.reference,r.reference_bar+(Constant(r.reference) ? 0 : offset),r.fixed_value,b))
+        { error="Aguardando dados da condicao."; return false; }
+      bool previous=false;
+      if(tick) { previous=m_previous[index]; pa=m_a[index]; pb=m_b[index]; }
+      else if(r.comparison>=7)
+        {
+         previous=Read(engine,r.source,r.bar+offset+1,r.fixed_value,pa) && Read(engine,r.reference,r.reference_bar+offset+1,r.fixed_value,pb);
+         if(!previous) { error="Aguardando candle anterior do cruzamento."; return false; }
+        }
+      double distance=r.unit==1 ? r.distance*point : r.unit==2 ? MathAbs(b)*r.distance/100.0 : 0;
+      if((r.unit==1 && point<=0) || (r.unit==2 && r.distance>0 && b==0) || !MathIsValidNumber(distance))
+        { error="Base de distancia indisponivel."; return false; }
+      result=UniSignalCompare(r.comparison,a,b,pa,pb,distance,previous);
+      return true;
+     }
+   bool UsesSlot(const int source,const int slot)
+     { return (source>=10 && source<=21 && (source-10)/3==slot) || (source>=22 && source<=33 && (source-22)/3==slot); }
 public:
    CUniSignals() { Reset(); }
+   void InvalidateVisual() { m_visual_ready=false; }
    bool LiveEntry(const int side)
      {
       for(int i=0;i<5;i++)
@@ -114,6 +138,7 @@ public:
      }
    void Reset()
      {
+      m_visual_ready=false; m_history=false;
       for(int i=0;i<5;i++) { ZeroMemory(m_rules[i]); m_previous[i]=false; m_a[i]=0; m_b[i]=0; }
       for(int i=0;i<4;i++) { m_last[i]=false; m_bar[i]=0; m_levels[i*3]=70; m_levels[i*3+1]=50; m_levels[i*3+2]=30; }
      }
@@ -174,10 +199,40 @@ public:
         }
       return true;
      }
+   // Per-slot conditions, grouped by purpose and side using the configured E/Ou.
+   // 2 means unavailable, ambiguous or tick history that cannot be reconstructed.
+   int VisualState(MyUnEA *engine,const int slot,const int offset,const double point)
+     {
+      bool matched[2]={false,false},seen=false;
+      for(int side=0;side<2;side++)
+        {
+         bool total=false,clause=false,first=true;
+         for(int i=0;i<5;i++)
+           {
+            UniSignalRule r=m_rules[i];
+            if(r.op==0 || r.side!=(side==0 ? 1 : -1) || (!UsesSlot(r.source,slot) && !UsesSlot(r.reference,slot))) continue;
+            seen=true; bool result=false;
+            if(offset==0) { if(!m_visual_ready) return 2; result=m_result[i]; }
+            else
+              {
+               if((!Constant(r.source) && r.bar==0) || (!Constant(r.reference) && r.reference_bar==0)) return 2;
+               double a,b; string error; m_history=true;
+               bool ready=RuleValue(engine,r,i,offset,point,result,a,b,error); m_history=false;
+               if(!ready) return 2;
+              }
+            if(first) { clause=result; first=false; }
+            else if(r.op==2) clause=clause && result;
+            else { total=total || clause; clause=result; }
+           }
+         matched[side]=total || clause;
+        }
+      if(!seen || (matched[0] && matched[1])) return 2;
+      return matched[0] ? 1 : matched[1] ? -1 : 0;
+     }
    // bits: 1 entry buy, 2 entry sell, 4 exit buy (close sells), 8 exit sell (close buys).
    bool Evaluate(MyUnEA *engine,const datetime bar,const double point,int &events,string &error)
      {
-      events=0; error="";
+      events=0; error=""; m_visual_ready=false;
       bool used[4]={false,false,false,false},live[4]={false,false,false,false};
       bool result[5]; double current_a[5],current_b[5];
       for(int i=0;i<5;i++)
@@ -187,20 +242,8 @@ public:
          used[group]=true;
          bool tick=(!Constant(r.source) && r.bar==0) || (!Constant(r.reference) && r.reference_bar==0);
          live[group]=live[group] || tick;
-         double a,b,pa=0,pb=0;
-         if(!Read(engine,r.source,r.bar,r.fixed_value,a) || !Read(engine,r.reference,r.reference_bar,r.fixed_value,b))
-           { error="Aguardando dados da condicao."; return false; }
-         bool previous=false;
-         if(tick) { previous=m_previous[i]; pa=m_a[i]; pb=m_b[i]; }
-         else if(r.comparison>=7)
-           {
-            previous=Read(engine,r.source,r.bar+1,r.fixed_value,pa) && Read(engine,r.reference,r.reference_bar+1,r.fixed_value,pb);
-            if(!previous) { error="Aguardando candle anterior do cruzamento."; return false; }
-           }
-         double distance=r.unit==1 ? r.distance*point : r.unit==2 ? MathAbs(b)*r.distance/100.0 : 0;
-         if((r.unit==1 && point<=0) || (r.unit==2 && r.distance>0 && b==0) || !MathIsValidNumber(distance))
-           { error="Base de distancia indisponivel."; return false; }
-         result[i]=UniSignalCompare(r.comparison,a,b,pa,pb,distance,previous);
+         double a,b;
+         if(!RuleValue(engine,r,i,0,point,result[i],a,b,error)) return false;
          current_a[i]=a; current_b[i]=b;
         }
       for(int g=0;g<4;g++)
@@ -218,6 +261,8 @@ public:
          if(matched && (!live[g] || !m_last[g])) events|=1<<g;
          m_last[g]=matched; m_bar[g]=bar;
         }
+      for(int i=0;i<5;i++) m_result[i]=m_rules[i].op!=0 ? result[i] : false;
+      m_visual_ready=true;
       for(int i=0;i<5;i++) if(m_rules[i].op!=0)
         { m_previous[i]=true; m_a[i]=current_a[i]; m_b[i]=current_b[i]; }
       return true;

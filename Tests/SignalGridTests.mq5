@@ -88,5 +88,34 @@ void OnStart()
       usages[0]=1;
       Check(!probe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Duplicate exits rejected");
      }
+   // Visual reads use the same condition outcomes and never consume trading events.
+   config.indicators[0].type=GUI_INDICATOR_MA; config.indicators[1].type=GUI_INDICATOR_NONE;
+   usages[0]=0; usages[1]=0; probe.ready=true;
+   for(int i=0;i<5;i++) rows[i]="";
+   rows[0]="1,0,1,10,1,0,9,0,100,0,0";
+   rows[1]="1,0,-1,10,1,1,9,0,100,0,0";
+   Check(probe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Visual rules configured");
+   Check(probe.VisualState(NULL,0,0,0.01)==2,"Not evaluated is unavailable");
+   probe.samples[10][1]=110;
+   Check(probe.Evaluate(NULL,1000,0.01,events,error) && events==1,"Buy before visual read");
+   Check(probe.VisualState(NULL,0,0,0.01)==1,"Visual buy");
+   Check(probe.Evaluate(NULL,1000,0.01,events,error) && events==0,"Visual read preserves event state");
+   probe.samples[10][1]=90;
+   Check(probe.Evaluate(NULL,1100,0.01,events,error) && events==2,"Sell before visual read");
+   Check(probe.VisualState(NULL,0,0,0.01)==-1,"Visual sell");
+   probe.samples[10][1]=100;
+   Check(probe.Evaluate(NULL,1200,0.01,events,error),"Neutral evaluated");
+   Check(probe.VisualState(NULL,0,0,0.01)==0,"No buy and no sell is neutral");
+   Check(probe.VisualState(NULL,1,0,0.01)==2,"No applicable rule has no invented signal");
+   probe.samples[10][2]=110;
+   Check(probe.VisualState(NULL,0,1,0.01)==1,"History applies configured candle offset");
+   probe.samples[10][2]=90;
+   Check(probe.VisualState(NULL,0,1,0.01)==-1,"Historical sell");
+   probe.ready=false;
+   Check(!probe.Evaluate(NULL,1300,0.01,events,error),"Missing data fails evaluation");
+   Check(probe.VisualState(NULL,0,0,0.01)==2,"Missing data is not neutral or sell");
+   probe.ready=true; rows[0]="1,0,1,10,0,7,9,0,100,0,0"; rows[1]="";
+   Check(probe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Tick crossing configured");
+   Check(probe.VisualState(NULL,0,1,0.01)==2,"Tick history remains unavailable");
    PrintFormat("[SignalGridTests] %d checks, %d failures",checks,failures);
   }

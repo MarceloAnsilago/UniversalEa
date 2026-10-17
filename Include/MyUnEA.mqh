@@ -364,6 +364,15 @@ public:
       return m_indicator_data[indicator].Get(buffer,bar,value);
      }
 
+   // Visual history reads the existing handle without changing the trading snapshot.
+   bool GetIndicatorHistoryValue(const int slot,const int buffer,const int bar,double &value)
+     {
+      if(slot<0 || slot>=4 || m_indicators[slot]==NULL) return false;
+      double data[];
+      if(!m_indicators[slot].Update(buffer,bar,1,data)) return false;
+      value=data[0]; return value!=EMPTY_VALUE && MathIsValidNumber(value);
+     }
+
    // Prepara a cotação e as velas seguindo o fluxo do OnTick.
    // Retorna true uma vez por nova vela; false indica espera ou falha.
    // Em caso de falha, error explica o motivo. Na mesma vela, error fica vazio.

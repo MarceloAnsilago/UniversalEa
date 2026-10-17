@@ -183,6 +183,11 @@
       "path":"Include\\UniPriceMarkers.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"Include\\UniSignalHistogram.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ],
 
@@ -197,6 +202,12 @@
     {
       "type":"indicator",
       "path":"Indicators\\UniOscillatorPlot.ex5",
+      "name":"",
+      "relative_to_project":true
+    },
+    {
+      "type":"indicator",
+      "path":"Indicators\\UniSignalHistogram.ex5",
       "name":"",
       "relative_to_project":true
     }

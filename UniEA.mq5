@@ -1,6 +1,7 @@
 ﻿#property strict
 #resource "Indicators\\UniMaPlot.ex5"
 #resource "Indicators\\UniOscillatorPlot.ex5"
+#resource "Indicators\\UniSignalHistogram.ex5"
 #property version "1.10"
 #property description "EA com painel padrao, ordens, SL/TP e gestao de posicoes."
 #include "Include/UniPanel.mqh"
@@ -157,6 +158,10 @@ input string InpSignal3=""; // Condicao 3: configurada na grade do GeraSet
 input string InpSignal4=""; // Condicao 4: configurada na grade do GeraSet
 input string InpSignal5=""; // Condicao 5: configurada na grade do GeraSet
 
+input group "Histograma de sinais"
+sinput bool InpExibirHistogramas=true; // Uma faixa por indicador habilitado
+sinput int InpHistogramasBarras=300; // Historico visual: 1 a 5000 candles
+
 input group "Marcadores de preco"
 sinput bool InpShowPriceMarkers=true; // Mostrar etiquetas de entrada, stop e take
 sinput bool InpMarkerShowProfit=true; // Mostrar resultado bruto atual na entrada e estimativas nos niveis
@@ -250,6 +255,7 @@ int OnInit()
       if(!runtime.ConfigureRsiLevels(levels,error))
         { Print("RSI: ",error); runtime.Shutdown(); return INIT_PARAMETERS_INCORRECT; }
       if(!runtime.ShowIndicators(ChartID(),usages,levels,error)) Print("Indicadores no grafico: ",error);
+      if(!runtime.ShowHistograms(ChartID(),InpExibirHistogramas,InpHistogramasBarras,error)) Print("Histogramas: ",error);
       if(activate && !runtime.Activate(error))
         { Print("Ativacao: ",error); runtime.Shutdown(); return INIT_FAILED; }
      }
