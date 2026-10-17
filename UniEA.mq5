@@ -158,7 +158,8 @@ input string InpSignal3=""; // Condicao 3: configurada na grade do GeraSet
 input string InpSignal4=""; // Condicao 4: configurada na grade do GeraSet
 input string InpSignal5=""; // Condicao 5: configurada na grade do GeraSet
 
-input group "Histograma de sinais"
+input group "Visualizacao no MetaTrader 5"
+sinput bool InpExibirPainel=true; // Mostrar painel do UNI
 sinput bool InpExibirHistogramas=true; // Uma faixa por indicador habilitado
 sinput int InpHistogramasBarras=300; // Historico visual: 1 a 5000 candles
 
@@ -263,7 +264,7 @@ int OnInit()
      { Print("Selecione ao menos um indicador para testar o motor."); return INIT_PARAMETERS_INCORRECT; }
    string status=!runtime.HasConfiguration() ? "Sem configuracao ativa" :
                  (runtime.Active() ? "Entradas habilitadas" : "Entradas pausadas; gestao habilitada");
-   if(!tester || MQLInfoInteger(MQL_VISUAL_MODE))
+   if(InpExibirPainel && (!tester || MQLInfoInteger(MQL_VISUAL_MODE)))
       if(!panel.Create(ChartID(),status,initial))
         { Print("Falha ao criar painel: ",GetLastError()); runtime.Shutdown(); return INIT_FAILED; }
    // Tester timers fire for every simulated second, even in Open Prices
@@ -271,7 +272,7 @@ int OnInit()
    // the timer for live maintenance between quotes.
    if(!tester && !EventSetTimer(1))
      { Print("Falha ao iniciar timer: ",GetLastError()); panel.Destroy(); runtime.Shutdown(); return INIT_FAILED; }
-   panel.Refresh(runtime.Active(),runtime.HasConfiguration());
+   if(InpExibirPainel) panel.Refresh(runtime.Active(),runtime.HasConfiguration());
    if(!tester || MQLInfoInteger(MQL_VISUAL_MODE))
      {
       price_markers.Configure(ChartID(),_Symbol,InpMagic,InpShowPriceMarkers,InpMarkerEntryColor,
@@ -295,14 +296,14 @@ void ReportExecutionError(const string error)
    if(error!="") Print("Execucao: ",error);
   }
 void OnTimer()
-  { string error; runtime.Service(error); ReportExecutionError(error); panel.Refresh(runtime.Active(),runtime.HasConfiguration(),error); price_markers.Refresh(); }
+  { string error; runtime.Service(error); ReportExecutionError(error); if(InpExibirPainel) panel.Refresh(runtime.Active(),runtime.HasConfiguration(),error); price_markers.Refresh(); }
 
 void OnTick()
   {
    string error;
    int signal=runtime.Process(error);
    ReportExecutionError(error);
-   panel.Refresh(runtime.Active(),runtime.HasConfiguration(),error);
+   if(InpExibirPainel) panel.Refresh(runtime.Active(),runtime.HasConfiguration(),error);
    price_markers.Refresh();
    if(signal==1) Print("Sinal de compra / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
    if(signal==-1) Print("Sinal de venda / ",runtime.AppliedName()," / configuracao ",runtime.Revision());
@@ -310,7 +311,7 @@ void OnTick()
 
 void OnChartEvent(const int id,const long &lparam,const double &dparam,const string &sparam)
   {
-   panel.OnChartEvent(id,lparam,dparam,sparam);
+   if(InpExibirPainel) panel.OnChartEvent(id,lparam,dparam,sparam);
    if(id==CHARTEVENT_CHART_CHANGE) price_markers.Refresh(true);
   }
 

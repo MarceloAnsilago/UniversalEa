@@ -167,7 +167,7 @@ Tests/SignalGridTests.mq5 usa leituras simuladas e nao envia ordens.
 `InpExibirHistogramas=true` ativa, por padrão, uma subjanela compacta por slot habilitado;
 `false` não cria indicadores visuais nem canais de dados do histograma.
 `InpHistogramasBarras=300` limita o histórico (1 a 5000 candles).
-No GeraSet: **Indicadores > Visualização no MetaTrader 5**, marque/desmarque
+No GeraSet: **Configurações > Visualização no MetaTrader 5**, marque/desmarque
 **Exibir histograma de sinais** e exporte novamente o `.set`.
 
 Azul representa compra, vermelho venda e cinza neutralidade. Falta de dados, sinais
@@ -208,3 +208,10 @@ Integração: UniEA.mq5, UniEA.mqproj, Include/MyUnEA.mqh,
 Include/UniRuntime.mqh, Include/UniSignals.mqh e os dois componentes novos de
 histograma. No GeraSet, os arquivos alterados são templates/page.html,
 static/app.js, static/export.js e tests/export.test.cjs, dentro de flask_version.
+
+
+A mesma seção do GeraSet possui **Exibir painel do UNI**, exportado como
+`InpExibirPainel=true` por padrão. Desmarcar impede a criação e a atualização
+do painel; a execução da estratégia, os histogramas e as etiquetas de preço
+continuam controlados pelas respectivas configurações. As duas checkboxes ficam
+salvas na aba Configurações; a escolha anterior do histograma é migrada.
