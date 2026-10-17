@@ -215,7 +215,7 @@ public:
             if(offset==0) { if(!m_visual_ready) return 2; result=m_result[i]; }
             else
               {
-               if((!Constant(r.source) && r.bar==0) || (!Constant(r.reference) && r.reference_bar==0)) return 2;
+               if(r.comparison>=6 && ((!Constant(r.source) && r.bar==0) || (!Constant(r.reference) && r.reference_bar==0))) return 2;
                double a,b; string error; m_history=true;
                bool ready=RuleValue(engine,r,i,offset,point,result,a,b,error); m_history=false;
                if(!ready) return 2;

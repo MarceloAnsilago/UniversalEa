@@ -160,3 +160,51 @@ Carregue no Testador e use ticks reais para conferir Toque/Vela atual.
 Ative InpTesterAutoStart manualmente para permitir entradas no teste.
 Gestao e demais regras ainda nao sao exportadas: confira seus inputs no Uni.
 Tests/SignalGridTests.mq5 usa leituras simuladas e nao envia ordens.
+
+
+### Histograma de sinais dos indicadores
+
+`InpExibirHistogramas=true` ativa, por padrão, uma subjanela compacta por slot habilitado;
+`false` não cria indicadores visuais nem canais de dados do histograma.
+`InpHistogramasBarras=300` limita o histórico (1 a 5000 candles).
+No GeraSet: **Indicadores > Visualização no MetaTrader 5**, marque/desmarque
+**Exibir histograma de sinais** e exporte novamente o `.set`.
+
+Azul representa compra, vermelho venda e cinza neutralidade. Falta de dados, sinais
+simultâneos de compra/venda ou indicadores sem condições aplicáveis ficam sem
+preenchimento. Cada faixa combina somente as condições que referenciam o respectivo
+indicador, preservando E/Ou e o lado já resolvido pelo GeraSet. Não representa a
+aprovação final de toda a estratégia.
+
+O estado atual vem dos resultados da mesma avaliação operacional (`CUniSignals`).
+O histórico reutiliza esse avaliador e os handles existentes, com deslocamento temporal.
+Comparações comuns da vela atual são reconstruídas pelo fechamento; cruzamentos e
+toques intrabar passados não são reconstruídos sem ticks. Os estados observados ao vivo
+são mantidos até saírem do limite de candles ou o EA reinicializar.
+
+`Include/UniSignalHistogram.mqh` controla o ciclo de vida e snapshots binários
+limitados no sandbox `MQL5/Files`; `Indicators/UniSignalHistogram.mq5` exibe buffers
+`DRAW_COLOR_HISTOGRAM`, sem objetos por candle. Os arquivos temporários são removidos
+na desinicialização normal. Atualizações do canal ocorrem ao mudar estado/candle,
+com até três tentativas iniciais de preenchimento do histórico. A leitura visual
+pode atrasar até um segundo. Use o mesmo timeframe da estratégia no gráfico.
+No testador não visual, o histograma não é criado.
+
+Compilar `Indicators/UniSignalHistogram.mq5` antes de `UniEA.mq5`, pois o indicador
+é incorporado como recurso. Testes: `Tests/SignalGridTests.mq5` e
+`Tests/HistogramPanelTests.mq5` (este último usa o indicador instalado no terminal
+isolado como `UniSignalHistogram.ex5`, com negociação desabilitada).
+
+
+Validação desta implementação (17/10/2026): UniEA e indicador compilados com
+zero erros e avisos; SignalGridTests: 67 verificações sem falhas; HistogramPanelTests:
+15 verificações sem falhas em terminal portátil com negociação desabilitada.
+O teste do painel confere buffers, cores, uma/três faixas, desativação e limpeza,
+sem inspeção visual por screenshot. GeraSet: 54 testes JavaScript sem falhas e
+renderização Flask da checkbox confirmada. Testador visual, troca de timeframe,
+zoom/rolagem e operações reais não foram exercitados nesta validação.
+
+Integração: UniEA.mq5, UniEA.mqproj, Include/MyUnEA.mqh,
+Include/UniRuntime.mqh, Include/UniSignals.mqh e os dois componentes novos de
+histograma. No GeraSet, os arquivos alterados são templates/page.html,
+static/app.js, static/export.js e tests/export.test.cjs, dentro de flask_version.

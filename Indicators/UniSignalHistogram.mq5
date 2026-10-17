@@ -47,6 +47,6 @@ int OnCalculate(const int total,const int calculated,const datetime &time[],cons
    if(calculated==0) { ArrayInitialize(values,EMPTY_VALUE); revision=-1; }
    else if(total>calculated) for(int i=0;i<MathMin(total-calculated,total);i++) values[i]=EMPTY_VALUE;
    ReadSnapshot();
-   if(total>HistoryBars) values[HistoryBars]=EMPTY_VALUE;
+   for(int i=HistoryBars;i<MathMin(total,HistoryBars+MathMax(1,total-calculated));i++) values[i]=EMPTY_VALUE;
    return total;
   }

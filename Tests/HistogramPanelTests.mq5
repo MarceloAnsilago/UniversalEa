@@ -13,7 +13,7 @@ void OnStart()
    int initial=(int)ChartGetInteger(0,CHART_WINDOWS_TOTAL);
    CGuiState defaults; GuiAppliedConfiguration config;
    config.setup=defaults.setup; config.setup.timeframe=(ENUM_TIMEFRAMES)_Period;
-   for(int i=0;i<4;i++) { config.indicators[i]=defaults.indicators[i]; if(i<3) config.indicators[i].type=GUI_INDICATOR_MA; }
+   for(int i=0;i<4;i++) { config.indicators[i]=defaults.indicators[i]; config.indicators[i].type=i<3 ? GUI_INDICATOR_MA : GUI_INDICATOR_NONE; }
    CUniSignalHistogram panel; HistogramProbe signals; string error; int events;
    int usages[4]={0,0,0,0};
    string rows[5]={"1,0,1,10,1,0,9,0,100,0,0","1,0,-1,13,1,1,9,0,100,0,0","3,0,1,16,1,0,9,0,100,0,0","",""};
@@ -36,6 +36,7 @@ void OnStart()
    Check((int)ChartGetInteger(0,CHART_WINDOWS_TOTAL)==initial,"Clear removes owned windows");
    config.indicators[1].type=GUI_INDICATOR_NONE; config.indicators[2].type=GUI_INDICATOR_NONE;
    Check(panel.Attach(0,config,true,20,error,"UniSignalHistogram"),"One enabled indicator attaches");
+   ChartRedraw(); Sleep(300);
    Check((int)ChartGetInteger(0,CHART_WINDOWS_TOTAL)==initial+1,"One enabled indicator has one window");
    panel.Clear();
    PrintFormat("[HistogramPanelTests] %d checks, %d failures",checks,failures);

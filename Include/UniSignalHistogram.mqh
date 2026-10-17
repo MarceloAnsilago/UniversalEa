@@ -8,12 +8,14 @@ private:
    long m_chart;
    int m_handles[4],m_last[4],m_files[4],m_bars,m_cursor;
    long m_revision;
+   int m_history_attempts;
+   datetime m_retry,m_started;
    string m_paths[4];
    string m_names[4];
    datetime m_time;
    bool m_initial;
 public:
-   CUniSignalHistogram() { m_chart=0; m_cursor=0; m_revision=0; m_time=0; m_initial=true; m_bars=300; for(int i=0;i<4;i++) { m_handles[i]=INVALID_HANDLE; m_files[i]=INVALID_HANDLE; m_paths[i]=""; m_names[i]=""; m_last[i]=99; } }
+   CUniSignalHistogram() { m_chart=0; m_history_attempts=0; m_retry=0; m_started=0; m_cursor=0; m_revision=0; m_time=0; m_initial=true; m_bars=300; for(int i=0;i<4;i++) { m_handles[i]=INVALID_HANDLE; m_files[i]=INVALID_HANDLE; m_paths[i]=""; m_names[i]=""; m_last[i]=99; } }
    ~CUniSignalHistogram() { Clear(); }
    void Clear()
      {
@@ -28,7 +30,7 @@ public:
          m_files[i]=INVALID_HANDLE; m_paths[i]="";
          m_handles[i]=INVALID_HANDLE; m_names[i]=""; m_last[i]=99;
         }
-      m_time=0; m_initial=true; m_cursor=0; m_revision=0;
+      m_time=0; m_initial=true; m_cursor=0; m_revision=0; m_history_attempts=0; m_retry=0; m_started=0;
      }
    bool Attach(const long chart,GuiAppliedConfiguration &config,const bool enabled,const int bars,string &error,const string plot_path="::Indicators\\UniSignalHistogram.ex5")
      {
@@ -57,7 +59,9 @@ public:
       bool any=false; for(int i=0;i<4;i++) if(m_handles[i]!=INVALID_HANDLE) any=true;
       if(!any) return;
       datetime now=iTime(symbol,period,0); if(now==0) return;
-      bool history=m_initial;
+      bool history=m_initial || (m_history_attempts<3 && TimeCurrent()>m_retry);
+      if(m_initial) m_started=now;
+      if(history) { m_history_attempts++; m_retry=TimeCurrent(); }
       if(!m_initial && now!=m_time) m_cursor=(m_cursor+m_bars-1)%m_bars;
       m_revision++;
       for(int slot=0;slot<4;slot++)
@@ -68,9 +72,10 @@ public:
          if(history)
             for(int b=MathMin(m_bars-1,Bars(symbol,period)-1);b>0;b--)
               {
+               datetime time=iTime(symbol,period,b); if(time>=m_started) continue;
                int state=signals.VisualState(engine,slot,b,SymbolInfoDouble(symbol,SYMBOL_POINT));
-               FileSeek(m_files[slot],8+b*12,SEEK_SET);
-               FileWriteLong(m_files[slot],(long)iTime(symbol,period,b)); FileWriteInteger(m_files[slot],state);
+               FileSeek(m_files[slot],8+((m_cursor+b)%m_bars)*12,SEEK_SET);
+               FileWriteLong(m_files[slot],(long)time); FileWriteInteger(m_files[slot],state);
               }
          if(history || current!=m_last[slot] || now!=m_time)
            {

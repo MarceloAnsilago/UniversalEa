@@ -117,5 +117,9 @@ void OnStart()
    probe.ready=true; rows[0]="1,0,1,10,0,7,9,0,100,0,0"; rows[1]="";
    Check(probe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Tick crossing configured");
    Check(probe.VisualState(NULL,0,1,0.01)==2,"Tick history remains unavailable");
+   rows[0]="1,0,1,10,0,0,9,0,100,0,0";
+   Check(probe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Current simple comparison configured");
+   probe.samples[10][1]=110;
+   Check(probe.VisualState(NULL,0,1,0.01)==1,"Simple current comparisons reconstruct the past candle close");
    PrintFormat("[SignalGridTests] %d checks, %d failures",checks,failures);
   }
