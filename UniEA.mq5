@@ -28,7 +28,6 @@ input long InpMagic=1;                                         // Magic Number: 
 input group "Mercado e operação"
 input ENUM_GUI_SETUP_MARKET InpMarket=GUI_SETUP_FOREX;          // Mercado: Forex ou B3
 input ENUM_GUI_SETUP_TRADE_MODE InpTradeMode=GUI_SETUP_DAY_TRADE; // Modalidade: operações no mesmo dia ou em vários dias
-input ENUM_UNI_TIMEFRAME InpStrategyTimeframe=UNI_PERIOD_CURRENT;                   // Período da estratégia
 input double InpLot=0.01;                                      // Volume por operacao; respeitar limites e passo do ativo
 input ENUM_GUI_SETUP_DIRECTION InpDirection=GUI_SETUP_BUY_SELL; // Direcao permitida das operacoes
 
@@ -82,18 +81,22 @@ input bool InpTesterAutoStart=false; // Aplicar inputs e ativar automaticamente 
 // Slots selecionam tipo e finalidade; parametros ficam nos grupos abaixo.
 input group "Slot 1"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator1Type=GUI_INDICATOR_NONE; // Indicador do slot 1
+input ENUM_UNI_SLOT_TIMEFRAME InpIndicator1Timeframe=UNI_SLOT_CURRENT; // Timeframe independente do slot 1
 input ENUM_UNI_YES_NO InpIndicator1Exit=UNI_NO; // Finalidade: Nao = entrada; Sim = saida
 
 input group "Slot 2"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator2Type=GUI_INDICATOR_NONE; // Indicador do slot 2
+input ENUM_UNI_SLOT_TIMEFRAME InpIndicator2Timeframe=UNI_SLOT_CURRENT; // Timeframe independente do slot 2
 input ENUM_UNI_YES_NO InpIndicator2Exit=UNI_NO; // Finalidade: Nao = entrada; Sim = saida
 
 input group "Slot 3"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator3Type=GUI_INDICATOR_NONE; // Indicador do slot 3
+input ENUM_UNI_SLOT_TIMEFRAME InpIndicator3Timeframe=UNI_SLOT_CURRENT; // Timeframe independente do slot 3
 input ENUM_UNI_YES_NO InpIndicator3Exit=UNI_NO; // Finalidade: Nao = entrada; Sim = saida
 
 input group "Slot 4"
 input ENUM_GUI_INDICATOR_TYPE InpIndicator4Type=GUI_INDICATOR_NONE; // Indicador do slot 4
+input ENUM_UNI_SLOT_TIMEFRAME InpIndicator4Timeframe=UNI_SLOT_CURRENT; // Timeframe independente do slot 4
 input ENUM_UNI_YES_NO InpIndicator4Exit=UNI_NO; // Finalidade: Nao = entrada; Sim = saida
 
 input group "RSI"
@@ -185,7 +188,7 @@ void BuildInitialConfiguration(CGuiState &config)
   {
    config.Reset();
    config.setup.name=InpName; config.setup.magic=InpMagic; config.setup.market=(int)InpMarket;
-   config.setup.timeframe=(ENUM_TIMEFRAMES)InpStrategyTimeframe; config.setup.direction=(int)InpDirection;
+   config.setup.timeframe=PERIOD_CURRENT; config.setup.direction=(int)InpDirection;
    config.setup.trade_mode=(int)InpTradeMode; config.setup.lot=InpLot;
    config.setup.entry_start=InpEntryStart; config.setup.entry_end=InpEntryEnd;
    config.setup.close_enabled=false; config.setup.close_time=config.setup.entry_end;
@@ -210,8 +213,10 @@ void BuildInitialConfiguration(CGuiState &config)
    ENUM_UNI_MA_METHOD methods[]={InpIndicator1MaMethod,InpIndicator2MaMethod,InpIndicator3MaMethod,InpIndicator4MaMethod};
    ENUM_UNI_APPLIED_PRICE prices[]={InpIndicator1MaPrice,InpIndicator2MaPrice,InpIndicator3MaPrice,InpIndicator4MaPrice};
    ENUM_UNI_YES_NO exits[]={InpIndicator1Exit,InpIndicator2Exit,InpIndicator3Exit,InpIndicator4Exit};
+   ENUM_TIMEFRAMES frames[]={UniSlotTimeframe(InpIndicator1Timeframe),UniSlotTimeframe(InpIndicator2Timeframe),UniSlotTimeframe(InpIndicator3Timeframe),UniSlotTimeframe(InpIndicator4Timeframe)};
    for(int i=0;i<4;i++)
      {
+      config.indicator_timeframes[i]=frames[i];
       config.indicators[i].type=types[i];
       config.indicators[i].maPeriod=periods[i];
       config.indicators[i].maShift=shifts[i]; config.indicators[i].maMethod=(ENUM_MA_METHOD)methods[i];
@@ -239,7 +244,7 @@ int OnInit()
      {
       GuiAppliedConfiguration config;
       config.setup=initial.setup; config.rules=initial.rules; config.management=initial.management;
-      for(int i=0;i<4;i++) config.indicators[i]=initial.indicators[i];
+      for(int i=0;i<4;i++) { config.indicators[i]=initial.indicators[i]; config.indicator_timeframes[i]=initial.indicator_timeframes[i]; }
       if(!runtime.Apply(_Symbol,config,error))
         { Print("Configuracao: ",error); runtime.Shutdown(); return INIT_PARAMETERS_INCORRECT; }
       string signals[]={InpSignal1,InpSignal2,InpSignal3,InpSignal4,InpSignal5};

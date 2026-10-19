@@ -50,13 +50,12 @@ public:
       ArrayResize(m_samples,bars);
       for(int b=0;b<bars;b++)
         { m_samples[b].time=0; for(int i=0;i<4;i++) m_samples[b].states[i]=2; }
-      ENUM_TIMEFRAMES period=config.setup.timeframe==PERIOD_CURRENT ? (ENUM_TIMEFRAMES)_Period : config.setup.timeframe;
-      if(ChartPeriod(chart)!=period) { error="Histogramas: use o periodo da estrategia no grafico."; return false; }
+      ENUM_TIMEFRAMES period=ChartPeriod(chart);
       for(int i=0;i<4;i++)
         {
          if(config.indicators[i].type==GUI_INDICATOR_NONE) continue;
          string type=config.indicators[i].type==GUI_INDICATOR_MA ? "Media Movel" : config.indicators[i].type==GUI_INDICATOR_RSI ? "RSI" : "ADX";
-         m_names[i]=StringFormat("UNI S %I64u | %d %s",GetMicrosecondCount(),i+1,type);
+         m_names[i]=StringFormat("UNI S %I64u | %d %s %s",GetMicrosecondCount(),i+1,type,EnumToString(config.indicator_timeframes[i]==PERIOD_CURRENT ? period : config.indicator_timeframes[i]));
          m_paths[i]=StringFormat("UNI_Hist_%I64d_%I64u_%d.bin",chart,GetMicrosecondCount(),i);
          m_files[i]=FileOpen(m_paths[i],FILE_BIN|FILE_READ|FILE_WRITE|FILE_SHARE_READ|FILE_SHARE_WRITE);
          if(m_files[i]==INVALID_HANDLE) { error="Falha no canal visual de sinais."; Clear(); return false; }

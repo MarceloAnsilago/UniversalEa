@@ -51,7 +51,20 @@ private:
    bool Constant(const int source) { return source==9 || (source>=22 && source<=33); }
    datetime m_bar[4];
    string m_symbol;
-   ENUM_TIMEFRAMES m_period;
+   ENUM_TIMEFRAMES m_period,m_read_period,m_slot_periods[4],m_rule_periods[5];
+   datetime m_clock_a[5],m_clock_b[5];
+   int Slot(const int source)
+     { return source>=22 && source<=33 ? (source-22)/3 : source>=10 && source<=21 ? (source-10)/3 : -1; }
+   ENUM_TIMEFRAMES SourcePeriod(const int source,const int rule)
+     { int slot=Slot(source); return slot>=0 ? m_slot_periods[slot] : m_rule_periods[rule]; }
+   int OffsetAt(const ENUM_TIMEFRAMES period,const int offset)
+     {
+      if(offset==0 || period==m_period) return offset;
+      datetime anchor=iTime(m_symbol,m_period,offset);
+      return anchor>0 ? iBarShift(m_symbol,period,anchor,false) : -1;
+     }
+   bool Operand(MyUnEA *engine,const int source,const int bar,const double fixed_value,const ENUM_TIMEFRAMES period,double &value)
+     { m_read_period=period; return Read(engine,source,bar,fixed_value,value); }
    int Scale(const int source,GuiAppliedConfiguration &config)
      {
       if(source==9) return -1;
@@ -70,13 +83,21 @@ private:
              (buffer==0 || config.indicators[slot].type==GUI_INDICATOR_ADX);
      }
 protected:
+   virtual datetime SourceClock(MyUnEA *engine,const int source,const int rule,const datetime fallback)
+     {
+      if(Constant(source)) return 0;
+      ENUM_TIMEFRAMES period=SourcePeriod(source,rule);
+      if(period==m_period) return fallback;
+      int slot=Slot(source);
+      return slot>=0 && engine!=NULL ? engine.IndicatorBarTime(slot) : iTime(m_symbol,period,0);
+     }
    virtual bool Read(MyUnEA *engine,const int source,const int bar,const double fixed_value,double &value)
      {
       if(source==9) { value=fixed_value; return true; }
       if(source>=22 && source<=33) { value=m_levels[source-22]; return true; }
-      if(source>=10) return m_history ? engine.GetIndicatorHistoryValue((source-10)/3,(source-10)%3,bar,value) : engine.GetIndicatorValue((source-10)/3,(source-10)%3,bar,value);
+      if(source>=10) return (m_history || bar>4) ? engine.GetIndicatorHistoryValue((source-10)/3,(source-10)%3,bar,value) : engine.GetIndicatorValue((source-10)/3,(source-10)%3,bar,value);
       MqlRates rates[];
-      if(CopyRates(m_symbol,m_period,bar,1,rates)!=1) return false;
+      if(CopyRates(m_symbol,m_read_period,bar,1,rates)!=1) return false;
       if(source==0) value=rates[0].close;
       else if(source==1) value=rates[0].open;
       else if(source==2) value=rates[0].high;
@@ -95,7 +116,7 @@ protected:
            {
             // Aggregate only through the selected candle; no later bars leak into closed signals.
             MqlRates intraday[];
-            int count=CopyRates(m_symbol,m_period,daily[0].time,rates[0].time,intraday);
+            int count=CopyRates(m_symbol,m_read_period,daily[0].time,rates[0].time,intraday);
             if(count<=0) return false;
             value=source==5 ? intraday[0].high : intraday[0].low;
             for(int i=1;i<count;i++) value=source==5 ? MathMax(value,intraday[i].high) : MathMin(value,intraday[i].low);
@@ -108,14 +129,27 @@ protected:
      {
       double pa=0,pb=0;
       bool tick=(!Constant(r.source) && r.bar==0) || (!Constant(r.reference) && r.reference_bar==0);
-      if(!Read(engine,r.source,r.bar+(Constant(r.source) ? 0 : offset),r.fixed_value,a) ||
-         !Read(engine,r.reference,r.reference_bar+(Constant(r.reference) ? 0 : offset),r.fixed_value,b))
+      ENUM_TIMEFRAMES ap=SourcePeriod(r.source,index),bp=SourcePeriod(r.reference,index);
+      int ao=Constant(r.source) ? 0 : OffsetAt(ap,offset),bo=Constant(r.reference) ? 0 : OffsetAt(bp,offset);
+      if(ao<0 || bo<0 || !Operand(engine,r.source,r.bar+ao,r.fixed_value,ap,a) ||
+         !Operand(engine,r.reference,r.reference_bar+bo,r.fixed_value,bp,b))
         { error="Aguardando dados da condicao."; return false; }
       bool previous=false;
       if(tick) { previous=m_previous[index]; pa=m_a[index]; pb=m_b[index]; }
       else if(r.comparison>=7)
         {
-         previous=Read(engine,r.source,r.bar+offset+1,r.fixed_value,pa) && Read(engine,r.reference,r.reference_bar+offset+1,r.fixed_value,pb);
+         int previous_a=ao+1,previous_b=bo+1;
+         // Across periods compare values as they were just before the last source boundary.
+         if(ap!=bp && !Constant(r.source) && !Constant(r.reference))
+           {
+            datetime ta=iTime(m_symbol,ap,ao),tb=iTime(m_symbol,bp,bo);
+            datetime anchor=(datetime)MathMax((long)ta,(long)tb)-1;
+            previous_a=iBarShift(m_symbol,ap,anchor,false);
+            previous_b=iBarShift(m_symbol,bp,anchor,false);
+            if(ta<=0 || tb<=0 || previous_a<0 || previous_b<0) { error="Aguardando alinhamento dos periodos."; return false; }
+           }
+         previous=Operand(engine,r.source,r.bar+(Constant(r.source) ? 0 : previous_a),r.fixed_value,ap,pa) &&
+                  Operand(engine,r.reference,r.reference_bar+(Constant(r.reference) ? 0 : previous_b),r.fixed_value,bp,pb);
          if(!previous) { error="Aguardando candle anterior do cruzamento."; return false; }
         }
       double distance=r.unit==1 ? r.distance*point : r.unit==2 ? MathAbs(b)*r.distance/100.0 : 0;
@@ -136,9 +170,17 @@ public:
             ((!Constant(m_rules[i].source) && m_rules[i].bar==0) || (!Constant(m_rules[i].reference) && m_rules[i].reference_bar==0))) return true;
       return false;
      }
+   bool ClosedEntryAfter(const int side,MyUnEA *engine,const datetime since,const datetime fallback)
+     {
+      for(int i=0;i<5;i++) if(m_rules[i].op!=0 && m_rules[i].usage==0 && m_rules[i].side==side)
+         if(SourceClock(engine,m_rules[i].source,i,fallback)>since || SourceClock(engine,m_rules[i].reference,i,fallback)>since) return true;
+      return false;
+     }
    void Reset()
      {
-      m_visual_ready=false; m_history=false;
+      m_visual_ready=false; m_history=false; m_read_period=PERIOD_CURRENT;
+      for(int i=0;i<5;i++) { m_clock_a[i]=0; m_clock_b[i]=0; m_rule_periods[i]=PERIOD_CURRENT; }
+      for(int i=0;i<4;i++) m_slot_periods[i]=PERIOD_CURRENT;
       for(int i=0;i<5;i++) { ZeroMemory(m_rules[i]); m_previous[i]=false; m_a[i]=0; m_b[i]=0; }
       for(int i=0;i<4;i++) { m_last[i]=false; m_bar[i]=0; m_levels[i*3]=70; m_levels[i*3+1]=50; m_levels[i*3+2]=30; }
      }
@@ -168,6 +210,7 @@ public:
             if(config.indicators[i].type==config.indicators[j].type && usages[i]==usages[j])
               { error=StringFormat("Indicadores %d e %d: este tipo permite apenas uma entrada e uma saida.",j+1,i+1); return false; }
         }
+      for(int i=0;i<4;i++) m_slot_periods[i]=config.indicator_timeframes[i]==PERIOD_CURRENT ? period : config.indicator_timeframes[i];
       bool groups[4]={false,false,false,false};
       for(int i=0;i<5;i++)
         {
@@ -195,6 +238,8 @@ public:
            { error="Escala ou unidade da condicao incompativel."; return false; }
          if((!groups[group] && r.op!=1) || (groups[group] && r.op==1))
            { error="Use Se, seguido de E/Ou por finalidade e lado."; return false; }
+         int slot=Slot(r.source); if(slot<0) slot=Slot(r.reference);
+         m_rule_periods[i]=slot>=0 ? m_slot_periods[slot] : period;
          groups[group]=true; m_rules[i]=r;
         }
       return true;
@@ -234,12 +279,17 @@ public:
      {
       events=0; error=""; m_visual_ready=false;
       bool used[4]={false,false,false,false},live[4]={false,false,false,false};
-      bool result[5]; double current_a[5],current_b[5];
+      bool result[5],changed[4]={false,false,false,false}; double current_a[5],current_b[5];
+      datetime clocks_a[5],clocks_b[5];
       for(int i=0;i<5;i++)
         {
          UniSignalRule r=m_rules[i]; if(r.op==0) continue;
          int group=r.usage*2+(r.side==1 ? 0 : 1);
          used[group]=true;
+         clocks_a[i]=SourceClock(engine,r.source,i,bar); clocks_b[i]=SourceClock(engine,r.reference,i,bar);
+         if((!Constant(r.source) && clocks_a[i]<=0) || (!Constant(r.reference) && clocks_b[i]<=0))
+           { error="Aguardando horario das velas dos slots."; return false; }
+         changed[group]=changed[group] || clocks_a[i]!=m_clock_a[i] || clocks_b[i]!=m_clock_b[i];
          bool tick=(!Constant(r.source) && r.bar==0) || (!Constant(r.reference) && r.reference_bar==0);
          live[group]=live[group] || tick;
          double a,b;
@@ -248,7 +298,7 @@ public:
         }
       for(int g=0;g<4;g++)
         {
-         if(!used[g] || (!live[g] && bar==m_bar[g])) continue;
+         if(!used[g] || (!live[g] && !changed[g])) continue;
          bool total=false,clause=false;
          for(int i=0;i<5;i++)
            {
@@ -264,7 +314,7 @@ public:
       for(int i=0;i<5;i++) m_result[i]=m_rules[i].op!=0 ? result[i] : false;
       m_visual_ready=true;
       for(int i=0;i<5;i++) if(m_rules[i].op!=0)
-        { m_previous[i]=true; m_a[i]=current_a[i]; m_b[i]=current_b[i]; }
+        { m_previous[i]=true; m_a[i]=current_a[i]; m_b[i]=current_b[i]; m_clock_a[i]=clocks_a[i]; m_clock_b[i]=clocks_b[i]; }
       return true;
      }
   };

@@ -123,7 +123,7 @@ private:
             for(int row=0;row<rows;row++)
               {
                int ry=y+108+row*44;
-               Text(34,ry,Row(c,row),14);
+               Text(34,ry,row==0 ? "Timeframe: "+EnumToString(m_config.indicator_timeframes[i]==PERIOD_CURRENT ? (ENUM_TIMEFRAMES)_Period : m_config.indicator_timeframes[i]) : Row(c,row),14);
                if(row<rows-1) m_canvas.LineHorizontal(34,w-37,ry+30,0xFFD8D8D8);
               }
            }

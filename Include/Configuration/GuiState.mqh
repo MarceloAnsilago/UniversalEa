@@ -15,6 +15,8 @@ struct GuiAppliedConfiguration
    CGuiRulesState rules;
    CGuiManagementState management;
    IndicatorConfig indicators[4];
+   ENUM_TIMEFRAMES indicator_timeframes[4];
+   GuiAppliedConfiguration() { for(int i=0;i<4;i++) indicator_timeframes[i]=PERIOD_CURRENT; }
   };
 string GuiMethodName(const int index)
   { string names[]={"SMA","EMA","SMMA","LWMA"}; return index>=0 && index<4 ? names[index] : ""; }
@@ -27,6 +29,7 @@ public:
    CGuiRulesState rules;
    CGuiManagementState management;
    IndicatorConfig indicators[4];
+   ENUM_TIMEFRAMES indicator_timeframes[4];
    IndicatorConfig applied[4];
    GuiAppliedConfiguration applications[];
    bool has_applied;
@@ -39,7 +42,7 @@ public:
       applications[count].rules=rules;
       applications[count].management=management;
       for(int i=0;i<4;i++)
-        { applications[count].indicators[i]=indicators[i]; applied[i]=indicators[i]; }
+        { applications[count].indicators[i]=indicators[i]; applied[i]=indicators[i]; applications[count].indicator_timeframes[i]=indicator_timeframes[i]; }
       has_applied=true;
       return true;
      }
@@ -50,6 +53,7 @@ public:
       ArrayFree(applications);
       for(int i=0;i<4;i++)
         {
+         indicator_timeframes[i]=PERIOD_CURRENT;
          indicators[i].type=GUI_INDICATOR_NONE;
          indicators[i].maPeriod=20; indicators[i].maMethod=MODE_EMA;
          indicators[i].maPrice=PRICE_CLOSE; indicators[i].maShift=0; indicators[i].maSlopeBars=3;

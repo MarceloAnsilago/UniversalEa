@@ -29,24 +29,23 @@ public:
      {
       Clear(); m_chart=chart; error="";
       if(MQLInfoInteger(MQL_TESTER) && !MQLInfoInteger(MQL_VISUAL_MODE)) return true;
-      ENUM_TIMEFRAMES period=config.setup.timeframe==PERIOD_CURRENT ? (ENUM_TIMEFRAMES)_Period : config.setup.timeframe;
-      if(ChartPeriod(chart)!=period)
-        { error="Para exibir os indicadores, use no grafico o mesmo periodo configurado na estrategia: "+EnumToString(period); return false; }
+      ENUM_TIMEFRAMES period=ChartPeriod(chart);
       color colors[4]={clrDodgerBlue,clrOrange,clrMediumPurple,clrLimeGreen};
       string prefix=StringFormat("Uni %I64d %I64u",config.setup.magic,GetMicrosecondCount());
       for(int i=0;i<4;i++)
         {
          if(config.indicators[i].type==GUI_INDICATOR_NONE) continue;
          string type=config.indicators[i].type==GUI_INDICATOR_MA ? "MA" : config.indicators[i].type==GUI_INDICATOR_RSI ? "RSI" : "ADX";
-         m_names[i]=StringFormat("%s | Slot %d %s %s",prefix,i+1,type,usages[i]==1 ? "Saida" : "Entrada");
+         ENUM_TIMEFRAMES slot_period=config.indicator_timeframes[i]==PERIOD_CURRENT ? period : config.indicator_timeframes[i];
+         m_names[i]=StringFormat("%s | Slot %d %s %s %s",prefix,i+1,type,EnumToString(slot_period),usages[i]==1 ? "Saida" : "Entrada");
          ResetLastError();
          if(config.indicators[i].type==GUI_INDICATOR_MA)
             m_handles[i]=iCustom(_Symbol,period,"::Indicators\\UniMaPlot.ex5",m_names[i],config.indicators[i].maPeriod,
-                                config.indicators[i].maShift,config.indicators[i].maMethod,config.indicators[i].maPrice,colors[i]);
+                                config.indicators[i].maShift,config.indicators[i].maMethod,config.indicators[i].maPrice,colors[i],slot_period);
          else
             m_handles[i]=iCustom(_Symbol,period,"::Indicators\\UniOscillatorPlot.ex5",m_names[i],type=="RSI",
                                 type=="RSI" ? config.indicators[i].rsiPeriod : config.indicators[i].adxPeriod,
-                                config.indicators[i].rsiPrice,levels[i*3],levels[i*3+1],levels[i*3+2]);
+                                config.indicators[i].rsiPrice,levels[i*3],levels[i*3+1],levels[i*3+2],slot_period);
          int window=type=="MA" ? 0 : (int)ChartGetInteger(chart,CHART_WINDOWS_TOTAL);
          if(m_handles[i]==INVALID_HANDLE || !ChartIndicatorAdd(chart,window,m_handles[i]))
            { int code=GetLastError(); error=StringFormat("Falha ao exibir slot %d. Erro %d.",i+1,code); Clear(); return false; }

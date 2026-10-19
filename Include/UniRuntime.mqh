@@ -17,13 +17,13 @@ private:
    ENUM_TIMEFRAMES m_period;
    bool m_active;
    int m_revision;
-   datetime m_resume_bar,m_evaluated_bar;
+   datetime m_resume_bar,m_evaluated_bar,m_resume_time;
    CUniSignals m_signals;
    CUniChartIndicators m_chart_indicators;
    CUniSignalHistogram m_histograms;
    int m_pending_exits;
 public:
-   CUniRuntime() { m_engine=NULL; m_active=false; m_revision=0; m_resume_bar=0; m_evaluated_bar=0; m_pending_exits=0; }
+   CUniRuntime() { m_engine=NULL; m_active=false; m_revision=0; m_resume_bar=0; m_resume_time=0; m_evaluated_bar=0; m_pending_exits=0; }
    ~CUniRuntime() { Shutdown(); }
    void Shutdown() { m_histograms.Clear(); m_chart_indicators.Clear(); if(m_engine!=NULL) delete m_engine; m_engine=NULL; m_active=false; }
    bool HasConfiguration() { return m_engine!=NULL; }
@@ -50,7 +50,7 @@ public:
       m_engine=next; m_applied=candidate; m_symbol=symbol;
       m_period=candidate.setup.timeframe==PERIOD_CURRENT ? (ENUM_TIMEFRAMES)_Period : candidate.setup.timeframe;
       m_orders.Configure(symbol,candidate,m_period);
-      m_active=false; m_resume_bar=0; m_evaluated_bar=0; m_pending_exits=0; m_signals.Reset(); m_revision++; error=""; return true;
+      m_active=false; m_resume_bar=0; m_resume_time=0; m_evaluated_bar=0; m_pending_exits=0; m_signals.Reset(); m_revision++; error=""; return true;
      }
    bool ShowIndicators(const long chart,const int &usages[],const double &levels[],string &error)
      { return m_chart_indicators.Attach(chart,m_applied,usages,levels,error); }
@@ -69,7 +69,7 @@ public:
       datetime times[];
       if(CopyTime(m_symbol,m_period,0,1,times)!=1 || times[0]<=0)
         { error="Aguardando histórico para ativar a análise."; return false; }
-      m_resume_bar=times[0]; m_active=true; error=""; return true;
+      m_resume_bar=times[0]; m_resume_time=TimeCurrent(); m_active=true; error=""; return true;
      }
    void Pause() { m_active=false; }
    void Service(string &error)
@@ -98,7 +98,7 @@ public:
       if(maintenance!="") { error=maintenance; return 0; }
       if(error!="" || !m_active) return 0;
       int signal=(events&3)==1 ? 1 : (events&3)==2 ? -1 : 0;
-      if(!m_signals.LiveEntry(signal) && m_engine.SignalBarTime()<=m_resume_bar) return 0;
+      if(!m_signals.LiveEntry(signal) && !m_signals.ClosedEntryAfter(signal,m_engine,m_resume_time,m_engine.SignalBarTime())) return 0;
       if(signal==0 || !UniEntryWindow(m_applied.setup.entry_start,m_applied.setup.entry_end,m_engine.QuoteTime())) return 0;
       if(m_applied.rules.candle_filter!=GUI_CANDLE_DISABLED)
         {
@@ -118,7 +118,7 @@ public:
       int events=0;
       if(!m_signals.Evaluate(m_engine,m_engine.SignalBarTime(),SymbolInfoDouble(m_symbol,SYMBOL_POINT),events,error)) return 0;
       int signal=(events&3)==1 ? 1 : (events&3)==2 ? -1 : 0;
-      if((!m_signals.LiveEntry(signal) && m_engine.SignalBarTime()<=m_resume_bar) ||
+      if((!m_signals.LiveEntry(signal) && !m_signals.ClosedEntryAfter(signal,m_engine,m_resume_time,m_engine.SignalBarTime())) ||
          !UniEntryWindow(m_applied.setup.entry_start,m_applied.setup.entry_end,m_engine.QuoteTime())) return 0;
       return signal;
      }

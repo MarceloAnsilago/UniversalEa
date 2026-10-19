@@ -22,6 +22,28 @@ struct GuiSetRecord
    int stop_bar,stop_measure;
    double take_multiplier;
    int take_mode;
+   ENUM_TIMEFRAMES indicator_timeframes[4];
+  };
+
+struct GuiSetRecordV11
+  {
+   uint signature,version;
+   ushort name[49],identity[33];
+   long magic;
+   int market,timeframe,direction,trade_mode;
+   double lot;
+   int entry_start,entry_end,close_enabled,close_time;
+   IndicatorConfig indicators[4];
+   GuiRulesStorage rules;
+   GuiManagementStorage management;
+   GuiPendingStorage pending;
+   GuiCandleFilterConfig candle_sizes[3];
+   int candle_units[3];
+   GuiCandleFilterConfig candle_percent[3];
+   double stop_multiplier;
+   int stop_bar,stop_measure;
+   double take_multiplier;
+   int take_mode;
   };
 
 struct GuiSetRecordV10
@@ -405,10 +427,42 @@ bool GuiUpgradeSetV10(const GuiSetRecordV10 &old,GuiSetRecord &data)
    return true;
   }
 
+bool GuiUpgradeSetV11(const GuiSetRecordV11 &old,GuiSetRecord &data)
+  {
+   if(old.signature!=0x554E4953 || old.version!=11) return false;
+   ZeroMemory(data); data.signature=old.signature; data.version=11; data.take_mode=1; data.stop_bar=1;
+   for(int i=0;i<49;i++) data.name[i]=old.name[i];
+   for(int i=0;i<33;i++) data.identity[i]=old.identity[i];
+   data.magic=old.magic;
+   data.market=old.market;
+   data.timeframe=old.timeframe;
+   data.direction=old.direction;
+   data.trade_mode=old.trade_mode;
+   data.lot=old.lot;
+   data.entry_start=old.entry_start;
+   data.entry_end=old.entry_end;
+   data.close_enabled=old.close_enabled;
+   data.close_time=old.close_time;
+   data.rules=old.rules;
+   data.management=old.management;
+   data.pending=old.pending;
+   for(int i=0;i<4;i++) data.indicators[i]=old.indicators[i];
+   for(int i=0;i<3;i++)
+     {
+      data.candle_sizes[i]=old.candle_sizes[i]; data.candle_units[i]=old.candle_units[i];
+      data.candle_percent[i]=old.candle_percent[i];
+     }
+   data.stop_multiplier=old.stop_multiplier;
+   data.stop_bar=old.stop_bar; data.stop_measure=old.stop_measure;
+   data.take_multiplier=old.take_multiplier;
+   data.take_mode=old.take_mode;
+   return true;
+  }
+
 bool GuiDecodeSet(const GuiSetRecord &data,CGuiState &state,string &error)
   {
    error="Arquivo de set inválido ou de versão incompatível.";
-   if(data.signature!=0x554E4953 || data.version!=11 || data.name[48]!=0 || data.identity[32]!=0) return false;
+   if(data.signature!=0x554E4953 || (data.version!=11 && data.version!=12) || data.name[48]!=0 || data.identity[32]!=0) return false;
    string name=ShortArrayToString(data.name),id=ShortArrayToString(data.identity);
    if(!GuiValidSetId(id,data.magic) || (data.close_enabled!=0 && data.close_enabled!=1)) return false;
    CGuiState candidate; candidate.Reset();
@@ -433,6 +487,8 @@ bool GuiDecodeSet(const GuiSetRecord &data,CGuiState &state,string &error)
          !MathIsValidNumber(c.adxMinimum) || c.adxMinimum<0 || c.adxMinimum>100)
         { error="Parâmetros de indicador inválidos no set."; return false; }
       candidate.indicators[i]=c;
+      candidate.indicator_timeframes[i]=data.version>=12 ? data.indicator_timeframes[i] : (ENUM_TIMEFRAMES)data.timeframe;
+      if(GuiSetupTimeframeIndex(candidate.indicator_timeframes[i])<0) { error="Timeframe do slot invalido no set."; return false; }
      }
    for(int i=0;i<3;i++)
      {
@@ -453,13 +509,13 @@ bool GuiEncodeSet(CGuiState &state,GuiSetRecord &data,string &error)
   {
    if(StringLen(state.setup.name)>48) { error="Nome do set deve ter no máximo 48 caracteres."; return false; }
    if(!GuiValidSetId(state.setup.set_id,state.setup.magic)) { error="O set ainda não possui identificação válida."; return false; }
-   ZeroMemory(data); data.signature=0x554E4953; data.version=11; data.take_mode=1; data.stop_bar=1;
+   ZeroMemory(data); data.signature=0x554E4953; data.version=12; data.take_mode=1; data.stop_bar=1;
    StringToShortArray(state.setup.name,data.name,0,49); StringToShortArray(state.setup.set_id,data.identity,0,33);
    data.magic=state.setup.magic; data.market=state.setup.market; data.timeframe=(int)state.setup.timeframe;
    data.direction=state.setup.direction; data.trade_mode=state.setup.trade_mode; data.lot=state.setup.lot;
    data.entry_start=state.setup.entry_start; data.entry_end=state.setup.entry_end;
    data.close_enabled=state.setup.close_enabled ? 1 : 0; data.close_time=state.setup.close_time;
-   for(int i=0;i<4;i++) data.indicators[i]=state.indicators[i];
+   for(int i=0;i<4;i++) { data.indicators[i]=state.indicators[i]; data.indicator_timeframes[i]=state.indicator_timeframes[i]; }
    for(int i=0;i<3;i++)
      {
       data.candle_sizes[i]=state.rules.candle_sizes[i];
@@ -496,12 +552,14 @@ bool GuiReadSetRecord(const string path,GuiSetRecord &data,string &error)
    bool legacy_v3=FileSize(file)==sizeof(GuiSetRecordV3)+4;
    bool legacy_v5=FileSize(file)==sizeof(GuiSetRecordV5)+4;
    bool legacy_v6=FileSize(file)==sizeof(GuiSetRecordV6)+4;
+   bool legacy_v11=FileSize(file)==sizeof(GuiSetRecordV11)+4;
    bool legacy_v10=FileSize(file)==sizeof(GuiSetRecordV10)+4;
    bool legacy_v9=FileSize(file)==sizeof(GuiSetRecordV9)+4;
    bool legacy_v8=FileSize(file)==sizeof(GuiSetRecordV8)+4;
    int record_size=legacy ? sizeof(GuiSetRecordV1) : (legacy_v2 ? sizeof(GuiSetRecordV2) : (legacy_v3 ? sizeof(GuiSetRecordV3) : (legacy_v5 ? sizeof(GuiSetRecordV5) : (legacy_v6 ? sizeof(GuiSetRecordV6) : sizeof(GuiSetRecord)))));
    if(legacy_v8) record_size=sizeof(GuiSetRecordV8);
    if(legacy_v9) record_size=sizeof(GuiSetRecordV9);
+   if(legacy_v11) record_size=sizeof(GuiSetRecordV11);
    if(legacy_v10) record_size=sizeof(GuiSetRecordV10);
    bool ok=false;
    if(legacy)
@@ -538,6 +596,11 @@ bool GuiReadSetRecord(const string path,GuiSetRecord &data,string &error)
      {
       GuiSetRecordV9 previous;
       ok=FileReadStruct(file,previous)==sizeof(GuiSetRecordV9) && GuiUpgradeSetV9(previous,data);
+     }
+   else if(legacy_v11)
+     {
+      GuiSetRecordV11 previous;
+      ok=FileReadStruct(file,previous)==sizeof(GuiSetRecordV11) && GuiUpgradeSetV11(previous,data);
      }
    else if(legacy_v10)
      {

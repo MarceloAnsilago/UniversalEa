@@ -18,6 +18,8 @@ private:
    string m_set_id;                         // Identidade do arquivo de configuracao.
    long m_magic;                           // Magic Number do setup.
    ENUM_GUI_SETUP_MARKET m_market;          // Forex ou B3.
+   ENUM_TIMEFRAMES m_indicator_periods[4];
+   datetime m_indicator_times[4];
    ENUM_TIMEFRAMES m_timeframe;             // Periodo de operacao.
    ENUM_GUI_SETUP_DIRECTION m_direction;    // Compra e venda, somente compra ou somente venda.
    ENUM_GUI_SETUP_TRADE_MODE m_trade_mode;  // Day trade ou swing trade.
@@ -206,7 +208,7 @@ public:
       m_volume_step=0.01;
 
       // Cada slot recebera somente o objeto do tipo selecionado.
-      for(int i=0;i<4;i++) m_indicators[i]=NULL;
+      for(int i=0;i<4;i++) { m_indicators[i]=NULL; m_indicator_periods[i]=PERIOD_CURRENT; m_indicator_times[i]=0; }
      }
 
    // Destrutor: executado automaticamente ao destruir a instancia de MyUnEA.
@@ -253,7 +255,7 @@ public:
          if(m_indicators[i]!=NULL)
            {
             ResetLastError();
-            if(!m_indicators[i].Initialize(m_symbol,m_timeframe))
+            if(!m_indicators[i].Initialize(m_symbol,IndicatorPeriod(i)))
               {
                int code=GetLastError();
                error=StringFormat("Falha ao inicializar Indicador %d. Erro do terminal: %d.",i+1,code);
@@ -340,17 +342,24 @@ public:
       for(int i=0;i<4;i++)
         {
          if(m_indicators[i]==NULL) continue; // Ignorar a opcao Nao usar.
+         datetime opened=iTime(m_symbol,IndicatorPeriod(i),0);
+         if(opened<=0) { error="Aguardando historico do slot."; return false; }
          string detail;
          if(!m_indicator_data[i].Load(m_indicators[i],detail))
            {
             error=StringFormat("Indicador %d: %s",i+1,detail);
             ClearBuffers(); return false;
            }
+         if(iTime(m_symbol,IndicatorPeriod(i),0)!=opened)
+           { error="A barra do slot mudou durante a leitura."; ClearBuffers(); return false; }
+         m_indicator_times[i]=opened;
         }
       // Se a barra mudou durante as copias, recomecar no proximo tick.
       datetime times[];
       if(CopyTime(m_symbol,m_timeframe,0,1,times)!=1 || times[0]!=m_rates[0].time)
         { error="A barra mudou durante a leitura dos buffers. Aguardando novo tick."; ClearBuffers(); return false; }
+      for(int i=0;i<4;i++) if(m_indicators[i]!=NULL && iTime(m_symbol,IndicatorPeriod(i),0)!=m_indicator_times[i])
+        { error="Um slot mudou de vela durante a leitura."; ClearBuffers(); return false; }
       m_buffers_ready=true;
       return true;
      }
@@ -527,9 +536,17 @@ public:
       setBreakeven(config.management.mode[0],config.management.values[0],config.management.values[1]);
       setTrailing(config.management.mode[1],config.management.values[2],config.management.values[3],config.management.values[4]);
       setMovingStop(config.management.mode[2],config.management.values[5],config.management.values[6],config.management.values[7]);
-      for(int i=0;i<4;i++) if(!ConfigureIndicator(i,config.indicators[i],error)) return false;
+      for(int i=0;i<4;i++)
+        {
+         if(!ConfigureIndicator(i,config.indicators[i],error)) return false;
+         m_indicator_periods[i]=config.indicator_timeframes[i];
+        }
       return true;
      }
+   ENUM_TIMEFRAMES IndicatorPeriod(const int slot)
+     { return slot>=0 && slot<4 && m_indicator_periods[slot]!=PERIOD_CURRENT ? m_indicator_periods[slot] : m_timeframe; }
+   datetime IndicatorBarTime(const int slot)
+     { return slot>=0 && slot<4 ? m_indicator_times[slot] : 0; }
    datetime SignalBarTime() { return m_previous_bar_time; }
    datetime QuoteTime() { return m_latest_price.time; }
   };

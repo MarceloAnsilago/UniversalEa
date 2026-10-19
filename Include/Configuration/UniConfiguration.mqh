@@ -10,6 +10,8 @@ bool UniValidateConfiguration(GuiAppliedConfiguration &config,string &error)
    int active=0;
    for(int i=0;i<4;i++)
      {
+      if(GuiSetupTimeframeIndex(config.indicator_timeframes[i])<0)
+        { error="Timeframe do slot invalido."; return false; }
       IndicatorConfig c=config.indicators[i];
       MyIndicator *probe=MyIndicatorFactory::Create(c,error);
       if(error!="") return false;
