@@ -267,3 +267,14 @@ Validacao: 72 testes JavaScript, 55 verificacoes matematicas de ordens/gestao e
 ou avisos. No navegador: minima/maxima, persistencia, integracao do botao,
 revisao da opcao e importacao legada conferidas. Sem ordens reais e sem novo
 teste visual de ponta a ponta no MT5 nesta etapa.
+
+
+### Politica atual de presets no GeraSet
+
+O GeraSet exporta e importa somente sets no formato versao 2. Foram removidas
+as migracoes de layouts e paginas antigas, timeframes globais, campos sem
+nome e sinais misturados entre compra/venda. Os arquivos antigos nao sao
+alterados nem apagados. Para novos testes, crie e exporte novamente o setup
+pelo GeraSet atual. A leitura verifica exatamente os parametros exportados,
+sem remapear posicoes de sinais. 70 testes JavaScript passaram nesta limpeza.
+Esta alteracao e do GeraSet; nao modifica a logica operacional do UniEA.
