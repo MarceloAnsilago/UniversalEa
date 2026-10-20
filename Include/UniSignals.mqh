@@ -46,6 +46,9 @@ class CUniSignals
   {
 private:
    UniSignalRule m_rules[5];
+   string m_visual_payload[5];
+   int m_visual_usages[4];
+   datetime m_visual_anchor;
    bool m_last[4],m_previous[5],m_visual_ready,m_result[5],m_history;
    double m_a[5],m_b[5],m_levels[12];
    bool Constant(const int source) { return source==9 || (source>=22 && source<=33); }
@@ -59,6 +62,7 @@ private:
      { int slot=Slot(source); return slot>=0 ? m_slot_periods[slot] : m_rule_periods[rule]; }
    int OffsetAt(const ENUM_TIMEFRAMES period,const int offset)
      {
+      if(m_visual_anchor>0) return iBarShift(m_symbol,period,m_visual_anchor,false);
       if(offset==0 || period==m_period) return offset;
       datetime anchor=iTime(m_symbol,m_period,offset);
       return anchor>0 ? iBarShift(m_symbol,period,anchor,false) : -1;
@@ -83,6 +87,7 @@ private:
              (buffer==0 || config.indicators[slot].type==GUI_INDICATOR_ADX);
      }
 protected:
+   ENUM_TIMEFRAMES ReadPeriod() { return m_read_period; }
    virtual datetime SourceClock(MyUnEA *engine,const int source,const int rule,const datetime fallback)
      {
       if(Constant(source)) return 0;
@@ -178,6 +183,9 @@ public:
      }
    void Reset()
      {
+      m_visual_anchor=0;
+      for(int i=0;i<5;i++) m_visual_payload[i]="";
+      for(int i=0;i<4;i++) m_visual_usages[i]=0;
       m_visual_ready=false; m_history=false; m_read_period=PERIOD_CURRENT;
       for(int i=0;i<5;i++) { m_clock_a[i]=0; m_clock_b[i]=0; m_rule_periods[i]=PERIOD_CURRENT; }
       for(int i=0;i<4;i++) m_slot_periods[i]=PERIOD_CURRENT;
@@ -202,6 +210,7 @@ public:
      {
       Reset(); error=""; m_symbol=symbol; m_period=period;
       if(ArraySize(payload)!=5 || ArraySize(usages)!=4) { error="Quantidade de sinais invalida."; return false; }
+      ArrayCopy(m_visual_usages,usages); ArrayCopy(m_visual_payload,payload);
       for(int i=0;i<4;i++)
         {
          if(usages[i]<0 || usages[i]>1) { error="Finalidade do indicador invalida."; return false; }
@@ -243,6 +252,26 @@ public:
          groups[group]=true; m_rules[i]=r;
         }
       return true;
+     }
+   // Immutable visual configuration; evaluation still uses this same class.
+   void CopyVisualConfiguration(string &payload[],int &usages[],double &levels[],ENUM_TIMEFRAMES &period)
+     {
+      ArrayCopy(payload,m_visual_payload); ArrayCopy(usages,m_visual_usages); ArrayCopy(levels,m_levels); period=m_period;
+     }
+   int VisualStateAt(MyUnEA *engine,const int slot,const datetime anchor,const double point)
+     {
+      // A higher-period forming candle cannot be reconstructed from its final
+      // buffer value without leaking data beyond this chart candle.
+      for(int i=0;i<5;i++)
+        {
+         UniSignalRule r=m_rules[i];
+         if(r.op==0 || (!UsesSlot(r.source,slot) && !UsesSlot(r.reference,slot))) continue;
+         if((!Constant(r.source) && r.bar==0 && PeriodSeconds(SourcePeriod(r.source,i))>PeriodSeconds((ENUM_TIMEFRAMES)_Period)) ||
+            (!Constant(r.reference) && r.reference_bar==0 && PeriodSeconds(SourcePeriod(r.reference,i))>PeriodSeconds((ENUM_TIMEFRAMES)_Period))) return 2;
+        }
+      m_visual_anchor=anchor;
+      int state=VisualState(engine,slot,1,point);
+      m_visual_anchor=0; return state;
      }
    // Per-slot conditions, grouped by purpose and side using the configured E/Ou.
    // 2 means unavailable, ambiguous or tick history that cannot be reconstructed.

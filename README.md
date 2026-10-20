@@ -176,39 +176,33 @@ preenchimento. Cada faixa combina somente as condições que referenciam o respe
 indicador, preservando E/Ou e o lado já resolvido pelo GeraSet. Não representa a
 aprovação final de toda a estratégia.
 
-O estado atual vem dos resultados da mesma avaliação operacional (`CUniSignals`).
-O histórico reutiliza esse avaliador e os handles existentes, com deslocamento temporal.
-Comparações comuns da vela atual são reconstruídas pelo fechamento; cruzamentos e
-toques intrabar passados não são reconstruídos sem ticks. Os estados observados ao vivo
-são mantidos até saírem do limite de candles ou o EA reinicializar.
+O indicador visual avalia as regras pelo mesmo `CUniSignals`, com adaptador
+somente de leitura dos indicadores nativos (`Include/UniHistogramEvaluation.mqh`).
+Slots, regras, periodos e niveis sao copiados na criacao. Leituras repetidas sao
+compartilhadas dentro de cada calculo e invalidadas antes do proximo calculo.
+O histograma nao envia ordens.
 
-`Include/UniSignalHistogram.mqh` controla o ciclo de vida e snapshots binários
-limitados no sandbox `MQL5/Files`; `Indicators/UniSignalHistogram.mq5` exibe buffers
-`DRAW_COLOR_HISTOGRAM`, sem objetos por candle. Os arquivos temporários são removidos
-na desinicialização normal. Atualizações do canal ocorrem ao mudar estado/candle,
-com até três tentativas iniciais de preenchimento do histórico. A leitura visual
-pode atrasar até um segundo. Use o mesmo timeframe da estratégia no gráfico.
-No testador não visual, o histograma não é criado.
+`Include/UniSignalHistogram.mqh` controla as subjanelas e
+`Indicators/UniSignalHistogram.mq5` desenha buffers `DRAW_COLOR_HISTOGRAM`.
+Nao ha arquivos de snapshots, temporizadores ou espera em milissegundos reais.
+No fim do testador visual, as faixas sao preservadas. No testador nao visual,
+nenhum histograma e criado. Use o timeframe da estrategia no grafico.
 
-Compilar `Indicators/UniSignalHistogram.mq5` antes de `UniEA.mq5`, pois o indicador
-é incorporado como recurso. Testes: `Tests/SignalGridTests.mq5` e
-`Tests/HistogramPanelTests.mq5` (este último usa o indicador instalado no terminal
-isolado como `UniSignalHistogram.ex5`, com negociação desabilitada).
+O historico usa os deslocamentos temporais das condicoes. Comparacoes comuns
+da vela atual sao reconstruidas pelo fechamento. Cruzamentos/toques intrabar
+e vela atual de periodo superior ao grafico nao sao reconstruidos sem ticks
+e podem ficar indisponiveis. Cada faixa representa somente suas proprias regras.
 
+Compile `Indicators/UniSignalHistogram.mq5` antes de `UniEA.mq5` (recurso embutido).
+`Tests/HistogramPanelTests.mq5` verifica buffers, cores, ativacao e ciclo de vida.
+`Tests/HistogramVisualAudit.mq5` inclui o EA e exporta os buffers no fim do Tester.
 
-Validação desta implementação (17/10/2026): UniEA e indicador compilados com
-zero erros e avisos; SignalGridTests: 67 verificações sem falhas; HistogramPanelTests:
-15 verificações sem falhas em terminal portátil com negociação desabilitada.
-O teste do painel confere buffers, cores, uma/três faixas, desativação e limpeza,
-sem inspeção visual por screenshot. GeraSet: 54 testes JavaScript sem falhas e
-renderização Flask da checkbox confirmada. Testador visual, troca de timeframe,
-zoom/rolagem e operações reais não foram exercitados nesta validação.
-
-Integração: UniEA.mq5, UniEA.mqproj, Include/MyUnEA.mqh,
-Include/UniRuntime.mqh, Include/UniSignals.mqh e os dois componentes novos de
-histograma. No GeraSet, os arquivos alterados são templates/page.html,
-static/app.js, static/export.js e tests/export.test.cjs, dentro de flask_version.
-
+Validacao de 20/10/2026: 26 verificacoes de histograma, 67 de sinais e 40 de MTF
+passaram sem falhas; compilacoes sem erros nem avisos. T05/T06 visuais anteriores
+preencheram as faixas e preservaram as operacoes, mas tiveram 60 divergencias
+no ADX. O cache foi ajustado depois; repetir o visual ainda esta pendente.
+**O histograma nao esta integralmente aprovado.** Evidencias e limites:
+`.test-results/histogram-fix-20261019/RELATORIO.md`.
 
 A mesma seção do GeraSet possui **Exibir painel do UNI**, exportado como
 `InpExibirPainel=true` por padrão. Desmarcar impede a criação e a atualização

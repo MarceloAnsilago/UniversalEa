@@ -25,7 +25,7 @@ private:
 public:
    CUniRuntime() { m_engine=NULL; m_active=false; m_revision=0; m_resume_bar=0; m_resume_time=0; m_evaluated_bar=0; m_pending_exits=0; }
    ~CUniRuntime() { Shutdown(); }
-   void Shutdown() { m_histograms.Clear(); m_chart_indicators.Clear(); if(m_engine!=NULL) delete m_engine; m_engine=NULL; m_active=false; }
+   void Shutdown(const bool preserve_histograms=false) { m_histograms.Clear(preserve_histograms); m_chart_indicators.Clear(); if(m_engine!=NULL) delete m_engine; m_engine=NULL; m_active=false; }
    bool HasConfiguration() { return m_engine!=NULL; }
    bool Active() { return m_active; }
    int Revision() { return m_revision; }
@@ -55,9 +55,7 @@ public:
    bool ShowIndicators(const long chart,const int &usages[],const double &levels[],string &error)
      { return m_chart_indicators.Attach(chart,m_applied,usages,levels,error); }
    bool ShowHistograms(const long chart,const bool enabled,const int bars,string &error)
-     { return m_histograms.Attach(chart,m_applied,enabled,bars,error); }
-   void RefreshHistograms()
-     { if(m_engine!=NULL) m_histograms.Refresh(m_engine,m_signals,m_symbol,m_period); }
+     { return m_histograms.Attach(chart,m_applied,m_signals,enabled,bars,error); }
    bool ConfigureRsiLevels(const double &levels[],string &error)
      { return m_signals.ConfigureRsiLevels(levels,m_applied,error); }
    bool ConfigureSignals(const string &payload[],const int &usages[],string &error)
@@ -81,7 +79,6 @@ public:
       m_engine.doTick(error);
       int events=0;
       if(error=="" && !m_signals.Evaluate(m_engine,m_engine.SignalBarTime(),SymbolInfoDouble(m_symbol,SYMBOL_POINT),events,error)) events=0;
-      RefreshHistograms();
       m_pending_exits|=events&12;
       // Keep retrying a failed/partial exit, including while entries are paused.
       if(m_pending_exits!=0)

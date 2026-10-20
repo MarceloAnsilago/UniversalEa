@@ -10,3 +10,5 @@
 .DS_Store
 Thumbs.db
 .test-runtime/
+# Evidencias, exportacoes e backups locais dos testes.
+/.test-results/

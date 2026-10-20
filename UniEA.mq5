@@ -291,7 +291,7 @@ int OnInit()
    return INIT_SUCCEEDED;
   }
 void OnDeinit(const int reason)
-  { EventKillTimer(); price_markers.Destroy(); runtime.Shutdown(); panel.Destroy(); }
+  { EventKillTimer(); price_markers.Destroy(); runtime.Shutdown((bool)MQLInfoInteger(MQL_TESTER) && (bool)MQLInfoInteger(MQL_VISUAL_MODE)); panel.Destroy(); }
 
 void ReportExecutionError(const string error)
   {
