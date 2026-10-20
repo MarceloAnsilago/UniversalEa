@@ -46,7 +46,9 @@ int OnCalculate(const int total,const int calculated,const datetime &time[],cons
    evaluation.BeginCalculation();
    string error; int events;
    if(!evaluation.Evaluate(NULL,iTime(_Symbol,evaluation.clock_period,0),_Point,events,error)) return calculated;
-   int count=calculated==0 ? MathMin(total,HistoryBars) : MathMin(total-calculated+1,HistoryBars);
+   // Retry the last closed candle too: at an MTF boundary the native buffer
+   // can finish updating after the first calculation of the new chart candle.
+   int count=calculated==0 ? MathMin(total,HistoryBars) : MathMin(MathMin(total,MathMax(2,total-calculated+1)),HistoryBars);
    for(int b=count-1;b>=1;b--) SetState(b,evaluation.VisualStateAt(NULL,Slot,time[b],_Point));
    SetState(0,evaluation.VisualState(NULL,Slot,0,_Point));
    for(int b=HistoryBars;b<MathMin(total,HistoryBars+MathMax(1,total-calculated));b++) histogram_values[b]=EMPTY_VALUE;
