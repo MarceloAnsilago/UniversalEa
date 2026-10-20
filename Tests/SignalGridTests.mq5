@@ -121,5 +121,19 @@ void OnStart()
    Check(probe.Configure(rows,usages,"TEST",PERIOD_M1,config,error),"Current simple comparison configured");
    probe.samples[10][1]=110;
    Check(probe.VisualState(NULL,0,1,0.01)==1,"Simple current comparisons reconstruct the past candle close");
+   string extended[UNI_SIGNAL_COUNT];
+   for(int i=0;i<UNI_SIGNAL_COUNT;i++) extended[i]="";
+   extended[0]="1,0,1,10,1,0,9,0,100,0,0";
+   extended[5]="1,0,-1,10,1,1,9,0,100,0,0";
+   extended[9]="2,0,-1,10,1,1,9,0,95,0,0";
+   Check(probe.Configure(extended,usages,"TEST",PERIOD_M1,config,error),"Ten conditions accept independent sell group in rows 6 and 10");
+   probe.samples[10][1]=90;
+   Check(probe.Evaluate(NULL,1400,0.01,events,error) && events==2,"Tenth condition participates in sell group");
+   Check(probe.VisualState(NULL,0,0,0.01)==-1,"Histogram includes extended sell group");
+   probe.samples[10][1]=97;
+   Check(probe.Evaluate(NULL,1500,0.01,events,error) && events==0,"False tenth AND condition blocks sell");
+   string copied[]; int copied_usages[]; double copied_levels[]; ENUM_TIMEFRAMES copied_period;
+   probe.CopyVisualConfiguration(copied,copied_usages,copied_levels,copied_period);
+   Check(ArraySize(copied)==UNI_SIGNAL_COUNT && copied[9]==extended[9],"Visual configuration preserves all ten rules");
    PrintFormat("[SignalGridTests] %d checks, %d failures",checks,failures);
   }

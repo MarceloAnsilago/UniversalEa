@@ -21,6 +21,11 @@ input string Rule2="";
 input string Rule3="";
 input string Rule4="";
 input string Rule5="";
+input string Rule6="";
+input string Rule7="";
+input string Rule8="";
+input string Rule9="";
+input string Rule10="";
 double histogram_values[],colors[];
 CUniHistogramEvaluation evaluation;
 int OnInit()
@@ -32,7 +37,7 @@ int OnInit()
    PlotIndexSetString(0,PLOT_LABEL,"Compra / Venda / Neutro"); PlotIndexSetDouble(0,PLOT_EMPTY_VALUE,EMPTY_VALUE);
    string error;
    string configuration="v1|"+IntegerToString((int)EvaluationPeriod)+"|"+Slot1Configuration+"|"+Slot2Configuration+"|"+Slot3Configuration+"|"+Slot4Configuration+
-                        "|"+Rule1+"|"+Rule2+"|"+Rule3+"|"+Rule4+"|"+Rule5;
+                        "|"+Rule1+"|"+Rule2+"|"+Rule3+"|"+Rule4+"|"+Rule5+"|"+Rule6+"|"+Rule7+"|"+Rule8+"|"+Rule9+"|"+Rule10;
    if(!evaluation.Initialize(configuration,error)) { Print("Histograma: ",error); return INIT_PARAMETERS_INCORRECT; }
    return INIT_SUCCEEDED;
   }

@@ -126,14 +126,14 @@ Compile `UniEA.mq5` no MetaEditor com a biblioteca padrão do MetaTrader 5 dispo
 
 As regras prontas de MA, RSI e ADX e a confirmacao conjunta foram removidas.
 Os indicadores fornecem buffers para o novo avaliador `Include/UniSignals.mqh`.
-As cinco condicoes do GeraSet chegam pelos inputs InpSignal1 a InpSignal5.
+As dez condicoes do GeraSet chegam pelos inputs InpSignal1 a InpSignal10; sets antigos com cinco continuam aceitos.
 Os inputs de inclinacao MA, niveis RSI e limiar ADX foram retirados.
 Os campos binarios legados permanecem apenas para compatibilidade.
 
 ## Grade Sinal integrada
 
 O exportador mapeia os quatro indicadores (MA, RSI e ADX), seus parametros e
-intervalos, a finalidade Entrada/Saida e cinco condicoes. RSI e ADX agora tem
+intervalos, a finalidade Entrada/Saida e dez condicoes. RSI e ADX agora tem
 parametros independentes por slot. Reexporte presets antigos com esses tipos.
 Normal/Inverter e resolvido pelo Flask para o lado final. Os payloads dos
 inputs de condicao sao gerados pela grade; nao exigem edicao manual.
@@ -198,11 +198,13 @@ Compile `Indicators/UniSignalHistogram.mq5` antes de `UniEA.mq5` (recurso embuti
 `Tests/HistogramVisualAudit.mq5` inclui o EA e exporta os buffers no fim do Tester.
 
 Validacao de 20/10/2026: 26 verificacoes de histograma, 67 de sinais e 40 de MTF
-passaram sem falhas; compilacoes sem erros nem avisos. T05/T06 visuais anteriores
-preencheram as faixas e preservaram as operacoes, mas tiveram 60 divergencias
-no ADX. O cache foi ajustado depois; repetir o visual ainda esta pendente.
-**O histograma nao esta integralmente aprovado.** Evidencias e limites:
-`.test-results/histogram-fix-20261019/RELATORIO.md`.
+passaram sem falhas; compilacoes sem erros nem avisos. Apos os ajustes de cache
+e da ultima barra fechada, T05/T06 passaram na auditoria numerica dos buffers:
+1.800 amostras, nenhuma indisponivel ou divergente, e 112 solicitacoes de negocio
+identicas as anteriores. A tela final do UniEA de producao foi confirmada no T06,
+com os tres histogramas preenchidos ate o ultimo candle e operacoes identicas.
+Verificacao aprovada para esses cenarios T05/T06.
+Evidencias locais: `.test-results/histogram-fix-20261019/RELATORIO.md`.
 
 A mesma seção do GeraSet possui **Exibir painel do UNI**, exportado como
 `InpExibirPainel=true` por padrão. Desmarcar impede a criação e a atualização
@@ -220,3 +222,20 @@ barras entre duas atualizações visuais. As tentativas iniciais de histórico t
 usam tempo real. O timer permanece apenas fora do tester, para atualização entre
 cotações. O teste HistogramPanelTests verifica a limitação de publicações com
 5.000 mudanças de estado consecutivas.
+
+
+### Sinais de compra e venda espelhados (20/10/2026)
+
+O GeraSet organiza cinco condicoes na aba Compra e cinco na aba Venda.
+Espelhar compra cria uma copia editavel das regras, preservando finalidade,
+candles, E/Ou, periodos e distancia. Niveis RSI inferior/superior e linhas DI
+sao trocados conforme a direcao; filtros de forca ADX mantem a comparacao.
+Valores fixos ambiguos exigem revisao explicita e bloqueiam a exportacao.
+A finalidade Saida continua fechando o lado oposto, sem abrir outra posicao.
+
+O EA aceita os novos inputs InpSignal6..InpSignal10 (vazios por padrao),
+incluindo-os no avaliador, na configuracao do histograma e nos recursos embutidos.
+Validacao desta alteracao: 70 testes JavaScript; 72 verificacoes de sinais,
+26 de histograma e 40 de MTF, sem falhas. Compilacoes sem erros nem avisos.
+A auditoria visual T05/T06 descrita acima pertence a versao anterior: a nova
+configuracao com dez condicoes ainda nao foi exercitada no Testador visual.

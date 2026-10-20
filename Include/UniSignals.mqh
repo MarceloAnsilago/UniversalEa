@@ -1,6 +1,7 @@
 #ifndef UNI_SIGNALS_MQH
 #define UNI_SIGNALS_MQH
 #include "MyUnEA.mqh"
+#define UNI_SIGNAL_COUNT 10
 
 struct UniSignalRule
   {
@@ -45,17 +46,17 @@ bool UniSignalCompare(const int op,const double a,const double b,const double pr
 class CUniSignals
   {
 private:
-   UniSignalRule m_rules[5];
-   string m_visual_payload[5];
+   UniSignalRule m_rules[UNI_SIGNAL_COUNT];
+   string m_visual_payload[UNI_SIGNAL_COUNT];
    int m_visual_usages[4];
    datetime m_visual_anchor;
-   bool m_last[4],m_previous[5],m_visual_ready,m_result[5],m_history;
-   double m_a[5],m_b[5],m_levels[12];
+   bool m_last[4],m_previous[UNI_SIGNAL_COUNT],m_visual_ready,m_result[UNI_SIGNAL_COUNT],m_history;
+   double m_a[UNI_SIGNAL_COUNT],m_b[UNI_SIGNAL_COUNT],m_levels[12];
    bool Constant(const int source) { return source==9 || (source>=22 && source<=33); }
    datetime m_bar[4];
    string m_symbol;
-   ENUM_TIMEFRAMES m_period,m_read_period,m_slot_periods[4],m_rule_periods[5];
-   datetime m_clock_a[5],m_clock_b[5];
+   ENUM_TIMEFRAMES m_period,m_read_period,m_slot_periods[4],m_rule_periods[UNI_SIGNAL_COUNT];
+   datetime m_clock_a[UNI_SIGNAL_COUNT],m_clock_b[UNI_SIGNAL_COUNT];
    int Slot(const int source)
      { return source>=22 && source<=33 ? (source-22)/3 : source>=10 && source<=21 ? (source-10)/3 : -1; }
    ENUM_TIMEFRAMES SourcePeriod(const int source,const int rule)
@@ -170,26 +171,26 @@ public:
    void InvalidateVisual() { m_visual_ready=false; }
    bool LiveEntry(const int side)
      {
-      for(int i=0;i<5;i++)
+      for(int i=0;i<UNI_SIGNAL_COUNT;i++)
          if(m_rules[i].op!=0 && m_rules[i].usage==0 && m_rules[i].side==side &&
             ((!Constant(m_rules[i].source) && m_rules[i].bar==0) || (!Constant(m_rules[i].reference) && m_rules[i].reference_bar==0))) return true;
       return false;
      }
    bool ClosedEntryAfter(const int side,MyUnEA *engine,const datetime since,const datetime fallback)
      {
-      for(int i=0;i<5;i++) if(m_rules[i].op!=0 && m_rules[i].usage==0 && m_rules[i].side==side)
+      for(int i=0;i<UNI_SIGNAL_COUNT;i++) if(m_rules[i].op!=0 && m_rules[i].usage==0 && m_rules[i].side==side)
          if(SourceClock(engine,m_rules[i].source,i,fallback)>since || SourceClock(engine,m_rules[i].reference,i,fallback)>since) return true;
       return false;
      }
    void Reset()
      {
       m_visual_anchor=0;
-      for(int i=0;i<5;i++) m_visual_payload[i]="";
+      for(int i=0;i<UNI_SIGNAL_COUNT;i++) m_visual_payload[i]="";
       for(int i=0;i<4;i++) m_visual_usages[i]=0;
       m_visual_ready=false; m_history=false; m_read_period=PERIOD_CURRENT;
-      for(int i=0;i<5;i++) { m_clock_a[i]=0; m_clock_b[i]=0; m_rule_periods[i]=PERIOD_CURRENT; }
+      for(int i=0;i<UNI_SIGNAL_COUNT;i++) { m_clock_a[i]=0; m_clock_b[i]=0; m_rule_periods[i]=PERIOD_CURRENT; }
       for(int i=0;i<4;i++) m_slot_periods[i]=PERIOD_CURRENT;
-      for(int i=0;i<5;i++) { ZeroMemory(m_rules[i]); m_previous[i]=false; m_a[i]=0; m_b[i]=0; }
+      for(int i=0;i<UNI_SIGNAL_COUNT;i++) { ZeroMemory(m_rules[i]); m_previous[i]=false; m_a[i]=0; m_b[i]=0; }
       for(int i=0;i<4;i++) { m_last[i]=false; m_bar[i]=0; m_levels[i*3]=70; m_levels[i*3+1]=50; m_levels[i*3+2]=30; }
      }
    bool ConfigureRsiLevels(const double &levels[],GuiAppliedConfiguration &config,string &error)
@@ -209,7 +210,7 @@ public:
                   GuiAppliedConfiguration &config,string &error)
      {
       Reset(); error=""; m_symbol=symbol; m_period=period;
-      if(ArraySize(payload)!=5 || ArraySize(usages)!=4) { error="Quantidade de sinais invalida."; return false; }
+      if((ArraySize(payload)<5 || ArraySize(payload)>UNI_SIGNAL_COUNT) || ArraySize(usages)!=4) { error="Quantidade de sinais invalida."; return false; }
       ArrayCopy(m_visual_usages,usages); ArrayCopy(m_visual_payload,payload);
       for(int i=0;i<4;i++)
         {
@@ -221,9 +222,9 @@ public:
         }
       for(int i=0;i<4;i++) m_slot_periods[i]=config.indicator_timeframes[i]==PERIOD_CURRENT ? period : config.indicator_timeframes[i];
       bool groups[4]={false,false,false,false};
-      for(int i=0;i<5;i++)
+      for(int i=0;i<UNI_SIGNAL_COUNT;i++)
         {
-         if(payload[i]=="") continue;
+         if(i>=ArraySize(payload) || payload[i]=="") continue;
          string parts[];
          if(StringSplit(payload[i],',',parts)!=11) { error="Formato da condicao invalido."; return false; }
          for(int j=0;j<11;j++)
@@ -262,7 +263,7 @@ public:
      {
       // A higher-period forming candle cannot be reconstructed from its final
       // buffer value without leaking data beyond this chart candle.
-      for(int i=0;i<5;i++)
+      for(int i=0;i<UNI_SIGNAL_COUNT;i++)
         {
          UniSignalRule r=m_rules[i];
          if(r.op==0 || (!UsesSlot(r.source,slot) && !UsesSlot(r.reference,slot))) continue;
@@ -281,7 +282,7 @@ public:
       for(int side=0;side<2;side++)
         {
          bool total=false,clause=false,first=true;
-         for(int i=0;i<5;i++)
+         for(int i=0;i<UNI_SIGNAL_COUNT;i++)
            {
             UniSignalRule r=m_rules[i];
             if(r.op==0 || r.side!=(side==0 ? 1 : -1) || (!UsesSlot(r.source,slot) && !UsesSlot(r.reference,slot))) continue;
@@ -308,9 +309,9 @@ public:
      {
       events=0; error=""; m_visual_ready=false;
       bool used[4]={false,false,false,false},live[4]={false,false,false,false};
-      bool result[5],changed[4]={false,false,false,false}; double current_a[5],current_b[5];
-      datetime clocks_a[5],clocks_b[5];
-      for(int i=0;i<5;i++)
+      bool result[UNI_SIGNAL_COUNT],changed[4]={false,false,false,false}; double current_a[UNI_SIGNAL_COUNT],current_b[UNI_SIGNAL_COUNT];
+      datetime clocks_a[UNI_SIGNAL_COUNT],clocks_b[UNI_SIGNAL_COUNT];
+      for(int i=0;i<UNI_SIGNAL_COUNT;i++)
         {
          UniSignalRule r=m_rules[i]; if(r.op==0) continue;
          int group=r.usage*2+(r.side==1 ? 0 : 1);
@@ -329,7 +330,7 @@ public:
         {
          if(!used[g] || (!live[g] && !changed[g])) continue;
          bool total=false,clause=false;
-         for(int i=0;i<5;i++)
+         for(int i=0;i<UNI_SIGNAL_COUNT;i++)
            {
             UniSignalRule r=m_rules[i]; if(r.op==0 || r.usage*2+(r.side==1 ? 0 : 1)!=g) continue;
             if(r.op==1) clause=result[i];
@@ -340,9 +341,9 @@ public:
          if(matched && (!live[g] || !m_last[g])) events|=1<<g;
          m_last[g]=matched; m_bar[g]=bar;
         }
-      for(int i=0;i<5;i++) m_result[i]=m_rules[i].op!=0 ? result[i] : false;
+      for(int i=0;i<UNI_SIGNAL_COUNT;i++) m_result[i]=m_rules[i].op!=0 ? result[i] : false;
       m_visual_ready=true;
-      for(int i=0;i<5;i++) if(m_rules[i].op!=0)
+      for(int i=0;i<UNI_SIGNAL_COUNT;i++) if(m_rules[i].op!=0)
         { m_previous[i]=true; m_a[i]=current_a[i]; m_b[i]=current_b[i]; m_clock_a[i]=clocks_a[i]; m_clock_b[i]=clocks_b[i]; }
       return true;
      }

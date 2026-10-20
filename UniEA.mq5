@@ -160,6 +160,11 @@ input string InpSignal2=""; // Condicao 2: configurada na grade do GeraSet
 input string InpSignal3=""; // Condicao 3: configurada na grade do GeraSet
 input string InpSignal4=""; // Condicao 4: configurada na grade do GeraSet
 input string InpSignal5=""; // Condicao 5: configurada na grade do GeraSet
+input string InpSignal6=""; // Condicao 6: configurada na grade do GeraSet
+input string InpSignal7=""; // Condicao 7: configurada na grade do GeraSet
+input string InpSignal8=""; // Condicao 8: configurada na grade do GeraSet
+input string InpSignal9=""; // Condicao 9: configurada na grade do GeraSet
+input string InpSignal10=""; // Condicao 10: configurada na grade do GeraSet
 
 input group "Visualizacao no MetaTrader 5"
 sinput bool InpExibirPainel=true; // Mostrar painel do UNI
@@ -236,7 +241,7 @@ int OnInit()
    CGuiState initial; BuildInitialConfiguration(initial);
    bool tester=(bool)MQLInfoInteger(MQL_TESTER);
    bool activate=tester ? InpTesterAutoStart : InpAutoStart;
-   bool configured=InpSignal1!="" || InpSignal2!="" || InpSignal3!="" || InpSignal4!="" || InpSignal5!="";
+   bool configured=InpSignal1!="" || InpSignal2!="" || InpSignal3!="" || InpSignal4!="" || InpSignal5!="" || InpSignal6!="" || InpSignal7!="" || InpSignal8!="" || InpSignal9!="" || InpSignal10!="";
    for(int i=0;i<4;i++)
       if(initial.indicators[i].type!=GUI_INDICATOR_NONE) configured=true;
    string error;
@@ -247,7 +252,7 @@ int OnInit()
       for(int i=0;i<4;i++) { config.indicators[i]=initial.indicators[i]; config.indicator_timeframes[i]=initial.indicator_timeframes[i]; }
       if(!runtime.Apply(_Symbol,config,error))
         { Print("Configuracao: ",error); runtime.Shutdown(); return INIT_PARAMETERS_INCORRECT; }
-      string signals[]={InpSignal1,InpSignal2,InpSignal3,InpSignal4,InpSignal5};
+      string signals[]={InpSignal1,InpSignal2,InpSignal3,InpSignal4,InpSignal5,InpSignal6,InpSignal7,InpSignal8,InpSignal9,InpSignal10};
       int usages[]={(int)InpIndicator1Exit,(int)InpIndicator2Exit,(int)InpIndicator3Exit,(int)InpIndicator4Exit};
       if(!runtime.ConfigureSignals(signals,usages,error))
         { Print("Sinal: ",error); runtime.Shutdown(); return INIT_PARAMETERS_INCORRECT; }
