@@ -239,3 +239,31 @@ Validacao desta alteracao: 70 testes JavaScript; 72 verificacoes de sinais,
 26 de histograma e 40 de MTF, sem falhas. Compilacoes sem erros nem avisos.
 A auditoria visual T05/T06 descrita acima pertence a versao anterior: a nova
 configuracao com dez condicoes ainda nao foi exercitada no Testador visual.
+
+
+### Espelhamento da referencia de ordens pendentes (20/10/2026)
+
+Em Gestao > Ordem, a opcao Espelhar referencia da pendente na venda usa a
+referencia configurada como base de compra e troca Maxima/Minima na venda.
+Abertura, Fechamento e numero da vela permanecem iguais. Cada passe de
+ otimizacao aplica essa regra a referencia base escolhida naquele passe.
+A previa mostra Compra/Venda. A opcao persiste e aparece na Revisao e Sets.
+O botao Espelhar compra em Sinais tambem a ativa; ela pode ser desmarcada em
+Gestao. Desligada, ambos os lados continuam usando a mesma referencia.
+
+O set exporta InpPendingMirrorSell; o UniEA atualizado le esse input (padrao
+false para compatibilidade) e aplica a troca ao preco OHLC antes de selecionar
+Stop/Limit. Sets antigos carregam sem ativar a opcao, mesmo se o rascunho
+anterior estava espelhado. Conferido com helo world08 rsi.set.
+
+Stop por candle no motor utiliza o tamanho do candle como distancia, nao a
+minima/maxima como ancora. Stop/take, breakeven, trailing e stop movel calculam
+os precos pelo lado da posicao; nao se invertem sinais dos numeros digitados.
+A exportacao de trailing/stop movel pelo GeraSet continua uma etapa futura;
+essa alteracao nao a implementa nem inventa novas regras de gestao.
+
+Validacao: 72 testes JavaScript, 55 verificacoes matematicas de ordens/gestao e
+28 de requisicoes com transporte simulado, sem falhas. Compilacoes sem erros
+ou avisos. No navegador: minima/maxima, persistencia, integracao do botao,
+revisao da opcao e importacao legada conferidas. Sem ordens reais e sem novo
+teste visual de ponta a ponta no MT5 nesta etapa.

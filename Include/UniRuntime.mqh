@@ -23,6 +23,7 @@ private:
    CUniSignalHistogram m_histograms;
    int m_pending_exits;
 public:
+   void SetPendingMirrorSell(const bool enabled) { m_orders.SetPendingMirrorSell(enabled); }
    CUniRuntime() { m_engine=NULL; m_active=false; m_revision=0; m_resume_bar=0; m_resume_time=0; m_evaluated_bar=0; m_pending_exits=0; }
    ~CUniRuntime() { Shutdown(); }
    void Shutdown(const bool preserve_histograms=false) { m_histograms.Clear(preserve_histograms); m_chart_indicators.Clear(); if(m_engine!=NULL) delete m_engine; m_engine=NULL; m_active=false; }

@@ -12,6 +12,7 @@ private:
    datetime m_moving_bar,m_last_service,m_modify_failure;
    ulong m_wait_order;
    bool m_uncertain;
+   bool m_pending_mirror_sell;
    bool m_exit_uncertain;
    ulong m_exit_wait;
 
@@ -74,7 +75,9 @@ private:
       request.deviation=20; request.comment="UniEA";
      }
 public:
-   CUniOrders() { m_symbol=""; m_wait_order=0; m_uncertain=false; m_exit_wait=0; m_exit_uncertain=false; m_moving_bar=0; m_last_service=0; m_modify_failure=0; }
+   CUniOrders() { m_pending_mirror_sell=false; m_symbol=""; m_wait_order=0; m_uncertain=false; m_exit_wait=0; m_exit_uncertain=false; m_moving_bar=0; m_last_service=0; m_modify_failure=0; }
+   // EA input policy survives panel reconfiguration; legacy binary files stay unchanged.
+   void SetPendingMirrorSell(const bool enabled) { m_pending_mirror_sell=enabled; }
    void Configure(const string symbol,GuiAppliedConfiguration &config,const ENUM_TIMEFRAMES period)
      { m_symbol=symbol; m_config=config; m_period=period; m_moving_bar=iTime(symbol,period,0); m_last_service=0; m_modify_failure=0; }
    bool Busy()
@@ -163,7 +166,7 @@ public:
         {
          MqlRates bar[];
          if(CopyRates(m_symbol,m_period,m_config.rules.pending_bar,1,bar)!=1) { error="Aguardando candle da pendente."; return false; }
-         int reference=m_config.rules.pending_reference;
+         int reference=UniPendingReference(m_config.rules.pending_reference,side,m_pending_mirror_sell);
          request.price=reference==0 ? bar[0].high : (reference==1 ? bar[0].low : (reference==2 ? bar[0].open : bar[0].close));
          double aligned=UniPriceGrid(request.price,tick,digits);
          if(MathAbs(request.price-aligned)>tick*1e-6) { error="OHLC fora do incremento de preço do ativo."; return false; }

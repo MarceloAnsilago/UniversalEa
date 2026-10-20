@@ -51,6 +51,11 @@ void OnStart()
    Check(!UniOrderTargets(rules,1,100,candle,1,0.5,2,sl,tp,error),"Reject malformed candle");
    Check(Near(UniPriceGrid(100.24,0.5,2,-1),100) && Near(UniPriceGrid(100.24,0.5,2,1),100.5),"Tick rounding directional");
    MqlTick quote; ZeroMemory(quote); quote.bid=100; quote.ask=101;
+   Check(UniPendingReference(1,-1,true)==0,"Sell mirrors buy low to high");
+   Check(UniPendingReference(0,-1,true)==1,"Sell mirrors buy high to low");
+   Check(UniPendingReference(1,1,true)==1 && UniPendingReference(0,1,true)==0,"Buy references stay unchanged");
+   Check(UniPendingReference(1,-1,false)==1,"Legacy sell preserves exact reference");
+   Check(UniPendingReference(2,-1,true)==2 && UniPendingReference(3,-1,true)==3,"Open and close remain unchanged");
    Check(UniPendingType(1,102,quote)==ORDER_TYPE_BUY_STOP,"Buy stop above ask");
    Check(UniPendingType(1,99,quote)==ORDER_TYPE_BUY_LIMIT,"Buy limit below ask");
    Check(UniPendingType(-1,99,quote)==ORDER_TYPE_SELL_STOP,"Sell stop below bid");
@@ -72,10 +77,16 @@ void OnStart()
    Check(UniManagedStop(management,-1,100,90,110,1,0.5,2,false)==92,"Sell trailing");
    Check(UniManagedStop(management,1,100,110.5,108,1,0.5,2,false)==108,"Trailing minimum step");
    Check(UniManagedStop(management,1,100,109,108,1,0.5,2,false)==108,"Trailing never retreats");
+   Check(UniManagedStop(management,-1,100,91,92,1,0.5,2,false)==92,"Sell trailing never loosens stop");
    management.Reset(); management.mode[2]=1; management.values[5]=5; management.values[6]=2; management.values[7]=1;
    Check(UniManagedStop(management,1,100,110,90,1,0.5,2,false)==90,"Moving stop waits for bar");
    Check(UniManagedStop(management,1,100,110,90,1,0.5,2,true)==108,"Moving stop on new bar");
+   Check(UniManagedStop(management,-1,100,90,110,1,0.5,2,true)==92,"Sell moving stop moves down on new bar");
    management.Reset(); management.mode[0]=2; management.values[0]=1; management.values[1]=0.5;
    Check(UniManagedStop(management,1,200,202,0,0.01,0.01,2,false)==201,"Percent BE uses opening price");
+   Check(UniManagedStop(management,-1,200,198,0,0.01,0.01,2,false)==199,"Sell percent BE uses opening price");
+   management.Reset(); management.mode[1]=2; management.values[2]=1; management.values[3]=0.5; management.values[4]=0.25;
+   Check(UniManagedStop(management,1,200,210,190,0.01,0.01,2,false)==209,"Buy percent trailing preserves distance");
+   Check(UniManagedStop(management,-1,200,190,210,0.01,0.01,2,false)==191,"Sell percent trailing mirrors distance");
    PrintFormat("[OrderLogicTests] %d checks, %d failures",checks,failures);
   }

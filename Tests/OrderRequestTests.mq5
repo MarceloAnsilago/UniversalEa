@@ -45,12 +45,15 @@ void OnStart()
    MqlRates reference[];
    Check(CopyRates(_Symbol,PERIOD_M1,10,1,reference)==1,"Pending history ready");
    if(ArraySize(reference)==1)
+     for(int mirrored=0;mirrored<2;mirrored++)
       for(int ref=0;ref<4;ref++)
         {
+         probe.SetPendingMirrorSell(mirrored==1);
          config.rules.pending_reference=ref; probe.Configure(_Symbol,config,PERIOD_M1);
-         double price=ref==0 ? reference[0].high : (ref==1 ? reference[0].low : (ref==2 ? reference[0].open : reference[0].close));
          for(int side=-1;side<=1;side+=2)
            {
+            int selected=mirrored==1 && side==-1 && ref<2 ? 1-ref : ref;
+            double price=selected==0 ? reference[0].high : (selected==1 ? reference[0].low : (selected==2 ? reference[0].open : reference[0].close));
             int before=probe.sends;
             double minimum=MathMax(SymbolInfoDouble(_Symbol,SYMBOL_TRADE_TICK_SIZE),SymbolInfoInteger(_Symbol,SYMBOL_TRADE_STOPS_LEVEL)*_Point);
             bool close=MathAbs(price-(side==1 ? quote.ask : quote.bid))<minimum-1e-10;

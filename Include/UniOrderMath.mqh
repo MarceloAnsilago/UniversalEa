@@ -51,6 +51,9 @@ ENUM_ORDER_TYPE UniPendingType(const int side,const double price,const MqlTick &
   { return side==1 ? (price>quote.ask ? ORDER_TYPE_BUY_STOP : ORDER_TYPE_BUY_LIMIT) :
                     (price<quote.bid ? ORDER_TYPE_SELL_STOP : ORDER_TYPE_SELL_LIMIT); }
 
+int UniPendingReference(const int reference,const int side,const bool mirror_sell)
+  { return mirror_sell && side==-1 && reference>=0 && reference<=1 ? 1-reference : reference; }
+
 // Calcula somente melhorias do stop. Percentuais usam o preço de abertura.
 double UniManagedStop(CGuiManagementState &management,const int side,const double entry,const double price,
                       const double old_sl,const double point,const double tick,const int digits,

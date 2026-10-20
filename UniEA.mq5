@@ -42,6 +42,7 @@ input group "Ordem"
 input ENUM_GUI_ORDER_MODE InpOrderMode=GUI_ORDER_MARKET;           // Tipo de ordem: a mercado ou pendente
 input ENUM_UNI_PENDING_REFERENCE InpPendingReference=UNI_PENDING_HIGH; // Pendente: posicionar em
 input int InpPendingCandle=1; // Pendente: vela 1 = ultima fechada; 1 a 100000
+input bool InpPendingMirrorSell=false; // Pendente: espelhar maxima/minima na venda
 
 input group "Regras de entrada e saida"
 input ENUM_GUI_CANDLE_FILTER InpCandleFilter=GUI_CANDLE_DISABLED;   // Filtro: desativado, tamanho de candles ou pavios
@@ -237,6 +238,7 @@ void BuildInitialConfiguration(CGuiState &config)
 
 int OnInit()
   {
+   runtime.SetPendingMirrorSell(InpPendingMirrorSell);
    TesterHideIndicators(true); // Display only the named slot plots explicitly attached below.
    CGuiState initial; BuildInitialConfiguration(initial);
    bool tester=(bool)MQLInfoInteger(MQL_TESTER);
