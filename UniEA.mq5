@@ -8,6 +8,10 @@
 #include "Include/UniRuntime.mqh"
 #include "Include/Configuration/UniInputOptions.mqh"
 #include "Include/UniPriceMarkers.mqh"
+#include "Include/UniOptimizationCurves.mqh"
+
+sinput string InpCurveSession=""; // Identificador interno das curvas do GeraSet
+CUniOptimizationCurves optimization_curves;
 
 
 // Modos de gestao da configuracao.
@@ -329,3 +333,9 @@ void OnChartEvent(const int id,const long &lparam,const double &dparam,const str
 
 void OnTradeTransaction(const MqlTradeTransaction &transaction,const MqlTradeRequest &request,const MqlTradeResult &result)
   { price_markers.Refresh(true); }
+
+// Preserve the former default custom criterion (zero); built-in criteria are unchanged.
+double OnTester() { UniSendBalanceCurve(InpCurveSession); return 0.0; }
+void OnTesterInit() { optimization_curves.Open(InpCurveSession); }
+void OnTesterPass() { optimization_curves.Drain(); }
+void OnTesterDeinit() { optimization_curves.Close(); }
