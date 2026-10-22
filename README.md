@@ -92,20 +92,26 @@ da entrada. O TP é arredondado para fora na grade de ticks do ativo.
 ### Integração GeraSet — identificação, mercado e operação
 
 O GeraSet exporta um preset nativo `.set` (UTF-16LE com BOM) com `InpName`
-e `InpMagic`, além de `InpMarket`, `InpTradeMode`, `InpStrategyTimeframe`,
-`InpLot` e `InpDirection`. Carregue nas propriedades do EA, em **Parâmetros de entrada →
-Carregar**, e confira os valores antes de aplicar. Nesta etapa, os demais
-dados do GeraSet são comentários e não configuram o motor. O leitor binário
-legado `GuiLoadSet` não participa desse fluxo. O Magic é preservado como input,
-sem regeneração ou reserva automática. O Flask valida a faixa de 1 a 2147483647,
-mas não verifica exclusividade no histórico de ordens do terminal.
+e `InpMagic`, além de mercado, modalidade, lote, direção, horários, ordens,
+SL/TP, breakeven, indicadores e condições. Carregue nas propriedades do EA,
+em **Parâmetros de entrada → Carregar**, e confira os valores antes de aplicar.
+Os comentários JSON preservam o rascunho da interface, inclusive campos que
+ainda não são exportados como inputs; sua presença não configura o motor.
+O leitor binário legado `GuiLoadSet` não participa desse fluxo. O navegador
+gera o Magic a partir do nome e valida a faixa de 1 a 2147483647; o Bridge
+também valida essa faixa. Não há verificação de exclusividade no histórico
+de ordens do terminal.
 
-Timeframe e Direção incluem os intervalos da aba Otimizar do GeraSet.
+Direção e timeframes dos indicadores incluem intervalos da aba Otimizar.
 Limites diferentes ativam a otimização; iguais a desativam. Mercado,
-Modalidade e Lote permanecem fixos. Confira as colunas Valor, Iniciar, Passo,
-Terminar e as marcações no Testador de Estratégias após carregar o arquivo.
-O timeframe usa os códigos do `ENUM_UNI_TIMEFRAME`, incluindo Tempo corrente=0.
-Não é necessário recompilar o Uni para carregar esses inputs.
+Modalidade e Lote permanecem fixos na exportação atual. Confira as colunas
+Valor, Iniciar, Passo, Terminar e as marcações no Testador de Estratégias.
+O timeframe base vem do gráfico/testador: não existe input `InpStrategyTimeframe`
+no EA atual. Cada `InpIndicatorNTimeframe` usa índices de `ENUM_UNI_SLOT_TIMEFRAME`
+(0 = corrente, 12 = H1, 21 = MN1), não os códigos nativos `PERIOD_*`.
+Os grupos RSI e ADX são compartilhados por finalidade (entrada/saída);
+MA possui parâmetros independentes por slot. Trailing e stop móvel possuem
+inputs no Uni, mas o exportador atual do GeraSet ainda não os emite.
 
 O card **Horários** exporta `InpEntryStart` e `InpEntryEnd` em minutos desde
 00:00 no servidor (09:30 = 570), com intervalos de otimização em passo 5.
