@@ -110,8 +110,14 @@ O timeframe base vem do gráfico/testador: não existe input `InpStrategyTimefra
 no EA atual. Cada `InpIndicatorNTimeframe` usa índices de `ENUM_UNI_SLOT_TIMEFRAME`
 (0 = corrente, 12 = H1, 21 = MN1), não os códigos nativos `PERIOD_*`.
 Os grupos RSI e ADX são compartilhados por finalidade (entrada/saída);
-MA possui parâmetros independentes por slot. Trailing e stop móvel possuem
-inputs no Uni, mas o exportador atual do GeraSet ainda não os emite.
+MA possui parâmetros independentes por slot. Trailing e stop móvel exportam
+modo, ativação, distância e passo de ajuste, com intervalos de otimização.
+Pontos e percentuais do preço de abertura usam a implementação padrão do Uni;
+acompanhamento por indicador permanece futuro. Trailing ajusta nos ticks;
+stop móvel na primeira atualização da nova vela do período base. Ambos só
+apertam o stop e preservam o TP. Não é necessário alterar o motor para essa
+exportação. Ao importar no GeraSet um arquivo antigo que não emitia esses
+inputs, os modos permanecem desativados até revisão explícita do usuário.
 
 O card **Horários** exporta `InpEntryStart` e `InpEntryEnd` em minutos desde
 00:00 no servidor (09:30 = 570), com intervalos de otimização em passo 5.
